@@ -86,39 +86,44 @@ async function handleAuthSubmit(e) {
   }
 }
 
-// นำสิทธิ์มาควบคุมการแสดงผลบนหน้าจอ
 async function applyUserPermissions(user) {
-  const { data: profile } = await supabaseClient
+  if (!user) return;
+
+  // ดึง profile
+  const { data: profile, error } = await supabaseClient
     .from('profiles')
-    .select('role')
+    .select('role, full_name')
     .eq('id', user.id)
     .single();
 
   const role = profile?.role || 'member';
+  // ถ้ามี full_name ให้ใช้ full_name ถ้าไม่มีค่อยใช้อีเมล
   const displayName = profile?.full_name || user.email;
 
-  // 1. นำชื่อ Email และ Role ไปแสดงที่มุมบนขวา
+  // 1. แสดงชื่อที่มุมขวาบน
   const profileNav = document.getElementById('userProfileNav');
   const emailText = document.getElementById('navUserEmail');
   const roleBadge = document.getElementById('navUserRole');
 
   if (profileNav) profileNav.style.display = 'flex';
-  if (emailText) emailText.innerText = displayName;
+  if (emailText) emailText.innerText = displayName; // จะแสดง "พ่อบี" แทน kaewsom@gmail.com
   if (roleBadge) {
-    roleBadge.innerText = role === 'admin' ? '🛡️ ผู้ดูแล (Admin)' : '👤 สมาชิก (Member)';
+    roleBadge.innerText = role === 'admin' ? '🛡️ ผู้ดูแล (ADMIN)' : '👤 สมาชิก (MEMBER)';
   }
 
-  // 2. ถ้าเป็นสมาชิกทั่วไป (Member) ให้ซ่อนส่วนสรุปพอร์ตทั้งหมด
-  if (role === 'member') {
-    const hiddenSelectors = [
-      'a[href*="portfolio"]', 
-      '.user-switcher-container',
-      '#grand-total-net-worth'
-    ];
-    hiddenSelectors.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => el.style.display = 'none');
-    });
-  }
+  // 2. อัปเดตหัวข้อแดชบอร์ดทันที
+  const updateDashboardHeader = () => {
+    const titleEl = document.getElementById('dashboardTitle');
+    if (titleEl) {
+      titleEl.innerText = role === 'admin' 
+        ? `พอร์ตภาพรวมครอบครัว (${displayName})` 
+        : `พอร์ตส่วนตัวของ ${displayName}`;
+    }
+  };
+
+  updateDashboardHeader();
+  // ตั้งหน่วงเวลาเล็กน้อยเพื่อป้องกันสคริปต์หน้าหลักเรนเดอร์มาทับ
+  setTimeout(updateDashboardHeader, 300);
 }
 
 // 3. ฟังก์ชันออกจากระบบ (Sign Out)
