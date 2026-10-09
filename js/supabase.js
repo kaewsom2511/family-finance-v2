@@ -95,8 +95,20 @@ async function applyUserPermissions(user) {
     .single();
 
   const role = profile?.role || 'member';
+  const displayName = profile?.full_name || user.email;
 
-  // ถ้าเป็นสมาชิกทั่วไป (Member) ให้ซ่อนส่วนสรุปพอร์ตและปุ่มสลับบัญชี
+  // 1. นำชื่อ Email และ Role ไปแสดงที่มุมบนขวา
+  const profileNav = document.getElementById('userProfileNav');
+  const emailText = document.getElementById('navUserEmail');
+  const roleBadge = document.getElementById('navUserRole');
+
+  if (profileNav) profileNav.style.display = 'flex';
+  if (emailText) emailText.innerText = displayName;
+  if (roleBadge) {
+    roleBadge.innerText = role === 'admin' ? '🛡️ ผู้ดูแล (Admin)' : '👤 สมาชิก (Member)';
+  }
+
+  // 2. ถ้าเป็นสมาชิกทั่วไป (Member) ให้ซ่อนส่วนสรุปพอร์ตทั้งหมด
   if (role === 'member') {
     const hiddenSelectors = [
       'a[href*="portfolio"]', 
@@ -106,5 +118,16 @@ async function applyUserPermissions(user) {
     hiddenSelectors.forEach(selector => {
       document.querySelectorAll(selector).forEach(el => el.style.display = 'none');
     });
+  }
+}
+
+// 3. ฟังก์ชันออกจากระบบ (Sign Out)
+async function handleSignOut() {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    alert('เกิดข้อผิดพลาดในการออกจากระบบ: ' + error.message);
+  } else {
+    location.reload(); // รีเฟรชเพื่อกลับไปหน้า Login Modal ทันที
   }
 }

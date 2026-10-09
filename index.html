@@ -114,6 +114,17 @@
     <div class="top-user-actions">
       <a href="settings.html" style="text-decoration: none; font-size: 13px; font-weight: 700; color: #475569; padding: 6px 12px; border-radius: 6px; background: #f1f5f9;">⚙️ ตั้งค่าระบบ</a>
       
+      <!-- แถบข้อมูล User และปุ่มออกจากระบบ -->
+      <div id="userProfileNav" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
+        <div style="text-align: right;">
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+        </div>
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer; transition: 0.2s;">
+          ออกจากระบบ
+        </button>
+      </div>
+      
       <!-- ส่วนเลือกโปรไฟล์ผู้ใช้งาน -->
       <div style="position: relative;">
         <button type="button" id="userMenuBtn" class="user-badge" onclick="toggleUserDropdown(event)">
