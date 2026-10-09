@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Finance - ตั้งค่าระบบ</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="top-navbar">
+    <a href="portfolio.html" class="brand-logo">
+      Family <span>Finance</span>
+    </a>
+    <nav class="top-nav-links">
+      <a href="index.html" class="top-nav-link">ภาพรวมระบบ</a>
+      <a href="portfolio.html" class="top-nav-link">พอร์ตลงทุน</a>
+      <a href="cashflow.html" class="top-nav-link">รายรับรายจ่าย</a>
+      <a href="calculator.html" class="top-nav-link">คำนวณ</a>
+      <a href="settings.html" class="top-nav-link active">ตั้งค่าระบบ</a>
+    </nav>
+  </header>
+
+  <div class="app-layout">
+    
+    <!-- Sidebar ซ้าย -->
+    <aside class="sidebar" style="display: flex; flex-direction: column; gap: 20px; justify-content: flex-start; padding: 18px 14px;">
+      <div>
+        <div class="sidebar-section-title" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; padding-left: 10px;">ภาพรวมและการบันทึก</div>
+        <div class="sidebar-menu" style="display: flex; flex-direction: column; gap: 4px;">
+          <a href="cashflow.html#cashflow/dashboard" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">📊</span> Dashboard
+          </a>
+          <a href="cashflow.html#cashflow/daily" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">📝</span> รายรับรายจ่าย
+          </a>
+          <a href="cashflow.html#cashflow/annual" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">📅</span> สรุปรายเดือน รายปี
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-section-title" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; padding-left: 10px;">สินทรัพย์และหนี้สิน</div>
+        <div class="sidebar-menu" style="display: flex; flex-direction: column; gap: 4px;">
+          <a href="cashflow.html#cashflow/banking" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">🏦</span> บัญชีเงินฝาก
+          </a>
+          <a href="portfolio.html" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">💰</span> การออมและลงทุน (พอร์ต)
+          </a>
+          <a href="cashflow.html#cashflow/debts" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">🏷️</span> หนี้สิน
+          </a>
+          <a href="cashflow.html#cashflow/credit-cards" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
+            <span class="sidebar-icon" style="font-size: 16px;">💳</span> รอบบิลบัตรเครดิต
+          </a>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="sidebar-section-title" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; padding-left: 10px;">ระบบ</div>
+        <div class="sidebar-menu" style="display: flex; flex-direction: column; gap: 4px;">
+          <a href="settings.html" class="sidebar-link active" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; background: #e0f2fe; color: #0284c7; font-size: 13px; font-weight: 700;">
+            <span class="sidebar-icon" style="font-size: 16px;">⚙️</span> ตั้งค่าระบบ
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="settings-content-area" class="content-area" style="padding: 24px 30px;"></main>
+
+  </div>
+
+  <script src="js/modules/settings.js"></script>
+</body>
+</html>

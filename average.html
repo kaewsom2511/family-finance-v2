@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Finance - คำนวณต้นทุนถัวเฉลี่ย</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* สไตล์ควบคุม Badge ราคาตลาด: พื้นหลัง กรอบ และข้อความหลักคงที่ */
+    .badge-market-price {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      background-color: #f0fdf4 !important;
+      border: 1px solid #bbf7d0 !important;
+      color: #0f766e !important;
+    }
+
+    /* ข้อความและตัวเลขเฉลี่ยปัจจุบันคงสีเดิมไว้ */
+    .badge-market-price b#lbl-curr-avg {
+      color: #0f766e !important;
+    }
+
+    * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
+    body { margin: 0; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+    
+    /* Top Navbar */
+    .top-navbar {
+      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: #0f172a; }
+    
+    .top-search-bar {
+      display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; padding: 6px 12px; width: 320px;
+    }
+    .top-search-bar input {
+      border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155;
+    }
+    .top-user-actions { display: flex; align-items: center; gap: 14px; }
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
+      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: #334155;
+    }
+
+    /* App Container Layout */
+    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 240px; min-width: 240px; max-width: 240px; box-sizing: border-box;
+      background: #ffffff; border-right: 1px solid #e2e8f0;
+      padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
+      flex-shrink: 0; user-select: none;
+    }
+    .menu-group-title {
+      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 8px 10px 4px;
+    }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+    
+    .sidebar-link, .nav-group-header {
+      display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      background: transparent; border: none; width: 100%; cursor: pointer; text-align: left;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-link:hover, .nav-group-header:hover { background: #f8fafc; color: #0f172a; }
+    .sidebar-link.active {
+      background: #f0f9ff; color: #0284c7; font-weight: 800;
+      border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0;
+    }
+    .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    /* Accordion Dropdown */
+    .nav-group-header .arrow-indicator {
+      margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: #94a3b8;
+    }
+    .nav-sub-items {
+      display: none; flex-direction: column; padding-left: 32px; gap: 2px; margin-top: 2px;
+    }
+    .nav-group.open .nav-sub-items { display: flex; }
+    .nav-group.open .nav-group-header .arrow-indicator { transform: rotate(180deg); }
+    .nav-group.open .nav-group-header { color: #0284c7; }
+
+    .nav-sub-item {
+      padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: #64748b;
+      text-decoration: none; border-radius: 6px; transition: background 0.15s, color 0.15s;
+      white-space: nowrap; box-sizing: border-box;
+    }
+    .nav-sub-item:hover { background: #f1f5f9; color: #0f172a; }
+    .nav-sub-item.active { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+
+    /* Main Content */
+    .main-wrapper { flex: 1; padding: 24px 32px 260px; overflow-y: auto; background: #f8fafc; }
+    .container { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    /* Top Action Bar (JSON Import/Export) */
+    .action-bar {
+      display: flex; align-items: center; gap: 12px; background: #ffffff;
+      padding: 10px 18px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 600;
+    }
+    .btn-export {
+      background: #0284c7; color: white; border: none; padding: 6px 14px;
+      border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-import {
+      background: #059669; color: white; border: none; padding: 6px 14px;
+      border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    /* Page Header */
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; }
+    .page-title-group h1 { font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0 2px; }
+    .page-title-group .sub { font-size: 12px; font-weight: 700; color: #0284c7; text-transform: uppercase; }
+    .page-title-group p { font-size: 13px; color: #64748b; margin: 0; }
+    .btn-clear {
+      background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d;
+      padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    /* Summary Cards */
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .summary-card {
+      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px;
+    }
+    .summary-card.active-outline { border: 1.5px solid #38bdf8; }
+    .card-label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 6px; }
+    .card-value { font-size: 22px; font-weight: 800; color: #0f172a; }
+    .card-value.highlight { color: #0284c7; }
+
+    /* Card Panels */
+    .panel {
+      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; }
+    .panel-title { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; }
+    .panel-desc { font-size: 12.5px; color: #64748b; margin: 2px 0 0; }
+    
+    .btn-secondary {
+      background: #f8fafc; border: 1px solid #e2e8f0; color: #0284c7;
+      padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    }
+    .btn-primary {
+      background: #0284c7; color: white; border: none; padding: 8px 18px;
+      border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    /* Form Grids */
+    .form-row { display: flex; align-items: flex-end; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
+    .form-control {
+      height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px;
+      font-size: 13.5px; color: #0f172a; background: #ffffff; outline: none;
+    }
+    .form-control:focus { border-color: #0284c7; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); }
+
+    /* Alert Banner */
+    .info-banner {
+      background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
+      padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700;
+    }
+
+    /* Target Average Calculations */
+    .calc-results-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 14px; }
+    .result-box {
+      background: #f8fafc; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 16px;
+    }
+    .result-box.blue { border-color: #bae6fd; }
+    .result-box .res-label { font-size: 12px; font-weight: 700; color: #15803d; }
+    .result-box.blue .res-label { color: #0284c7; }
+    .result-box .res-val { font-size: 22px; font-weight: 800; color: #15803d; margin: 4px 0 2px; }
+    .result-box.blue .res-val { color: #0284c7; }
+    .result-box .res-sub { font-size: 11.5px; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="top-navbar">
+    <a href="index.html" class="brand-logo">Family<span>Finance</span></a>
+    
+    <div class="top-search-bar">
+      <span style="margin-right: 8px; font-size: 12px;">🔍</span>
+      <input type="text" placeholder="ค้นหาฟังก์ชันคำนวณ, อัตราภาษี...">
+    </div>
+
+    <div class="top-user-actions">
+      <a href="settings.html" style="text-decoration: none; font-size: 13px; font-weight: 700; color: #475569; padding: 6px 12px; border-radius: 6px; background: #f1f5f9;">⚙️ ตั้งค่าระบบ</a>
+      <div class="user-badge">
+        <span>👤</span> Family Portfolio
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <!-- Sidebar Menu ซ้าย -->
+    <aside class="sidebar">
+      <div>
+        <div class="menu-group-title">ภาพรวมและการบันทึก</div>
+        <ul class="sidebar-menu">
+          <li><a href="index.html" class="sidebar-link"><span class="sidebar-icon">📊</span> Dashboard</a></li>
+          <li><a href="cashflow.html#daily" class="sidebar-link"><span class="sidebar-icon">📝</span> รายรับรายจ่าย</a></li>
+          <li><a href="cashflow.html#annual" class="sidebar-link"><span class="sidebar-icon">📅</span> สรุปรายเดือน รายปี</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="menu-group-title">สินทรัพย์และการลงทุน</div>
+        <ul class="sidebar-menu">
+          <li><a href="cashflow.html#banking" class="sidebar-link"><span class="sidebar-icon">🏦</span> บัญชีเงินฝาก</a></li>
+          <li class="nav-group" id="group-portfolio">
+            <button type="button" class="nav-group-header" onclick="toggleNavGroup('group-portfolio')">
+              <span class="sidebar-icon">📈</span> พอร์ตการลงทุน
+              <span class="arrow-indicator">▾</span>
+            </button>
+            <div class="nav-sub-items">
+              <a href="portfolio.html" class="nav-sub-item">📁 ภาพรวมพอร์ตทั้งหมด</a>
+              <a href="portfolio.html#holdings" class="nav-sub-item">📑 รายการถือครอง</a>
+              <a href="portfolio.html#returns" class="nav-sub-item">📈 รายงานผลตอบแทน</a>
+              <a href="portfolio.html#dividends" class="nav-sub-item">💵 ปันผลจริงรายตัว</a>
+              <a href="portfolio.html#technical" class="nav-sub-item">🕯️ กราฟเทคนิค</a>
+            </div>
+          </li>
+          <li><a href="cashflow.html#debts" class="sidebar-link"><span class="sidebar-icon">💳</span> หนี้สินและบัตรเครดิต</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="menu-group-title">เครื่องมือคำนวณ</div>
+        <ul class="sidebar-menu">
+          <li class="nav-group open" id="group-calc">
+            <button type="button" class="nav-group-header" onclick="toggleNavGroup('group-calc')">
+              <span class="sidebar-icon">🧮</span> เครื่องมือคำนวณ
+              <span class="arrow-indicator">▾</span>
+            </button>
+            <div class="nav-sub-items">
+              <a href="tax.html" class="nav-sub-item" id="subnav-calc-tax">📑 คำนวณภาษี</a>
+              <a href="average.html" class="nav-sub-item active" id="subnav-calc-average">⚖️ คำนวณต้นทุนถัวเฉลี่ย</a>
+              <a href="calculator.html?type=retirement" class="nav-sub-item" id="subnav-calc-retire">🎯 วางแผนเกษียณ / DCA</a>
+              <a href="calculator.html?type=loan" class="nav-sub-item" id="subnav-calc-loan">📉 ดอกเบี้ยกู้ / ผ่อนบ้าน</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div style="margin-top: auto;">
+        <div class="menu-group-title">ระบบ</div>
+        <ul class="sidebar-menu">
+          <li><a href="settings.html" class="sidebar-link"><span class="sidebar-icon">⚙️</span> ตั้งค่าระบบ</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content ฝั่งขวา -->
+    <main class="main-wrapper">
+      <div class="container">
+        
+        <!-- แถบด้านบน: Import / Export -->
+        <div class="action-bar">
+          <span>💾 โอนย้าย/สำรองข้อมูลพอร์ต:</span>
+          <button type="button" class="btn-export" onclick="exportData()">📤 ส่งออกข้อมูล (Export JSON)</button>
+          <button type="button" class="btn-import" onclick="document.getElementById('importFile').click()">📥 นำเข้าข้อมูล (Import JSON)</button>
+          <input type="file" id="importFile" style="display: none;" onchange="importData(event)" accept=".json">
+        </div>
+
+        <!-- หัวข้อหน้า -->
+        <div class="page-header">
+          <div class="page-title-group">
+            <div class="sub">Calculators</div>
+            <h1>คำนวณต้นทุนถัวเฉลี่ย</h1>
+            <p>บันทึกซื้อขายจำลองเพื่อดูจำนวนหุ้นคงเหลือ ต้นทุนเฉลี่ย และมูลค่าต้นทุนรวม</p>
+          </div>
+          <button type="button" class="btn-clear" onclick="clearSim()">ล้างรายการ</button>
+        </div>
+
+        <!-- การ์ดสรุป 4 กล่อง -->
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="card-label">จำนวนคงเหลือ</div>
+            <div class="card-value" id="disp-shares">11,000</div>
+          </div>
+          <div class="summary-card">
+            <div class="card-label">ต้นทุนเฉลี่ย</div>
+            <div class="card-value" id="disp-avg">4.90</div>
+          </div>
+          <div class="summary-card">
+            <div class="card-label">มูลค่าต้นทุนรวม</div>
+            <div class="card-value" id="disp-total">53,882.60</div>
+          </div>
+          <div class="summary-card">
+            <div class="card-label">รายการทั้งหมด</div>
+            <div class="card-value" id="disp-count">3</div>
+          </div>
+        </div>
+
+        <!-- กล่องดึงรายการจากพอร์ต -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">ดึงรายการจากพอร์ต</h3>
+              <p class="panel-desc">เลือกพอร์ตและสินทรัพย์ เพื่อนำรายการซื้อ ขาย และ Split มาคำนวณต้นทุนถัวเฉลี่ย</p>
+            </div>
+            <button type="button" class="btn-secondary" onclick="refreshPortfolios()">รีเฟรชรายการ</button>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="max-width: 280px;">
+              <label>พอร์ต</label>
+              <select class="form-control" id="select-port">
+                <option value="BLS">BLS</option>
+                <option value="KS">Kasikorn Securities (KS)</option>
+                <option value="InnovestX">InnovestX</option>
+                <option value="Dime">Dime!</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>สินทรัพย์</label>
+              <select class="form-control" id="select-asset">
+                <option value="">-- เลือกสินทรัพย์ --</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn-primary" style="height: 38px;" onclick="loadFromPortfolio()">ดึงจากพอร์ต</button>
+          </div>
+
+          <div class="info-banner" id="banner-port-status">
+            พบ 30 สินทรัพย์ในพอร์ตนี้ เลือกแล้วกด “ดึงจากพอร์ต”
+          </div>
+        </div>
+
+        <!-- กล่องหาเฉลี่ยเป้าหมาย -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">หาเฉลี่ยเป้าหมาย</h3>
+              <p class="panel-desc">ใช้จำนวนหุ้นและต้นทุนปัจจุบันจากตารางด้านล่าง เพื่อคำนวณว่าต้องซื้อเพิ่มเท่าไร จะถัวขึ้นหรือถัวลงก็ได้</p>
+            </div>
+            <div class="badge-market-price" id="badge-market-price">
+              🎯 เฉลี่ยปัจจุบัน: <b id="lbl-curr-avg">-</b> | ราคาตลาด: <b id="lbl-mkt-price">-</b> <span id="lbl-mkt-diff" style="font-weight:700;"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>ราคาซื้อเพิ่ม</label>
+              <input type="number" step="any" class="form-control" id="input-buy-price" placeholder="เช่น 6.50" oninput="calcTarget()">
+            </div>
+            <div class="form-group">
+              <label>ต้นทุนเฉลี่ยเป้าหมาย</label>
+              <input type="number" step="any" class="form-control" id="input-target-avg" placeholder="เช่น 7.00" oninput="calcTarget()">
+            </div>
+            <div class="form-group">
+              <label>คำนวณเสริม</label>
+              <select class="form-control" id="select-calc-mode" onchange="calcTarget()">
+                <option value="money">จากจำนวนเงินที่จะซื้อเพิ่ม</option>
+                <option value="shares">จากจำนวนหุ้นที่จะซื้อเพิ่ม</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>จำนวนเงินที่จะซื้อเพิ่ม</label>
+              <input type="number" step="any" class="form-control" id="input-buy-budget" placeholder="เช่น 20,000" oninput="calcTarget()">
+            </div>
+          </div>
+
+          <div class="calc-results-grid">
+            <div class="result-box">
+              <div class="res-label">ต้องซื้อเพิ่ม</div>
+              <div class="res-val" id="res-target-shares">0</div>
+              <div class="res-sub">หุ้น</div>
+            </div>
+            <div class="result-box">
+              <div class="res-label">ต้องใช้เงิน</div>
+              <div class="res-val" id="res-target-money">0.00</div>
+              <div class="res-sub">ตามราคาซื้อเพิ่ม</div>
+            </div>
+            <div class="result-box blue">
+              <div class="res-label">เฉลี่ยใหม่จากจำนวนเงิน</div>
+              <div class="res-val" id="res-new-avg">0.00</div>
+              <div class="res-sub" id="res-new-shares">ซื้อได้ 0 หุ้น</div>
+            </div>
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; margin: 0;">
+            ใส่ราคาซื้อเพิ่มและต้นทุนเฉลี่ยเป้าหมาย เพื่อคำนวณจำนวนหุ้นที่ต้องซื้อเพิ่ม
+          </p>
+        </div>
+
+        <!-- 1. กล่องสรุปเปรียบเทียบ ก่อน - หลังถัวเฉลี่ย -->
+        <div class="panel" id="avgComparePanel" style="margin-top: 20px; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+              📊 สรุปเปรียบเทียบ ก่อน - หลังถัวเฉลี่ย
+            </h3>
+            <span id="avgStrategyBadge" style="background: #e6f4ea; color: #16a34a; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; border: 1px solid #b7eb8f;">
+              📉 ถัวลดต้นทุน ลง 1.73%
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center;">
+            <!-- สถานะปัจจุบัน -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+              <div style="font-weight: 600; color: #64748b; font-size: 13px; margin-bottom: 12px;">สถานะปัจจุบัน (ก่อนถัว)</div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px;">
+                <span style="color: #64748b;">จำนวนหุ้น:</span>
+                <strong id="cmpBeforeShares" style="color: #0f172a;">11,000 หุ้น</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px;">
+                <span style="color: #64748b;">ต้นทุนเฉลี่ย:</span>
+                <strong id="cmpBeforeAvg" style="color: #0f172a;">4.90 ฿</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span style="color: #64748b;">มูลค่าต้นทุนรวม:</span>
+                <strong id="cmpBeforeTotal" style="color: #0f172a;">53,882.60 ฿</strong>
+              </div>
+            </div>
+
+            <div style="font-size: 20px; color: #94a3b8; font-weight: bold;">➔</div>
+
+            <!-- สถานะใหม่ -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px;">
+              <div style="font-weight: 600; color: #166534; font-size: 13px; margin-bottom: 12px;">สถานะใหม่ (หลังถัว)</div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px;">
+                <span style="color: #166534;">จำนวนหุ้นรวม:</span>
+                <strong id="cmpAfterShares" style="color: #15803d;">15,347.826087 หุ้น (+4,347.826087)</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px;">
+                <span style="color: #166534;">ต้นทุนเฉลี่ยใหม่:</span>
+                <strong id="cmpAfterAvg" style="color: #15803d;">4.81 ฿ (-1.73%)</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span style="color: #166534;">มูลค่าต้นทุนรวมใหม่:</span>
+                <strong id="cmpAfterTotal" style="color: #15803d;">73,882.60 ฿</strong>
+              </div>
+            </div>
+          </div>
+
+          <div id="avgSummaryDynamicText" style="margin-top: 14px; background: #fffbe8; border: 1px solid #ffe58f; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #594200;">
+            💡 หากซื้อเพิ่ม <b>4,347.826087 หุ้น</b> ที่ราคา <b>4.60 ฿</b> (ใช้เงิน <b>20,000.00 ฿</b>) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>4.90 ฿</b> เป็น <b>4.81 ฿</b>
+          </div>
+        </div>
+
+        <!-- 2. แถบสรุปกรณีถัวลง -->
+        <div id="avgTargetNote" style="margin-top: 14px; background: #e6f4ea; color: #137333; padding: 12px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #ceead6;">
+          กรณีถัวลง: ถ้าซื้อที่ราคา <b>4.60 ฿</b> ต้องซื้อเพิ่มประมาณ <b>5,413 หุ้น</b> เพื่อให้เฉลี่ยใหม่เป็น <b>4.80 ฿</b>
+        </div>
+
+        <!-- 3. แบบฟอร์มเพิ่มรายการซื้อ/ขาย -->
+        <div class="panel" style="margin-top: 20px; background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+          <div style="display: grid; grid-template-columns: 120px 180px 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+            <div>
+              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">ประเภท</label>
+              <select id="trade-type" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+                <option value="BUY">ซื้อ</option>
+                <option value="SELL">ขาย</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">วันที่</label>
+              <input type="date" id="trade-date" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+            </div>
+            <div>
+              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">จำนวนหุ้น</label>
+              <input type="number" id="trade-qty" placeholder="เช่น 5,000" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+            </div>
+            <div>
+              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">ราคา/หุ้น</label>
+              <input type="number" step="0.01" id="trade-price" placeholder="เช่น 8.31" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+            </div>
+            <div>
+              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">หมายเหตุ</label>
+              <input type="text" id="trade-note" placeholder="เช่น ไม้ที่ 1" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+            </div>
+            <div>
+              <button type="button" id="btn-add-trade" style="background: #0284c7; color: white; border: none; height: 38px; padding: 0 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                เพิ่มรายการ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. ตารางบันทึกซื้อ/ขาย และคำนวณต้นทุน -->
+        <div class="panel" style="margin-top: 20px; background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">ตารางบันทึกซื้อ/ขาย และคำนวณต้นทุน</h3>
+              <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">กรณีขาย จำนวนหุ้นและมูลค่าจะถูกหักออกอัตโนมัติ แต่ต้นทุนเฉลี่ยของหุ้นที่เหลือยังคงเดิม</p>
+            </div>
+            <button type="button" style="border: 1px solid #cbd5e1; background: #fff; color: #0284c7; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ใส่ตัวอย่าง</button>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px;">
+            <thead>
+              <tr style="background: #1e3a5f; color: #fff; text-align: right;">
+                <th style="padding: 10px; text-align: center; border-top-left-radius: 6px;">ครั้งที่</th>
+                <th style="padding: 10px; text-align: center;">ประเภท</th>
+                <th style="padding: 10px; text-align: center;">วันที่</th>
+                <th style="padding: 10px;">จำนวนหุ้น</th>
+                <th style="padding: 10px;">ราคา</th>
+                <th style="padding: 10px;">มูลค่ารายการ</th>
+                <th style="padding: 10px;">หุ้นสะสม</th>
+                <th style="padding: 10px;">ต้นทุนเฉลี่ย</th>
+                <th style="padding: 10px; text-align: center; border-top-right-radius: 6px;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="avgCostRows">
+              <!-- แถวประวัติซื้อขายจะถูกวาดลงตรงนี้ -->
+            </tbody>
+            <tfoot>
+              <tr style="background: #f1f5f9; font-weight: 700; border-top: 2px solid #0284c7; text-align: right;">
+                <td colspan="3" style="padding: 12px 10px; text-align: left; color: #0f172a;">สถานะพอร์ตสุทธิปัจจุบัน</td>
+                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-total-shares">11,000</td>
+                <td style="padding: 12px 10px;"></td>
+                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-total-cost">53,882.60</td>
+                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-running-shares">11,000</td>
+                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-final-avg">4.90</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>   
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleNavGroup(id) {
+      const g = document.getElementById(id);
+      if (g) g.classList.toggle('open');
+    }
+
+    // ตัวแปรเก็บสถานะการคำนวณ
+    let currentHolding = {
+      shares: 0.293854,
+      avgCost: 169.88,
+      totalCost: 49.92,
+      txCount: 1,
+      marketPrice: 4.90
+    };
+
+    // ฟังก์ชันปรับสีเฉพาะราคาตลาดและเปอร์เซ็นต์
+    function updateMarketBadgeColor(currentAvg, marketPrice) {
+      const mktPriceEl = document.getElementById('lbl-mkt-price');
+      const mktDiffEl = document.getElementById('lbl-mkt-diff');
+
+      if (currentAvg > 0) {
+        const diffPct = ((marketPrice - currentAvg) / currentAvg) * 100;
+        const isProfit = diffPct >= 0;
+        const targetColor = isProfit ? '#16a34a' : '#dc2626';
+
+        if (mktPriceEl) {
+          mktPriceEl.style.setProperty('color', targetColor, 'important');
+        }
+        if (mktDiffEl) {
+          mktDiffEl.textContent = `(${isProfit ? '+' : ''}${diffPct.toFixed(2)}%)`;
+          mktDiffEl.style.setProperty('color', targetColor, 'important');
+        }
+      }
+    }
+
+    function updateSummaryDisplay() {
+      const elDispShares = document.getElementById('disp-shares');
+      const elDispAvgCost = document.getElementById('disp-avg-cost') || document.getElementById('disp-avg');
+      const elDispTotalVal = document.getElementById('disp-total-val') || document.getElementById('disp-total');
+      const elDispTotalTx = document.getElementById('disp-total-tx') || document.getElementById('disp-count');
+
+      if (elDispShares) elDispShares.textContent = currentHolding.shares.toLocaleString();
+      if (elDispAvgCost) elDispAvgCost.textContent = currentHolding.avgCost.toFixed(2);
+      if (elDispTotalVal) elDispTotalVal.textContent = (currentHolding.shares * currentHolding.avgCost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      if (elDispTotalTx) elDispTotalTx.textContent = currentHolding.txCount;
+
+      const elCurrAvg = document.getElementById('lbl-curr-avg');
+      const elMktPrice = document.getElementById('lbl-mkt-price');
+
+      if (elCurrAvg) elCurrAvg.textContent = `${currentHolding.avgCost.toFixed(2)} ฿`;
+      if (elMktPrice) elMktPrice.textContent = `${(currentHolding.marketPrice || currentHolding.avgCost).toFixed(2)} ฿`;
+
+      updateMarketBadgeColor(currentHolding.avgCost, (currentHolding.marketPrice || currentHolding.avgCost));
+    }
+
+    function calcTarget() {
+      const buyPrice = parseFloat(document.getElementById('input-buy-price').value) || 0;
+      const targetAvg = parseFloat(document.getElementById('input-target-avg').value) || 0;
+      const budget = parseFloat(document.getElementById('input-buy-budget').value) || 0;
+
+      if (buyPrice > 0 && targetAvg > 0 && buyPrice !== targetAvg) {
+        const neededShares = (currentHolding.shares * (targetAvg - currentHolding.avgCost)) / (buyPrice - targetAvg);
+        if (neededShares > 0) {
+          document.getElementById('res-target-shares').textContent = Math.ceil(neededShares).toLocaleString();
+          document.getElementById('res-target-money').textContent = (neededShares * buyPrice).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        } else {
+          document.getElementById('res-target-shares').textContent = '0';
+          document.getElementById('res-target-money').textContent = '0.00';
+        }
+      } else {
+        document.getElementById('res-target-shares').textContent = '0';
+        document.getElementById('res-target-money').textContent = '0.00';
+      }
+
+      if (buyPrice > 0 && budget > 0) {
+        const canBuyShares = budget / buyPrice;
+        const newTotalShares = currentHolding.shares + canBuyShares;
+        const newTotalCost = (currentHolding.shares * currentHolding.avgCost) + budget;
+        const newAvg = newTotalCost / newTotalShares;
+        document.getElementById('res-new-avg').textContent = newAvg.toFixed(2);
+        document.getElementById('res-new-shares').textContent = `ซื้อได้ ${canBuyShares.toFixed(2)} หุ้น`;
+      } else {
+        document.getElementById('res-new-avg').textContent = '0.00';
+        document.getElementById('res-new-shares').textContent = 'ซื้อได้ 0 หุ้น';
+      }
+    }
+
+    function clearSim() {
+      if (confirm('คุณต้องการล้างข้อมูลจำลองการคำนวณทั้งหมดหรือไม่?')) {
+        currentHolding = { shares: 0, avgCost: 0, totalCost: 0, txCount: 0, marketPrice: 0 };
+        updateSummaryDisplay();
+        calcTarget();
+      }
+    }
+
+    // ฟังก์ชันล้างชื่อหุ้นให้ได้มาตรฐานเดียวกัน
+    function normalizeSymbol(sym) {
+      if (!sym) return '';
+      return sym.toString().trim().toUpperCase().replace(/\.BK$/, '').trim();
+    }
+
+    function refreshPortfolios() {
+      const selectAsset = document.getElementById('select-asset');
+      const selectPort = document.getElementById('select-port');
+      const statusBanner = document.getElementById('banner-port-status');
+
+      const raw = localStorage.getItem('stock-trading-log:v3');
+      if (!raw) return;
+
+      try {
+        const db = JSON.parse(raw);
+        const portfolios = db.portfolios || [];
+        const trades = db.trades || [];
+
+        const currentPortVal = selectPort.value;
+        selectPort.innerHTML = '<option value="ALL">-- ทุกพอร์ตรวมกัน --</option>';
+
+        const sortedPortfolios = [...portfolios].sort((a, b) => {
+          const nameA = (a.name || a.id || '').toString();
+          const nameB = (b.name || b.id || '').toString();
+          return nameA.localeCompare(nameB, 'th');
+        });
+
+        sortedPortfolios.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.name || p.id;
+          opt.textContent = p.name || p.id;
+          selectPort.appendChild(opt);
+        });
+
+        if (currentPortVal && Array.from(selectPort.options).some(o => o.value === currentPortVal)) {
+          selectPort.value = currentPortVal;
+        } else if (Array.from(selectPort.options).some(o => o.value === 'BLS')) {
+          selectPort.value = 'BLS';
+        } else {
+          selectPort.value = 'ALL';
+        }
+
+        const selectedPortVal = selectPort.value;
+        let targetPortId = selectedPortVal;
+        const foundPort = portfolios.find(p => p.id === selectedPortVal || p.name === selectedPortVal);
+        if (foundPort && foundPort.id) {
+          targetPortId = foundPort.id;
+        }
+
+        const assetMap = {};
+        trades.forEach(t => {
+          let rawSym = (t.symbol || t.ticker || t.stock || t.asset || '').trim().toUpperCase();
+          if (!rawSym) return;
+          const cleanSym = rawSym.replace(/\.BK$/, '').trim();
+
+          if (selectedPortVal !== 'ALL') {
+            const tPort = (t.portfolioId || t.portfolio || t.port || t.broker || '').toString();
+            if (tPort !== targetPortId && tPort !== selectedPortVal) return;
+          }
+
+          assetMap[cleanSym] = (assetMap[cleanSym] || 0) + 1;
+        });
+
+        const currentAssetVal = selectAsset.value;
+        selectAsset.innerHTML = '';
+        const sortedSymbols = Object.keys(assetMap).sort();
+
+        sortedSymbols.forEach(sym => {
+          const opt = document.createElement('option');
+          opt.value = sym;
+          opt.textContent = `${sym} (${assetMap[sym]} รายการ)`;
+          selectAsset.appendChild(opt);
+        });
+
+        if (sortedSymbols.includes(currentAssetVal)) {
+          selectAsset.value = currentAssetVal;
+        } else if (sortedSymbols.includes('ALLY')) {
+          selectAsset.value = 'ALLY';
+        }
+
+        if (statusBanner) {
+          statusBanner.textContent = `พบ ${sortedSymbols.length} สินทรัพย์ในพอร์ตนี้ เลือกแล้วกด “ดึงจากพอร์ต”`;
+        }
+
+      } catch (err) {
+        console.error('Error in refreshPortfolios:', err);
+      }
+    }
+
+    function loadFromPortfolio() {
+      const selectAsset = document.getElementById('select-asset');
+      const selectPort = document.getElementById('select-port');
+      if (!selectAsset || !selectAsset.value) return;
+
+      const targetSymbol = normalizeSymbol(selectAsset.value);
+      const raw = localStorage.getItem('stock-trading-log:v3');
+      if (!raw) return;
+
+      try {
+        const db = JSON.parse(raw);
+        const trades = db.trades || [];
+        const portfolios = db.portfolios || [];
+        
+        const selectedPortVal = selectPort && selectPort.value ? selectPort.value.trim() : 'ALL';
+        const isAllPorts = (!selectedPortVal || selectedPortVal === 'ALL');
+
+        let targetPortId = selectedPortVal;
+        if (!isAllPorts) {
+          const foundPort = portfolios.find(p => p.id === selectedPortVal || p.name === selectedPortVal);
+          if (foundPort && foundPort.id) targetPortId = foundPort.id;
+        }
+
+        const matchedTrades = trades.filter(t => {
+          const cleanSym = normalizeSymbol(t.symbol || t.ticker || t.stock || t.asset);
+          if (cleanSym !== targetSymbol) return false;
+
+          if (!isAllPorts) {
+            const tPort = (t.portfolioId || t.portfolio || t.port || t.broker || '').toString();
+            if (tPort !== targetPortId && tPort !== selectedPortVal) return false;
+          }
+          return true;
+        });
+
+        if (matchedTrades.length === 0) {
+          alert(`ไม่พบรายการซื้อขายของ ${targetSymbol}`);
+          return;
+        }
+
+        matchedTrades.sort((a, b) => new Date(a.date || a.timestamp || 0) - new Date(b.date || b.timestamp || 0));
+
+        let totalShares = 0;
+        let totalCost = 0;
+
+        matchedTrades.forEach(t => {
+          const qty = parseFloat(t.shares || t.quantity || t.qty || t.amount || 0);
+          const price = parseFloat(t.price || t.cost || t.unitPrice || 0);
+          const fee = parseFloat(t.fee || t.commission || t.vat || 0);
+          const type = (t.type || t.action || t.side || 'BUY').toUpperCase();
+
+          if (type.includes('BUY')) {
+            totalCost += (qty * price) + fee;
+            totalShares += qty;
+          } else if (type.includes('SELL')) {
+            if (totalShares > 0) {
+              const avg = totalCost / totalShares;
+              totalShares = Math.max(0, totalShares - qty);
+              totalCost = totalShares > 0 ? (totalShares * avg) : 0;
+            }
+          }
+        });
+
+        const avgPrice = totalShares > 0 ? (totalCost / totalShares) : 0;
+
+        let marketPrice = avgPrice;
+        const rawQuote = localStorage.getItem('stock-trading-log:quote-cache:v1');
+        if (rawQuote) {
+          try {
+            const quotes = JSON.parse(rawQuote);
+            const q = quotes[targetSymbol] || quotes[`${targetSymbol}.BK`];
+            if (q && (q.price || q.close)) {
+              marketPrice = parseFloat(q.price || q.close);
+            }
+          } catch (e) {}
+        }
+
+        if (typeof currentHolding !== 'undefined') {
+          currentHolding.shares = totalShares;
+          currentHolding.avgCost = avgPrice;
+          currentHolding.totalCost = totalCost;
+          currentHolding.txCount = matchedTrades.length;
+          currentHolding.marketPrice = marketPrice;
+          currentHolding.symbol = targetSymbol;
+        }
+
+        // อัปเดตตัวเลขแสดงผลบนการ์ดด้านบน 4 ใบ
+        const statCards = document.querySelectorAll('.card .stat-val, .summary-card-val, .stat-value');
+        if (statCards.length >= 4) {
+          statCards[0].textContent = totalShares.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+          statCards[1].textContent = avgPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          statCards[2].textContent = totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          statCards[3].textContent = matchedTrades.length;
+        }
+
+        // อัปเดตข้อความและสีในแถบ Badge ด้านขวาบน
+        const elCurrAvg = document.getElementById('lbl-curr-avg');
+        const elMktPrice = document.getElementById('lbl-mkt-price');
+
+        if (elCurrAvg) elCurrAvg.textContent = `${avgPrice.toFixed(2)} ฿`;
+        if (elMktPrice) elMktPrice.textContent = `${marketPrice.toFixed(2)} ฿`;
+
+        updateMarketBadgeColor(avgPrice, marketPrice);
+
+        // วาดแถวตารางประวัติซื้อ/ขายด้านล่าง
+        const tableBody = document.querySelector('#trades-table tbody') || 
+                          document.querySelector('table tbody') || 
+                          document.getElementById('trade-list-body') ||
+                          document.getElementById('avgCostRows');
+
+        if (tableBody) {
+          tableBody.innerHTML = '';
+          let runningShares = 0;
+          let runningCost = 0;
+
+          matchedTrades.forEach((t, idx) => {
+            const qty = parseFloat(t.shares || t.quantity || t.qty || 0);
+            const price = parseFloat(t.price || t.cost || t.unitPrice || 0);
+            const subtotal = qty * price;
+            const type = (t.type || t.action || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY';
+            const dateStr = t.date || '-';
+
+            if (type === 'BUY') {
+              runningCost += subtotal;
+              runningShares += qty;
+            } else {
+              const currentAvg = runningShares > 0 ? (runningCost / runningShares) : 0;
+              runningShares = Math.max(0, runningShares - qty);
+              runningCost = runningShares * currentAvg;
+            }
+
+            const currentAvgPrice = runningShares > 0 ? (runningCost / runningShares) : 0;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="text-align:center;">${idx + 1}</td>
+              <td style="text-align:center;">
+                <span style="color:${type === 'BUY' ? '#10b981' : '#ef4444'}; font-weight:700;">
+                  ${type === 'BUY' ? 'ซื้อ' : 'ขาย'}
+                </span>
+              </td>
+              <td style="text-align:center;">${dateStr}</td>
+              <td style="text-align:right; font-weight:600;">${qty.toLocaleString()}</td>
+              <td style="text-align:right;">${price.toFixed(2)}</td>
+              <td style="text-align:right;">${subtotal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+              <td style="text-align:right; font-weight:700;">${runningShares.toLocaleString()}</td>
+              <td style="text-align:right; color:#0284c7; font-weight:700;">${currentAvgPrice.toFixed(2)}</td>
+              <td style="text-align:center;">-</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        }
+
+        // แสดงผลแบนเนอร์แจ้งสถานะ
+        const banner = document.getElementById('banner-port-status') || document.querySelector('.alert-success');
+        if (banner) {
+          banner.textContent = `✓ ดึงรายการสำเร็จ ${matchedTrades.length} รายการ (${totalShares.toLocaleString()} หุ้น)`;
+        }
+
+      } catch (err) {
+        console.error('Error in loadFromPortfolio:', err);
+      }
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentHolding, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "average_cost_backup.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          currentHolding = JSON.parse(evt.target.result);
+          updateSummaryDisplay();
+          calcTarget();
+          alert('นำเข้าข้อมูลสำเร็จ');
+        } catch(err) {
+          alert('รูปแบบไฟล์ไม่ถูกต้อง');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+  const selectPort = document.getElementById('select-port');
+  if (selectPort) {
+    selectPort.addEventListener('change', refreshPortfolios);
+  }
+
+  // เคลียร์ค่าช่องกรอกทั้ง 3 ช่องให้ว่างเปล่า เพื่อให้แสดงเฉพาะตัวอักษรจาง ๆ (Placeholder)
+  const inBuy = document.getElementById('input-buy-price');
+  const inTarget = document.getElementById('input-target-avg');
+  const inBudget = document.getElementById('input-buy-budget');
+  if (inBuy) inBuy.value = '';
+  if (inTarget) inTarget.value = '';
+  if (inBudget) inBudget.value = '';
+
+  refreshPortfolios();
+  calcTarget();
+});
+  </script>
+  <script src="js/modules/average.js"></script>
+</body>
+</html>

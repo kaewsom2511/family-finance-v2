@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Finance - พอร์ตการลงทุน (Investment Portfolio)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
+    body { margin: 0; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+    
+    /* Top Navbar */
+    .top-navbar {
+      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: #0f172a; }
+    
+    .top-search-bar {
+      display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; padding: 6px 12px; width: 320px;
+    }
+    .top-search-bar input {
+      border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155;
+    }
+    .top-user-actions { display: flex; align-items: center; gap: 14px; }
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
+      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: #334155;
+    }
+
+    /* App Container Layout */
+    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+    
+    /* Sidebar สไตล์ Stock Analysis */
+    .sidebar {
+      width: 240px; background: #ffffff; border-right: 1px solid #e2e8f0;
+      padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
+      flex-shrink: 0; user-select: none;
+    }
+    .menu-group-title {
+      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 8px 10px 4px;
+    }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+    
+    .sidebar-link, .nav-group-header {
+      display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      background: transparent; border: none; width: 100%; cursor: pointer; text-align: left;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-link:hover, .nav-group-header:hover { background: #f8fafc; color: #0f172a; }
+    .sidebar-link.active {
+      background: #f0f9ff; color: #0284c7; font-weight: 800;
+      border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0;
+    }
+    .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    /* Accordion Dropdown */
+    .nav-group-header .arrow-indicator {
+      margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: #94a3b8;
+    }
+    .nav-sub-items {
+      display: none; flex-direction: column; padding-left: 32px; gap: 2px; margin-top: 2px;
+    }
+    .nav-group.open .nav-sub-items { display: flex; }
+    .nav-group.open .nav-group-header .arrow-indicator { transform: rotate(180deg); }
+    .nav-group.open .nav-group-header { color: #0284c7; }
+
+    .nav-sub-item {
+      padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: #64748b;
+      text-decoration: none; border-radius: 6px; transition: background 0.15s, color 0.15s;
+    }
+    .nav-sub-item:hover { background: #f1f5f9; color: #0f172a; }
+    .nav-sub-item.active { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+
+    /* Main Content */
+    .main-wrapper { flex: 1; padding: 24px 30px; overflow-y: auto; text-align: left; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="top-navbar">
+    <a href="index.html" class="brand-logo">Family<span>Finance</span></a>
+    
+    <div class="top-search-bar">
+      <span style="margin-right: 8px; font-size: 12px;">🔍</span>
+      <input type="text" placeholder="ค้นหาหุ้น, กองทุน, สินทรัพย์...">
+    </div>
+
+    <div class="top-user-actions">
+      <a href="settings.html" style="text-decoration: none; font-size: 13px; font-weight: 700; color: #475569; padding: 6px 12px; border-radius: 6px; background: #f1f5f9;">⚙️ ตั้งค่าระบบ</a>
+      <div class="user-badge">
+        <span>👤</span> Family Portfolio
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <!-- Sidebar Menu ซ้าย (ชุดเดียวกันทุกหน้า) -->
+    <aside class="sidebar">
+      <div>
+        <div class="menu-group-title">ภาพรวมและการบันทึก</div>
+        <ul class="sidebar-menu">
+          <li>
+            <a href="index.html" class="sidebar-link">
+              <span class="sidebar-icon">📊</span> Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="cashflow.html#daily" class="sidebar-link">
+              <span class="sidebar-icon">📝</span> รายรับรายจ่าย
+            </a>
+          </li>
+          <li>
+            <a href="cashflow.html#annual" class="sidebar-link">
+              <span class="sidebar-icon">📅</span> สรุปรายเดือน รายปี
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="menu-group-title">สินทรัพย์และการลงทุน</div>
+        <ul class="sidebar-menu">
+          <li>
+            <a href="cashflow.html#banking" class="sidebar-link">
+              <span class="sidebar-icon">🏦</span> บัญชีเงินฝาก
+            </a>
+          </li>
+
+          <!-- Accordion: พอร์ตการลงทุน (เปิดค้างไว้เสมอสำหรับหน้านี้) -->
+          <li class="nav-group open" id="group-portfolio">
+            <button type="button" class="nav-group-header" onclick="toggleNavGroup('group-portfolio')">
+              <span class="sidebar-icon">📈</span> พอร์ตการลงทุน
+              <span class="arrow-indicator">▾</span>
+            </button>
+            <div class="nav-sub-items">
+              <a href="portfolio.html" class="nav-sub-item active" id="subnav-portfolio-all">📁 ภาพรวมพอร์ตทั้งหมด</a>
+              <a href="portfolio.html#holdings" class="nav-sub-item" id="subnav-portfolio-holdings">📑 รายการถือครอง</a>
+              <a href="portfolio.html#returns" class="nav-sub-item" id="subnav-portfolio-returns">📈 รายงานผลตอบแทน</a>
+              <a href="portfolio.html#dividends" class="nav-sub-item" id="subnav-portfolio-dividends">💵 ปันผลจริงรายตัว</a>
+              <a href="portfolio.html#technical" class="nav-sub-item" id="subnav-portfolio-chart">🕯️ กราฟเทคนิค</a>
+              <a href="portfolio.html#plan" class="nav-sub-item" id="subnav-portfolio-plan">🎯 วางแผนปันผล</a>
+            </div>
+          </li>
+
+          <li>
+            <a href="cashflow.html#debts" class="sidebar-link">
+              <span class="sidebar-icon">💳</span> หนี้สินและบัตรเครดิต
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="menu-group-title">เครื่องมือคำนวณ</div>
+        <ul class="sidebar-menu">
+          <li class="nav-group" id="group-calc">
+            <button type="button" class="nav-group-header" onclick="toggleNavGroup('group-calc')">
+              <span class="sidebar-icon">🧮</span> เครื่องมือคำนวณ
+              <span class="arrow-indicator">▾</span>
+            </button>
+            <div class="nav-sub-items">
+              <a href="tax.html" class="nav-sub-item">📄 คำนวณภาษี</a>
+        <a href="average.html" class="nav-sub-item" id="subnav-calc-average">⚖️ คำนวณต้นทุนถัวเฉลี่ย</a>
+        <a href="calculator.html?type=retirement" class="nav-sub-item">🎯 วางแผนเกษียณ / DCA</a>
+        <a href="calculator.html?type=loan" class="nav-sub-item">📉 ดอกเบี้ยกู้ / ผ่อนบ้าน</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div style="margin-top: auto;">
+        <div class="menu-group-title">ระบบ</div>
+        <ul class="sidebar-menu">
+          <li>
+            <a href="settings.html" class="sidebar-link">
+              <span class="sidebar-icon">⚙️</span> ตั้งค่าระบบ
+            </a>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Container: รองรับโมดูลพอร์ตการลงทุน -->
+    <main class="main-wrapper" id="content-area">
+      <!-- คอนเทนต์พอร์ตการลงทุนจะถูกโหลดมาแสดงผลตรงนี้ -->
+    </main>
+  </div>
+
+  <!-- โหลดสคริปต์ของพอร์ตการลงทุน (หากมีไฟล์แยก เช่น portfolio.js ให้ใส่ path ตรงนี้) -->
+  <script src="js/modules/portfolio.js"></script>
+  <script src="js/modules/dividend-planner.js"></script>
+  <script>
+    // สลับเปิด-ปิด กลุ่มเมนูย่อย
+    function toggleNavGroup(groupId) {
+      const group = document.getElementById(groupId);
+      if (group) group.classList.toggle('open');
+    }
+
+    // อัปเดตสถานะ Active ของเมนูย่อยพอร์ตตาม Hash เช่น #holdings, #returns, #dividends, #technical
+    function updatePortfolioSubnav() {
+      const hash = window.location.hash || '';
+      const subItems = document.querySelectorAll('#group-portfolio .nav-sub-item');
+      subItems.forEach(item => item.classList.remove('active'));
+
+      if (hash === '#holdings') {
+        document.getElementById('subnav-portfolio-holdings')?.classList.add('active');
+      } else if (hash === '#returns') {
+        document.getElementById('subnav-portfolio-returns')?.classList.add('active');
+      } else if (hash === '#dividends') {
+        document.getElementById('subnav-portfolio-dividends')?.classList.add('active');
+      } else if (hash === '#technical') {
+        document.getElementById('subnav-portfolio-chart')?.classList.add('active');
+      } else if (hash === '#plan') {
+      document.getElementById('subnav-portfolio-plan')?.classList.add('active');  
+      } else {
+        document.getElementById('subnav-portfolio-all')?.classList.add('active');
+      }
+    }
+
+    window.addEventListener('hashchange', () => {
+      updatePortfolioSubnav();
+      if (window.PortfolioModule && typeof window.PortfolioModule.render === 'function') {
+        window.PortfolioModule.render();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updatePortfolioSubnav();
+      // เรียกสั่งรันโมดูลพอร์ตเมื่อหน้าโหลดเสร็จ
+      if (window.PortfolioModule && typeof window.PortfolioModule.init === 'function') {
+        window.PortfolioModule.init();
+      }
+    });
+  </script>
+</body>
+</html>
