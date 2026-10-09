@@ -112,7 +112,7 @@
     </div>
 
     <div class="top-user-actions">
-      <a href="settings.html" style="text-decoration: none; font-size: 13px; font-weight: 700; color: #475569; padding: 6px 12px; border-radius: 6px; background: #f1f5f9;">⚙️ ตั้งค่าระบบ</a>
+      
       
       <!-- แถบข้อมูล User และปุ่มออกจากระบบ -->
       <div id="userProfileNav" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
@@ -124,25 +124,21 @@
           ออกจากระบบ
         </button>
       </div>
-      
-      <!-- ส่วนเลือกโปรไฟล์ผู้ใช้งาน -->
-      <div style="position: relative;">
-        <button type="button" id="userMenuBtn" class="user-badge" onclick="toggleUserDropdown(event)">
-          <span>👤</span> <span id="currentUserName">บัญชีผู้ใช้</span> <span style="font-size: 10px; color: #94a3b8;">▾</span>
-        </button>
 
-        <div id="userDropdownMenu" class="user-dropdown">
-          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; padding: 6px 10px; text-transform: uppercase;">เลือกบัญชีผู้ใช้</div>
-          <div id="userListContainer" style="display: flex; flex-direction: column; gap: 3px; max-height: 200px; overflow-y: auto;">
-            <!-- แสดงรายชื่อผู้ใช้แบบไดนามิก -->
-          </div>
-          <div style="border-top: 1px solid #f1f5f9; margin-top: 6px; padding-top: 6px;">
-            <button type="button" onclick="promptAddNewUser()" style="width: 100%; border: none; background: #f0f9ff; color: #0284c7; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px;">
-              <span>➕</span> เพิ่มผู้ใช้งานใหม่
-            </button>
-          </div>
-        </div>
+      <div class="top-user-actions">
+
+    <!-- แถบข้อมูล User และปุ่มออกจากระบบ -->
+    <div id="userProfileNav" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
+      <div style="text-align: right;">
+        <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
+        <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
       </div>
+      <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
+        ออกจากระบบ
+      </button>
+    </div>
+
+  </div>
     </div>
   </header>
 
