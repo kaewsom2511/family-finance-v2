@@ -472,7 +472,39 @@
       `;
     })();
   </script>
+  <!-- โหลด Supabase SDK และไฟล์ตั้งค่า -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/modules/creditcard.js"></script>
   <script src="js/modules/debt.js"></script>
+  <!-- Modal เข้าสู่ระบบ / ลงทะเบียน -->
+<div id="authModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; width: 90%; max-width: 400px; border-radius: 16px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); font-family: inherit;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h2 id="authTitle" style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 8px 0;">เข้าสู่ระบบ</h2>
+      <p id="authSubtitle" style="color: #64748b; font-size: 0.875rem; margin: 0;">Family Finance เข้าถึงข้อมูลพอร์ตและการเงิน</p>
+    </div>
+
+    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px;">อีเมล</label>
+        <input type="email" id="authEmail" required placeholder="name@example.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px;">รหัสผ่าน</label>
+        <input type="password" id="authPassword" required placeholder="••••••••" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+      </div>
+
+      <div id="authError" style="display: none; padding: 10px; margin-bottom: 16px; border-radius: 6px; background: #fee2e2; color: #b91c1c; font-size: 0.825rem;"></div>
+
+      <button type="submit" id="authSubmitBtn" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #2563eb; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s;">เข้าสู่ระบบ</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <a href="javascript:void(0)" id="toggleAuthMode" onclick="toggleAuthMode()" style="color: #2563eb; font-size: 0.875rem; text-decoration: none;">ยังไม่มีบัญชี? สมัครสมาชิกใหม่</a>
+    </div>
+  </div>
+</div>
 </body>
 </html>
