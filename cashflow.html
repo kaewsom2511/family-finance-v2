@@ -26,10 +26,6 @@
       border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155;
     }
     .top-user-actions { display: flex; align-items: center; gap: 14px; }
-    .user-badge {
-      display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
-      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: #334155;
-    }
 
     /* App Container Layout */
     .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
@@ -92,10 +88,16 @@
       <input type="text" placeholder="ค้นหาหมวดหมู่, ทรัพย์สิน หรือธุรกรรม...">
     </div>
 
+    <!-- ส่วนแสดงข้อมูลบัญชีผู้ใช้และปุ่มออกจากระบบ -->
     <div class="top-user-actions">
-      <a href="settings.html" style="text-decoration: none; font-size: 13px; font-weight: 700; color: #475569; padding: 6px 12px; border-radius: 6px; background: #f1f5f9;">⚙️ ตั้งค่าระบบ</a>
-      <div class="user-badge">
-        <span>👤</span> Family Portfolio
+      <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
+        <div style="text-align: right;">
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+        </div>
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
+          ออกจากระบบ
+        </button>
       </div>
     </div>
   </header>
@@ -166,11 +168,11 @@
               <span class="arrow-indicator">▾</span>
             </button>
             <div class="nav-sub-items">
-        <a href="tax.html" class="nav-sub-item">📄 คำนวณภาษี</a>
-        <a href="average.html" class="nav-sub-item" id="subnav-calc-average">⚖️ คำนวณต้นทุนถัวเฉลี่ย</a>
-        <a href="calculator.html?type=retirement" class="nav-sub-item">🎯 วางแผนเกษียณ / DCA</a>
-        <a href="calculator.html?type=loan" class="nav-sub-item">📉 ดอกเบี้ยกู้ / ผ่อนบ้าน</a>
-      </div>
+              <a href="tax.html" class="nav-sub-item">📄 คำนวณภาษี</a>
+              <a href="average.html" class="nav-sub-item" id="subnav-calc-average">⚖️ คำนวณต้นทุนถัวเฉลี่ย</a>
+              <a href="calculator.html?type=retirement" class="nav-sub-item">🎯 วางแผนเกษียณ / DCA</a>
+              <a href="calculator.html?type=loan" class="nav-sub-item">📉 ดอกเบี้ยกู้ / ผ่อนบ้าน</a>
+            </div>
           </li>
         </ul>
       </div>
@@ -188,16 +190,21 @@
     </aside>
 
     <!-- Main Content: พื้นที่แสดงผลระบบกระแสเงินสด -->
-   <main class="main-wrapper" id="content-area">
-</main>
+    <main class="main-wrapper" id="content-area"></main>
   </div>
 
-  <!-- โหลดสคริปต์ระบบ -->
+  <!-- 1. โหลด Supabase SDK และ Auth Script เพื่อดึงสิทธิ์และปุ่มออกจากระบบก่อนเสมอ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+
+  <!-- 2. โหลดโมดูลระบบการเงินต่าง ๆ -->
   <script src="js/modules/cashflow.js"></script>
   <script src="js/modules/creditcard.js"></script>
   <script src="js/modules/debt.js"></script>
+
+  <!-- 3. สคริปต์ควบคุมการเปลี่ยนหน้าและเมนูย่อย -->
   <script>
-    // ฟังก์ชัน สลับเปิด-ปิด กลุ่มเมนูย่อย
+    // ฟังก์ชัน สลับเปิด-ปิด กลุ่มเมนูย่อย Accordion
     function toggleNavGroup(groupId) {
       const group = document.getElementById(groupId);
       if (group) {
@@ -221,32 +228,32 @@
         document.getElementById('nav-cashflow')?.classList.add('active');
       }
     }
-    function handleRoute() {
-    updateActiveSidebar();
-    const hash = window.location.hash || '';
-    const contentArea = document.getElementById('content-area');
 
-    if (hash === '#debts' || hash === '#credit-cards' || hash.includes('debt')) {
-      // หยุดการเรนเดอร์ของ CashFlowModule และสั่งวาดหน้าบัตรเครดิต/หนี้สินทันที
-      setTimeout(() => {
-        if (contentArea) contentArea.innerHTML = '';
-        if (typeof DebtModule !== 'undefined') {
-          DebtModule.init();
-          DebtModule.render(contentArea);
-        } else if (typeof CreditCardModule !== 'undefined') {
-          CreditCardModule.render(contentArea);
+    function handleRoute() {
+      updateActiveSidebar();
+      const hash = window.location.hash || '';
+      const contentArea = document.getElementById('content-area');
+
+      if (hash === '#debts' || hash === '#credit-cards' || hash.includes('debt')) {
+        setTimeout(() => {
+          if (contentArea) contentArea.innerHTML = '';
+          if (typeof DebtModule !== 'undefined') {
+            DebtModule.init();
+            DebtModule.render(contentArea);
+          } else if (typeof CreditCardModule !== 'undefined') {
+            CreditCardModule.render(contentArea);
+          }
+        }, 50);
+      } else {
+        if (window.CashFlowModule) {
+          if (typeof window.CashFlowModule.render === 'function') window.CashFlowModule.render();
+          else if (typeof window.CashFlowModule.init === 'function') window.CashFlowModule.init();
         }
-      }, 50);
-    } else {
-      if (window.CashFlowModule) {
-        if (typeof window.CashFlowModule.render === 'function') window.CashFlowModule.render();
-        else if (typeof window.CashFlowModule.init === 'function') window.CashFlowModule.init();
       }
     }
-  }
 
-  window.addEventListener('hashchange', handleRoute);
-  window.addEventListener('DOMContentLoaded', handleRoute);
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('DOMContentLoaded', handleRoute);
   </script>
 </body>
 </html>

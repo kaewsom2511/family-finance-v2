@@ -1,16 +1,28 @@
 // js/supabase.js
 const SUPABASE_URL = 'https://kluefrvavvyhtswsvxee.supabase.co';
-// แทนที่ด้วย Publishable Key ตัวเต็มที่คุณก๊อปปี้ไว้
 const SUPABASE_ANON_KEY = 'sb_publishable_KHfOsEWDCW6RyV-Mbx_v6w_pyUtOR03';
 
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-let isSignUpMode = false;
+// โหมด: 'signin' | 'signup' | 'forgot' | 'reset'
+let authMode = 'signin';
 
-// ตรวจสอบสถานะผู้ใช้เมื่อโหลดหน้าเว็บ
 document.addEventListener('DOMContentLoaded', async () => {
   checkUserSession();
+  listenToPasswordReset();
 });
+
+// ตรวจสอบเมื่อผู้ใช้คลิกลิงก์จากอีเมลกลับมาตั้งรหัสผ่านใหม่
+function listenToPasswordReset() {
+  if (!supabaseClient) return;
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      const modal = document.getElementById('authModal');
+      if (modal) modal.style.display = 'flex';
+      switchAuthMode('reset');
+    }
+  });
+}
 
 async function checkUserSession() {
   if (!supabaseClient) return;
@@ -18,100 +30,168 @@ async function checkUserSession() {
   const modal = document.getElementById('authModal');
   
   if (!session) {
-    if (modal) modal.style.display = 'flex';
+    if (modal && authMode !== 'reset') modal.style.display = 'flex';
   } else {
-    if (modal) modal.style.display = 'none';
+    if (modal && authMode !== 'reset') modal.style.display = 'none';
     applyUserPermissions(session.user);
   }
 }
 
-// สลับโหมดระหว่าง เข้าสู่ระบบ / สมัครสมาชิก
-function toggleAuthMode() {
-  isSignUpMode = !isSignUpMode;
+// สลับโหมดการทำงานของ Modal
+function switchAuthMode(mode) {
+  authMode = mode;
   const title = document.getElementById('authTitle');
-  const btn = document.getElementById('authSubmitBtn');
-  const toggle = document.getElementById('toggleAuthMode');
-  const err = document.getElementById('authError');
-  if (err) err.style.display = 'none';
+  const subtitle = document.getElementById('authSubtitle');
+  const submitBtn = document.getElementById('authSubmitBtn');
+  const toggleLink = document.getElementById('toggleAuthMode');
+  const errBox = document.getElementById('authError');
+  
+  const nameGroup = document.getElementById('authNameGroup');
+  const emailGroup = document.getElementById('authEmailGroup');
+  const passGroup = document.getElementById('authPasswordGroup');
+  const passLabel = document.getElementById('authPasswordLabel');
+  const forgotBtn = document.getElementById('btnForgotPassword');
 
-  if (isSignUpMode) {
-    title.innerText = 'สมัครสมาชิกใหม่';
-    btn.innerText = 'ลงทะเบียน';
-    toggle.innerText = 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ';
+  if (errBox) errBox.style.display = 'none';
+
+  if (mode === 'signup') {
+    if (title) title.innerText = 'สมัครสมาชิกใหม่';
+    if (subtitle) subtitle.innerText = 'สร้างบัญชีเพื่อเข้าใช้งาน Family Finance';
+    if (submitBtn) submitBtn.innerText = 'ลงทะเบียน';
+    if (toggleLink) toggleLink.innerText = 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ';
+    if (nameGroup) nameGroup.style.display = 'block';
+    if (emailGroup) emailGroup.style.display = 'block';
+    if (passGroup) passGroup.style.display = 'block';
+    if (passLabel) passLabel.innerText = 'รหัสผ่าน';
+    if (forgotBtn) forgotBtn.style.display = 'none';
+  } else if (mode === 'forgot') {
+    if (title) title.innerText = 'ลืมรหัสผ่าน';
+    if (subtitle) subtitle.innerText = 'กรอกอีเมลเพื่อรับลิงก์ตั้งรหัสผ่านใหม่ทางอีเมล';
+    if (submitBtn) submitBtn.innerText = 'ส่งลิงก์รีเซ็ตรหัสผ่าน';
+    if (toggleLink) toggleLink.innerText = '← กลับไปหน้าเข้าสู่ระบบ';
+    if (nameGroup) nameGroup.style.display = 'none';
+    if (emailGroup) emailGroup.style.display = 'block';
+    if (passGroup) passGroup.style.display = 'none';
+    if (forgotBtn) forgotBtn.style.display = 'none';
+  } else if (mode === 'reset') {
+    if (title) title.innerText = 'ตั้งรหัสผ่านใหม่';
+    if (subtitle) subtitle.innerText = 'กรุณาระบุรหัสผ่านใหม่ที่คุณต้องการใช้งาน';
+    if (submitBtn) submitBtn.innerText = '💾 บันทึกรหัสผ่านใหม่';
+    if (toggleLink) toggleLink.innerText = '';
+    if (nameGroup) nameGroup.style.display = 'none';
+    if (emailGroup) emailGroup.style.display = 'none';
+    if (passGroup) passGroup.style.display = 'block';
+    if (passLabel) passLabel.innerText = 'รหัสผ่านใหม่';
+    if (forgotBtn) forgotBtn.style.display = 'none';
   } else {
-    title.innerText = 'เข้าสู่ระบบ';
-    btn.innerText = 'เข้าสู่ระบบ';
-    toggle.innerText = 'ยังไม่มีบัญชี? สมัครสมาชิกใหม่';
+    // signin
+    if (title) title.innerText = 'เข้าสู่ระบบ';
+    if (subtitle) subtitle.innerText = 'Family Finance เข้าถึงข้อมูลพอร์ตและการเงิน';
+    if (submitBtn) submitBtn.innerText = 'เข้าสู่ระบบ';
+    if (toggleLink) toggleLink.innerText = 'ยังไม่มีบัญชี? สมัครสมาชิกใหม่';
+    if (nameGroup) nameGroup.style.display = 'none';
+    if (emailGroup) emailGroup.style.display = 'block';
+    if (passGroup) passGroup.style.display = 'block';
+    if (passLabel) passLabel.innerText = 'รหัสผ่าน';
+    if (forgotBtn) forgotBtn.style.display = 'inline';
   }
 }
 
-// ฟังก์ชันกดส่งฟอร์ม Login / Sign Up
+function toggleAuthModeAction() {
+  if (authMode === 'signin') {
+    switchAuthMode('signup');
+  } else {
+    switchAuthMode('signin');
+  }
+}
+
+// ฟังก์ชันส่งฟอร์มตามโหมดต่างๆ
 async function handleAuthSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
+  const email = document.getElementById('authEmail')?.value.trim();
+  const password = document.getElementById('authPassword')?.value;
+  const fullName = document.getElementById('authFullName')?.value.trim();
   const errBox = document.getElementById('authError');
   const btn = document.getElementById('authSubmitBtn');
 
-  errBox.style.display = 'none';
+  if (errBox) errBox.style.display = 'none';
   btn.disabled = true;
+  const originalText = btn.innerText;
   btn.innerText = 'กำลังดำเนินการ...';
 
   try {
-    if (isSignUpMode) {
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (authMode === 'signup') {
+      if (!fullName) throw new Error('กรุณากรอกชื่อที่ใช้เรียก');
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } }
+      });
       if (error) throw error;
-      
-      // บันทึกลง profiles table
-      if (data?.user) {
-        await supabaseClient.from('profiles').insert([
-          { id: data.user.id, email: email, role: 'member' }
-        ]);
-      }
       alert('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ');
-      toggleAuthMode();
+      switchAuthMode('signin');
+
+    } else if (authMode === 'forgot') {
+      if (!email) throw new Error('กรุณากรอกอีเมล');
+      
+      // ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมล
+      const redirectUrl = window.location.origin + window.location.pathname;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+      if (error) throw error;
+      alert(`ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปที่อีเมล ${email} เรียบร้อยแล้ว กรุณาตรวจสอบในกล่องข้อความหรืออีเมลขยะ`);
+      switchAuthMode('signin');
+
+    } else if (authMode === 'reset') {
+      if (!password || password.length < 6) throw new Error('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+      
+      // อัปเดตรหัสผ่านใหม่
+      const { error } = await supabaseClient.auth.updateUser({ password });
+      if (error) throw error;
+      alert('เปลี่ยนรหัสผ่านใหม่สำเร็จแล้ว! กำลังเข้าสู่ระบบ...');
+      window.location.href = 'index.html';
+
     } else {
+      // signin
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      
       document.getElementById('authModal').style.display = 'none';
-      location.reload(); // รีเฟรชเพื่อโหลดข้อมูลตามสิทธิ์
+      location.reload();
     }
   } catch (err) {
-    errBox.innerText = err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
-    errBox.style.display = 'block';
+    if (errBox) {
+      errBox.innerText = err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      errBox.style.display = 'block';
+    }
   } finally {
     btn.disabled = false;
-    btn.innerText = isSignUpMode ? 'ลงทะเบียน' : 'เข้าสู่ระบบ';
+    btn.innerText = originalText;
   }
 }
 
 async function applyUserPermissions(user) {
   if (!user) return;
 
-  // ดึง profile
-  const { data: profile, error } = await supabaseClient
+  const { data: profile } = await supabaseClient
     .from('profiles')
     .select('role, full_name')
     .eq('id', user.id)
     .single();
 
   const role = profile?.role || 'member';
-  // ถ้ามี full_name ให้ใช้ full_name ถ้าไม่มีค่อยใช้อีเมล
   const displayName = profile?.full_name || user.email;
 
-  // 1. แสดงชื่อที่มุมขวาบน
   const profileNav = document.getElementById('userProfileNav');
   const emailText = document.getElementById('navUserEmail');
   const roleBadge = document.getElementById('navUserRole');
 
   if (profileNav) profileNav.style.display = 'flex';
-  if (emailText) emailText.innerText = displayName; // จะแสดง "พ่อบี" แทน kaewsom@gmail.com
+  if (emailText) emailText.innerText = displayName;
   if (roleBadge) {
     roleBadge.innerText = role === 'admin' ? '🛡️ ผู้ดูแล (ADMIN)' : '👤 สมาชิก (MEMBER)';
   }
 
-  // 2. อัปเดตหัวข้อแดชบอร์ดทันที
   const updateDashboardHeader = () => {
     const titleEl = document.getElementById('dashboardTitle');
     if (titleEl) {
@@ -122,17 +202,15 @@ async function applyUserPermissions(user) {
   };
 
   updateDashboardHeader();
-  // ตั้งหน่วงเวลาเล็กน้อยเพื่อป้องกันสคริปต์หน้าหลักเรนเดอร์มาทับ
   setTimeout(updateDashboardHeader, 300);
 }
 
-// 3. ฟังก์ชันออกจากระบบ (Sign Out)
 async function handleSignOut() {
   if (!supabaseClient) return;
   const { error } = await supabaseClient.auth.signOut();
   if (error) {
     alert('เกิดข้อผิดพลาดในการออกจากระบบ: ' + error.message);
   } else {
-    location.reload(); // รีเฟรชเพื่อกลับไปหน้า Login Modal ทันที
+    window.location.href = 'index.html';
   }
 }

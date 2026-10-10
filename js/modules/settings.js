@@ -1,16 +1,17 @@
 /**
  * js/modules/settings.js
- * System Settings & Financial Category / Account Management Module
- * - รองรับ 21 บัญชีมาตรฐาน พร้อมสี Badge ธนาคารตรงกัน
- * - รองรับ Inline Edit ในการ์ดหมวดหมู่ย่อย
+ * System Settings & Financial Category / Account / Member Management Module
  */
 
 var SettingsModule = {
   categoriesStorageKey: 'family-finance:categories:v1',
   accountsStorageKey: 'family-finance:master-accounts:v1',
-  activeTab: 'categories', // 'categories' หรือ 'accounts'
+  activeTab: 'categories', // 'categories' | 'accounts' | 'members'
   activeCategoryGroup: 'เงินออมและลงทุน',
   editingCategoryName: null,
+  cachedMembers: [],
+  currentUserRole: 'member',
+  currentUserId: null,
 
   defaultCategories: {
     'รายรับ': [
@@ -40,7 +41,6 @@ var SettingsModule = {
     ]
   },
 
-  // 21 บัญชีมาตรฐานตามภาพเดิม
   defaultAccounts: [
     { id: 'acc-1', name: 'เงินสด', type: 'เงินสด' },
     { id: 'acc-2', name: 'กรุงเทพ', type: 'ธนาคาร' },
@@ -65,9 +65,29 @@ var SettingsModule = {
     { id: 'acc-21', name: 'บัตรเครดิตทีทีบี', type: 'บัตรเครดิต' }
   ],
 
-  init() {
+  async init() {
+    await this.checkAuthRole();
     this.bindEvents();
     this.render();
+  },
+
+  async checkAuthRole() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) return;
+      this.currentUserId = session.user.id;
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('role')
+        .eq('id', this.currentUserId)
+        .single();
+      if (profile) {
+        this.currentUserRole = profile.role || 'member';
+      }
+    } catch (e) {
+      console.warn('Could not verify role:', e);
+    }
   },
 
   getCategories() {
@@ -129,6 +149,9 @@ var SettingsModule = {
         this.activeTab = tabBtn.dataset.tab;
         this.editingCategoryName = null;
         this.render();
+        if (this.activeTab === 'members') {
+          this.fetchMembers();
+        }
         return;
       }
 
@@ -315,6 +338,164 @@ var SettingsModule = {
     this.render();
   },
 
+  async fetchMembers() {
+    const tbody = document.getElementById('memberListBody');
+    if (!tbody || typeof supabaseClient === 'undefined' || !supabaseClient) return;
+
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">กำลังดึงข้อมูลสมาชิก...</td></tr>';
+
+    try {
+      const { data: members, error } = await supabaseClient
+        .from('profiles')
+        .select('id, email, full_name, role')
+        .order('role', { ascending: true });
+
+      if (error) throw error;
+      this.cachedMembers = members || [];
+      this.renderMemberRows();
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 24px; color: #dc2626;">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+    }
+  },
+
+  renderMemberRows() {
+    const tbody = document.getElementById('memberListBody');
+    const statEl = document.getElementById('statTotalUsers');
+    if (!tbody) return;
+
+    if (statEl) statEl.innerText = this.cachedMembers.length;
+
+    if (this.cachedMembers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายชื่อสมาชิก</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = this.cachedMembers.map(m => {
+      const isAdmin = m.role === 'admin';
+      const isSelf = m.id === this.currentUserId;
+      const name = m.full_name || 'สมาชิก';
+      const initial = name.charAt(0);
+
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 14px 20px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; ${isAdmin ? 'background: #e0f2fe; color: #0284c7;' : 'background: #f1f5f9; color: #64748b;'}">
+                ${initial}
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-weight: 700; color: #0f172a; font-size: 14.5px;">${name}</span>
+                ${isSelf ? '<span style="font-size: 10px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 1px 6px; border-radius: 4px;">ตัวคุณ</span>' : ''}
+              </div>
+            </div>
+          </td>
+          <td style="padding: 14px 20px;">
+            <span style="color: #64748b; font-size: 13.5px;">${m.email || '-'}</span>
+          </td>
+          <td style="padding: 14px 20px;">
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; ${isAdmin ? 'background: #e0f2fe; color: #0284c7;' : 'background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;'}">
+              ${isAdmin ? '🛡️ ผู้ดูแล (ADMIN)' : '👤 สมาชิก (MEMBER)'}
+            </span>
+          </td>
+          <td style="padding: 14px 20px; text-align: right; white-space: nowrap;">
+            <button onclick="SettingsModule.openEditModal('${m.id}')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155;" title="แก้ไขชื่อและสิทธิ์">
+              ✏️ แก้ไข
+            </button>
+            ${!isSelf ? `
+              <button onclick="SettingsModule.deleteMember('${m.id}', '${name}')" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; font-size: 12.5px; cursor: pointer; border: 1px solid #e2e8f0; background: #ffffff; color: #94a3b8; margin-left: 6px;" title="ลบสมาชิกนี้ถาวร">
+                🗑️
+              </button>
+            ` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  openEditModal(userId) {
+    const member = this.cachedMembers.find(m => m.id === userId);
+    if (!member) return;
+
+    document.getElementById('modalUserId').value = member.id;
+    document.getElementById('modalUserEmail').innerText = member.email || '-';
+    document.getElementById('modalFullName').value = member.full_name || '';
+
+    const isSelf = member.id === this.currentUserId;
+    const rAdmin = document.getElementById('radioRoleAdmin');
+    const rMember = document.getElementById('radioRoleMember');
+    if (rAdmin) rAdmin.disabled = isSelf;
+    if (rMember) rMember.disabled = isSelf;
+
+    this.selectRoleInModal(member.role || 'member');
+    document.getElementById('editMemberModal').style.display = 'flex';
+  },
+
+  closeEditModal() {
+    const modal = document.getElementById('editMemberModal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  selectRoleInModal(role) {
+    const rAdmin = document.getElementById('radioRoleAdmin');
+    const rMember = document.getElementById('radioRoleMember');
+    const cAdmin = document.getElementById('cardRoleAdmin');
+    const cMember = document.getElementById('cardRoleMember');
+
+    if (role === 'admin') {
+      if (rAdmin) rAdmin.checked = true;
+      if (cAdmin) cAdmin.style.borderColor = '#0284c7', cAdmin.style.background = '#f0f9ff';
+      if (cMember) cMember.style.borderColor = '#e2e8f0', cMember.style.background = '#ffffff';
+    } else {
+      if (rMember) rMember.checked = true;
+      if (cMember) cMember.style.borderColor = '#0284c7', cMember.style.background = '#f0f9ff';
+      if (cAdmin) cAdmin.style.borderColor = '#e2e8f0', cAdmin.style.background = '#ffffff';
+    }
+  },
+
+  async saveMemberChanges() {
+    const userId = document.getElementById('modalUserId').value;
+    const newName = document.getElementById('modalFullName').value.trim();
+    const newRole = document.querySelector('input[name="modalRole"]:checked')?.value || 'member';
+    const btn = document.getElementById('btnSaveMember');
+
+    if (!newName) {
+      alert('กรุณาระบุชื่อที่ใช้เรียก');
+      return;
+    }
+
+    if (btn) btn.disabled = true, btn.innerText = 'กำลังบันทึก...';
+
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ full_name: newName, role: newRole })
+        .eq('id', userId);
+
+      if (error) throw error;
+      this.closeEditModal();
+      this.fetchMembers();
+    } catch (err) {
+      alert('บันทึกไม่สำเร็จ: ' + err.message);
+    } finally {
+      if (btn) btn.disabled = false, btn.innerText = '💾 บันทึกการเปลี่ยนแปลง';
+    }
+  },
+
+  async deleteMember(userId, name) {
+    if (!confirm(`ยืนยันการลบสมาชิก "${name}" ออกจากระบบครอบครัวถาวร?`)) return;
+
+    try {
+      const { error } = await supabaseClient.rpc('delete_user_by_admin', {
+        target_user_id: userId
+      });
+
+      if (error) throw error;
+      this.fetchMembers();
+    } catch (err) {
+      alert('ลบไม่สำเร็จ: ' + err.message);
+    }
+  },
+
   render(targetContainer = null) {
     const container = targetContainer 
                    || document.getElementById('settings-content-area')
@@ -325,7 +506,9 @@ var SettingsModule = {
 
     const categories = this.getCategories();
     const accounts = this.getAccounts();
+    const isAdmin = this.currentUserRole === 'admin';
 
+    // แถบ 3 แท็บ (แท็บสมาชิกครอบครัวจะแสดงเมื่อเป็น Admin)
     const tabHeadersHtml = `
       <div style="display: flex; gap: 18px; border-bottom: 2px solid #e2e8f0; margin-bottom: 22px;">
         <button class="settings-main-tab" data-tab="categories" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'categories' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'categories' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -334,6 +517,11 @@ var SettingsModule = {
         <button class="settings-main-tab" data-tab="accounts" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'accounts' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'accounts' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
           <span>🗂️</span> จัดการบัญชีการเงิน (${accounts.length})
         </button>
+        ${isAdmin ? `
+          <button class="settings-main-tab" data-tab="members" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'members' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'members' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <span>👥</span> จัดการสมาชิกครอบครัว
+          </button>
+        ` : ''}
       </div>
     `;
 
@@ -407,8 +595,7 @@ var SettingsModule = {
           ${cardsHtml}
         </div>
       `;
-    } else {
-      // แท็บบัญชีการเงิน 21 บัญชี พร้อม Badge ธนาคาร
+    } else if (this.activeTab === 'accounts') {
       const accountCardsHtml = accounts.map(a => {
         const badge = this.getBankBadge(a.name, a.type);
         return `
@@ -455,11 +642,41 @@ var SettingsModule = {
           ${accountCardsHtml}
         </div>
       `;
+    } else if (this.activeTab === 'members') {
+      contentBodyHtml = `
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden;">
+          <div style="padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9;">
+            <div>
+              <div style="font-size: 15px; font-weight: 700; color: #0f172a;">👥 รายชื่อสมาชิกในครอบครัว</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">กำหนดสิทธิ์ให้เข้าถึงพอร์ตการเงินส่วนตัวหรือภาพรวมทั้งบ้าน</div>
+            </div>
+            <button onclick="SettingsModule.fetchMembers()" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">
+              🔄 รีเฟรชข้อมูล
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                  <th style="padding: 12px 20px; width: 32%;">ชื่อที่ใช้เรียก</th>
+                  <th style="padding: 12px 20px; width: 30%;">อีเมล</th>
+                  <th style="padding: 12px 20px; width: 20%;">บทบาท (ROLE)</th>
+                  <th style="padding: 12px 20px; width: 18%; text-align: right;">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="memberListBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">กำลังดึงข้อมูล...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
     container.innerHTML = `
       <div style="width: 100%; max-width: 100%; margin: 0; text-align: left;">
-        
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 22px;">
           <div style="background: #f1f5f9; color: #334155; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">⚙️</div>
           <div>
@@ -470,9 +687,12 @@ var SettingsModule = {
 
         ${tabHeadersHtml}
         ${contentBodyHtml}
-
       </div>
     `;
+
+    if (this.activeTab === 'members') {
+      this.fetchMembers();
+    }
   }
 };
 

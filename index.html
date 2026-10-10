@@ -25,30 +25,7 @@
     .top-search-bar input {
       border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155;
     }
-    .top-user-actions { display: flex; align-items: center; gap: 14px; position: relative; }
-    .user-badge {
-      display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
-      padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; color: #334155;
-      cursor: pointer; transition: all 0.15s;
-    }
-    .user-badge:hover { background: #f1f5f9; border-color: #cbd5e1; }
-
-    /* User Profile Dropdown Menu */
-    .user-dropdown {
-      display: none; position: absolute; right: 0; top: calc(100% + 8px);
-      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05);
-      width: 240px; padding: 8px; z-index: 100;
-    }
-    .user-dropdown.show { display: block; }
-    .user-item-btn {
-      width: 100%; border: none; background: transparent; padding: 8px 12px;
-      border-radius: 8px; font-size: 13px; font-weight: 600; color: #334155;
-      cursor: pointer; text-align: left; display: flex; align-items: center; justify-content: space-between;
-      transition: background 0.15s;
-    }
-    .user-item-btn:hover { background: #f8fafc; }
-    .user-item-btn.active { background: #f0f9ff; color: #0284c7; font-weight: 800; }
+    .top-user-actions { display: flex; align-items: center; gap: 14px; }
 
     /* App Container Layout */
     .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
@@ -112,10 +89,8 @@
     </div>
 
     <div class="top-user-actions">
-      
-      
       <!-- แถบข้อมูล User และปุ่มออกจากระบบ -->
-      <div id="userProfileNav" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
+      <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
         <div style="text-align: right;">
           <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
           <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
@@ -124,21 +99,6 @@
           ออกจากระบบ
         </button>
       </div>
-
-      <div class="top-user-actions">
-
-    <!-- แถบข้อมูล User และปุ่มออกจากระบบ -->
-    <div id="userProfileNav" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
-      <div style="text-align: right;">
-        <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
-        <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
-      </div>
-      <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
-        ออกจากระบบ
-      </button>
-    </div>
-
-  </div>
     </div>
   </header>
 
@@ -231,287 +191,186 @@
 
     <!-- Main Content Container -->
     <main class="main-wrapper" id="dashboard-content-area">
-      <!-- ส่วนแสดงผล Executive Financial Dashboard -->
+      <div style="width: 100%; max-width: 1200px; margin: 0 auto;">
+        
+        <!-- Top Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 24px;">👑</div>
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">EXECUTIVE FINANCIAL DASHBOARD</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0;" id="dashboardTitle">พอร์ตภาพรวมครอบครัว (พ่อบี)</h1>
+                <span id="badgeAccountType" style="background: #ecfdf5; color: #16a34a; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #16a34a;"></span> ข้อมูลเฉพาะบัญชีนี้
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <button onclick="window.print()" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+              <span>🖨️</span> พิมพ์รายงาน
+            </button>
+          </div>
+        </div>
+
+        <!-- กล่องใหญ่บนสุด: Grand Total Net Worth -->
+        <div id="grand-total-net-worth" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">ความมั่งคั่งสุทธิที่แท้จริง (GRAND TOTAL NET WORTH)</div>
+              <div style="display: flex; align-items: baseline; gap: 12px; margin-top: 4px;">
+                <span id="grandNetWorthVal" style="font-size: 38px; font-weight: 900; color: #0f172a; letter-spacing: -1px; font-variant-numeric: tabular-nums;">฿0.00</span>
+                <span id="usdNetWorthVal" style="font-size: 15px; font-weight: 700; color: #64748b;">≈ $0.00 USD</span>
+              </div>
+            </div>
+
+            <!-- เม็ดสรุปย่อยด้านขวา -->
+            <div style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px 16px; font-size: 12.5px; font-weight: 700; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+              <div>พอร์ตลงทุน: <strong id="summaryPort" style="color: #0284c7;">+฿0.00</strong></div>
+              <div style="color: #cbd5e1;">|</div>
+              <div>เงินสด: <strong id="summaryCash" style="color: #16a34a;">+฿0.00</strong></div>
+              <div style="color: #cbd5e1;">|</div>
+              <div>หนี้บัตร: <strong id="summaryDebt" style="color: #dc2626;">-฿0.00</strong></div>
+            </div>
+          </div>
+
+          <!-- แถบสัดส่วนโครงสร้างสินทรัพย์รวม -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 8px;">
+              <span>โครงสร้างสินทรัพย์รวมทั้งหมด (Total Assets Structure)</span>
+              <span id="totalAssetsLabel">สินทรัพย์รวม: ฿0.00</span>
+            </div>
+            <div style="height: 10px; width: 100%; background: #f1f5f9; border-radius: 5px; overflow: hidden; display: flex;">
+              <div style="width: 43.2%; background: #6366f1;" title="หุ้นไทย & REITs"></div>
+              <div style="width: 40.0%; background: #10b981;" title="กองทุนรวม"></div>
+              <div style="width: 12.6%; background: #0284c7;" title="หุ้นสหรัฐฯ"></div>
+              <div style="width: 4.2%; background: #f59e0b;" title="เงินสดในบัญชี"></div>
+            </div>
+            <div style="display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; font-weight: 700; color: #334155; flex-wrap: wrap;">
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #6366f1; border-radius: 2px;"></span> หุ้นไทย & REITs</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #10b981; border-radius: 2px;"></span> กองทุนรวม</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #0284c7; border-radius: 2px;"></span> หุ้นสหรัฐฯ</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #f59e0b; border-radius: 2px;"></span> เงินสดในบัญชี</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 การ์ดสรุปย่อย -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 22px;">
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+              <span>📈</span> พอร์ตลงทุน (Investments)
+            </div>
+            <div id="cardPortVal" style="font-size: 24px; font-weight: 900; color: #0284c7; font-variant-numeric: tabular-nums;">
+              ฿0.00
+            </div>
+            <div id="cardPortProfit" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #16a34a; font-weight: 700;">
+              กำไรสะสม: +฿0.00 (+0%)
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+              <span>🏦</span> สภาพคล่องเงินฝาก (Cash Reserves)
+            </div>
+            <div id="cardCashVal" style="font-size: 24px; font-weight: 900; color: #0f172a; font-variant-numeric: tabular-nums;">
+              ฿0.00
+            </div>
+            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #16a34a; font-weight: 700;">
+              เงินสำรองฉุกเฉินเฉพาะคุณ
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+              <span>💳</span> หนี้บัตรเครดิต (Liabilities)
+            </div>
+            <div id="cardDebtVal" style="font-size: 24px; font-weight: 900; color: #dc2626; font-variant-numeric: tabular-nums;">
+              ฿0.00
+            </div>
+            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #64748b; font-weight: 700;">
+              ภาระหนี้สินส่วนบุคคล
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+              <span>💰</span> เงินออมเดือนนี้ (Monthly Savings)
+            </div>
+            <div id="cardSavingsVal" style="font-size: 24px; font-weight: 900; color: #16a34a; font-variant-numeric: tabular-nums;">
+              +฿0.00
+            </div>
+            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #16a34a; font-weight: 700;">
+              อัตราการออมเฉพาะบัญชีนี้
+            </div>
+          </div>
+        </div>
+
+      </div>
     </main>
   </div>
 
   <script>
-    // ==========================================
-    // 1. ระบบจัดการผู้ใช้แยกบัญชีเด็ดขาด (User Isolation)
-    // ==========================================
-    function getStoredUsers() {
-      const defaultUsers = [
-        { id: 'usr_main', name: 'พ่อ (หลัก)' }
-      ];
-      try {
-        const users = JSON.parse(localStorage.getItem('wealthport_users'));
-        return Array.isArray(users) && users.length ? users : defaultUsers;
-      } catch (e) {
-        return defaultUsers;
-      }
-    }
-
-    function getActiveUserId() {
-      return localStorage.getItem('wealthport_active_user') || 'usr_main';
-    }
-
-    function switchUser(userId) {
-      localStorage.setItem('wealthport_active_user', userId);
-      window.location.reload();
-    }
-
-    function promptAddNewUser() {
-      const name = prompt('กรุณากรอกชื่อผู้ใช้งานใหม่ (เช่น แม่, ลูก):');
-      if (!name || !name.trim()) return;
-
-      const users = getStoredUsers();
-      const newId = 'usr_' + Date.now();
-      users.push({ id: newId, name: name.trim() });
-      
-      localStorage.setItem('wealthport_users', JSON.stringify(users));
-      localStorage.setItem('wealthport_active_user', newId);
-      window.location.reload();
-    }
-
-    function toggleUserDropdown(event) {
-      event.stopPropagation();
-      const menu = document.getElementById('userDropdownMenu');
-      if (menu) menu.classList.toggle('show');
-    }
-
-    document.addEventListener('click', (e) => {
-      const menu = document.getElementById('userDropdownMenu');
-      if (menu && menu.classList.contains('show')) {
-        menu.classList.remove('show');
-      }
-    });
-
-    // ==========================================
-    // 2. ฟังก์ชัน Accordion เมนูย่อย
-    // ==========================================
+    // ฟังก์ชันเปิด-ปิด Accordion เมนูย่อย
     function toggleNavGroup(groupId) {
       const group = document.getElementById(groupId);
       if (group) group.classList.toggle('open');
     }
-
-    // ==========================================
-    // 3. Render Dashboard แยกเฉพาะบัญชีผู้ใช้ปัจจุบัน
-    // ==========================================
-    (function renderExecutiveDashboard() {
-      const container = document.getElementById('dashboard-content-area');
-      if (!container) return;
-
-      // จัดการ UI แสดงผลชื่อผู้ใช้ปัจจุบัน
-      const users = getStoredUsers();
-      const activeId = getActiveUserId();
-      const activeUser = users.find(u => u.id === activeId) || users[0];
-
-      const nameEl = document.getElementById('currentUserName');
-      if (nameEl) nameEl.textContent = activeUser.name;
-
-      const listContainer = document.getElementById('userListContainer');
-      if (listContainer) {
-        listContainer.innerHTML = users.map(u => {
-          const isActive = u.id === activeUser.id;
-          return `
-            <button type="button" onclick="switchUser('${u.id}')" class="user-item-btn ${isActive ? 'active' : ''}">
-              <span>👤 ${u.name}</span>
-              ${isActive ? '<span style="font-size: 11px;">✓</span>' : ''}
-            </button>
-          `;
-        }).join('');
-      }
-
-      const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-      // ดึงข้อมูลเฉพาะของบัญชีที่ใช้งานอยู่ (นำ activeId มาเป็น Key นำหน้าเสมอ)
-      let portValue = 0;
-      let portProfit = 0;
-      let portProfitPct = 0;
-      let cashReserve = 0;
-      let creditDebt = 0;
-      let monthlySavings = 0;
-
-      // หากเป็นบัญชีตั้งต้น (usr_main) สามารถโหลดข้อมูลจำลองไว้ แต่ถ้าสร้าง User ใหม่จะเป็น 0.00
-      if (activeUser.id === 'usr_main') {
-        portValue = 3993884.59;
-        portProfit = 296261.66;
-        portProfitPct = 8.01;
-        cashReserve = 175000.00;
-        creditDebt = -22450.00;
-        monthlySavings = 68200.00;
-      }
-
-      // ตรวจสอบข้อมูลพอร์ตจริงที่บันทึกไว้ใน LocalStorage ของ User คนนี้
-      try {
-        const userPortKey = `${activeUser.id}:wealthport:portfolio-data`;
-        const rawPort = localStorage.getItem(userPortKey);
-        if (rawPort) {
-          const parsed = JSON.parse(rawPort);
-          if (parsed.totalValue) portValue = parseFloat(parsed.totalValue);
-          if (parsed.totalProfit) portProfit = parseFloat(parsed.totalProfit);
-        }
-      } catch(e) {}
-
-      const grandTotalAssets = portValue + cashReserve;
-      const grandNetWorth = grandTotalAssets + creditDebt;
-      const usdValue = (grandNetWorth / 33.55).toFixed(2);
-
-      container.innerHTML = `
-        <div style="width: 100%; max-width: 1200px; margin: 0 auto;">
-          
-          <!-- Top Header -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 24px;">👑</div>
-              <div>
-                <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">EXECUTIVE FINANCIAL DASHBOARD</div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <h1 style="font-size: 22px; font-weight: 800; color: #0f172a;" id="dashboardTitle">พอร์ตภาพรวมครอบครัว (พ่อบี)</h1>
-                  <span style="background: #ecfdf5; color: #16a34a; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #16a34a;"></span> ข้อมูลเฉพาะบัญชีนี้
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <button onclick="window.print()" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                <span>🖨️</span> พิมพ์รายงาน
-              </button>
-            </div>
-          </div>
-
-          <!-- กล่องใหญ่บนสุด: Grand Total Net Worth -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
-              <div>
-                <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">ความมั่งคั่งสุทธิที่แท้จริง (GRAND TOTAL NET WORTH)</div>
-                <div style="display: flex; align-items: baseline; gap: 12px; margin-top: 4px;">
-                  <span style="font-size: 38px; font-weight: 900; color: #0f172a; letter-spacing: -1px; font-variant-numeric: tabular-nums;">${formatBaht(grandNetWorth)}</span>
-                  <span style="font-size: 15px; font-weight: 700; color: #64748b;">≈ $${Number(usdValue).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</span>
-                </div>
-              </div>
-
-              <!-- เม็ดสรุปย่อยด้านขวา -->
-              <div style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px 16px; font-size: 12.5px; font-weight: 700; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                <div>พอร์ตลงทุน: <strong style="color: #0284c7;">+${formatBaht(portValue)}</strong></div>
-                <div style="color: #cbd5e1;">|</div>
-                <div>เงินสด: <strong style="color: #16a34a;">+${formatBaht(cashReserve)}</strong></div>
-                <div style="color: #cbd5e1;">|</div>
-                <div>หนี้บัตร: <strong style="color: #dc2626;">-${formatBaht(Math.abs(creditDebt))}</strong></div>
-              </div>
-            </div>
-
-            <!-- แถบสัดส่วนโครงสร้างสินทรัพย์รวม -->
-            <div>
-              <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 8px;">
-                <span>โครงสร้างสินทรัพย์รวมทั้งหมด (Total Assets Structure)</span>
-                <span>สินทรัพย์รวม: ${formatBaht(grandTotalAssets)}</span>
-              </div>
-              <div style="height: 10px; width: 100%; background: #f1f5f9; border-radius: 5px; overflow: hidden; display: flex;">
-                <div style="width: 43.2%; background: #6366f1;" title="หุ้นไทย & REITs"></div>
-                <div style="width: 40.0%; background: #10b981;" title="กองทุนรวม"></div>
-                <div style="width: 12.6%; background: #0284c7;" title="หุ้นสหรัฐฯ"></div>
-                <div style="width: 4.2%; background: #f59e0b;" title="เงินสดในบัญชี"></div>
-              </div>
-              <div style="display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; font-weight: 700; color: #334155; flex-wrap: wrap;">
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #6366f1; border-radius: 2px;"></span> หุ้นไทย & REITs</span>
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #10b981; border-radius: 2px;"></span> กองทุนรวม</span>
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #0284c7; border-radius: 2px;"></span> หุ้นสหรัฐฯ</span>
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #f59e0b; border-radius: 2px;"></span> เงินสดในบัญชี</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 4 การ์ดสรุปย่อย -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 22px;">
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                <span>📈</span> พอร์ตลงทุน (Investments)
-              </div>
-              <div style="font-size: 24px; font-weight: 900; color: #0284c7; font-variant-numeric: tabular-nums;">
-                ${formatBaht(portValue)}
-              </div>
-              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #16a34a; font-weight: 700;">
-                กำไรสะสม: +${formatBaht(portProfit)} (+${portProfitPct}%)
-              </div>
-            </div>
-
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                <span>🏦</span> สภาพคล่องเงินฝาก (Cash Reserves)
-              </div>
-              <div style="font-size: 24px; font-weight: 900; color: #0f172a; font-variant-numeric: tabular-nums;">
-                ${formatBaht(cashReserve)}
-              </div>
-              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #16a34a; font-weight: 700;">
-                เงินสำรองฉุกเฉินเฉพาะคุณ
-              </div>
-            </div>
-
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                <span>💳</span> หนี้บัตรเครดิต (Liabilities)
-              </div>
-              <div style="font-size: 24px; font-weight: 900; color: #dc2626; font-variant-numeric: tabular-nums;">
-                ${formatBaht(creditDebt)}
-              </div>
-              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #64748b; font-weight: 700;">
-                ภาระหนี้สินส่วนบุคคล
-              </div>
-            </div>
-
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;">
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                <span>💰</span> เงินออมเดือนนี้ (Monthly Savings)
-              </div>
-              <div style="font-size: 24px; font-weight: 900; color: #16a34a; font-variant-numeric: tabular-nums;">
-                +${formatBaht(monthlySavings)}
-              </div>
-              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #f1f5f9; font-size: 11.5px; color: #16a34a; font-weight: 700;">
-                อัตราการออมเฉพาะบัญชีนี้
-              </div>
-            </div>
-          </div>
-
-        </div>
-      `;
-    })();
   </script>
+
   <!-- โหลด Supabase SDK และไฟล์ตั้งค่า -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/modules/creditcard.js"></script>
   <script src="js/modules/debt.js"></script>
-  <!-- Modal เข้าสู่ระบบ / ลงทะเบียน -->
-<div id="authModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
-  <div style="background: #ffffff; width: 90%; max-width: 400px; border-radius: 16px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); font-family: inherit;">
-    <div style="text-align: center; margin-bottom: 24px;">
-      <h2 id="authTitle" style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 8px 0;">เข้าสู่ระบบ</h2>
-      <p id="authSubtitle" style="color: #64748b; font-size: 0.875rem; margin: 0;">Family Finance เข้าถึงข้อมูลพอร์ตและการเงิน</p>
-    </div>
+  <script src="js/modules/dashboard.js"></script>
 
-    <form id="authForm" onsubmit="handleAuthSubmit(event)">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px;">อีเมล</label>
-        <input type="email" id="authEmail" required placeholder="name@example.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+  <!-- Modal เข้าสู่ระบบ / ลงทะเบียน (รวมช่องกรอกชื่อเรียบร้อยแล้ว) -->
+  <div id="authModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #ffffff; width: 90%; max-width: 400px; border-radius: 16px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); font-family: inherit;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 id="authTitle" style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0 0 8px 0;">เข้าสู่ระบบ</h2>
+        <p id="authSubtitle" style="color: #64748b; font-size: 0.875rem; margin: 0;">Family Finance เข้าถึงข้อมูลพอร์ตและการเงิน</p>
       </div>
 
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px;">รหัสผ่าน</label>
-        <input type="password" id="authPassword" required placeholder="••••••••" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+      <div id="authError" style="display: none; background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; padding: 10px 14px; border-radius: 8px; font-size: 0.875rem; margin-bottom: 16px;"></div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <!-- ช่องชื่อ (เฉพาะสมัครใหม่) -->
+        <div id="authNameGroup" style="display: none; margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px;">ชื่อที่ใช้เรียก (เช่น แม่, ลูกสาว)</label>
+          <input type="text" id="authFullName" placeholder="ระบุชื่อของคุณ" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+        </div>
+
+        <!-- ช่องอีเมล -->
+        <div id="authEmailGroup" style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px;">อีเมล</label>
+          <input type="email" id="authEmail" placeholder="name@example.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+        </div>
+
+        <!-- ช่องรหัสผ่าน -->
+        <div id="authPasswordGroup" style="margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label id="authPasswordLabel" style="font-size: 0.875rem; font-weight: 500; color: #334155;">รหัสผ่าน</label>
+            <a href="javascript:void(0)" id="btnForgotPassword" onclick="switchAuthMode('forgot')" style="font-size: 0.75rem; color: #0284c7; text-decoration: none; font-weight: 600;">ลืมรหัสผ่าน?</a>
+          </div>
+          <input type="password" id="authPassword" placeholder="••••••••" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+        </div>
+
+        <button type="submit" id="authSubmitBtn" style="width: 100%; margin-top: 16px; padding: 12px; background: #0284c7; color: #ffffff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s;">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <!-- ลิงก์สลับโหมดด้านล่าง -->
+      <div style="text-align: center; margin-top: 18px;">
+        <a href="javascript:void(0)" id="toggleAuthMode" onclick="toggleAuthModeAction()" style="font-size: 0.875rem; color: #0284c7; text-decoration: none; font-weight: 500;">
+          ยังไม่มีบัญชี? สมัครสมาชิกใหม่
+        </a>
       </div>
-
-      <div id="authError" style="display: none; padding: 10px; margin-bottom: 16px; border-radius: 6px; background: #fee2e2; color: #b91c1c; font-size: 0.825rem;"></div>
-
-      <button type="submit" id="authSubmitBtn" style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: #2563eb; color: #ffffff; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s;">เข้าสู่ระบบ</button>
-    </form>
-
-    <div style="text-align: center; margin-top: 20px;">
-      <a href="javascript:void(0)" id="toggleAuthMode" onclick="toggleAuthMode()" style="color: #2563eb; font-size: 0.875rem; text-decoration: none;">ยังไม่มีบัญชี? สมัครสมาชิกใหม่</a>
     </div>
   </div>
-</div>
 </body>
 </html>

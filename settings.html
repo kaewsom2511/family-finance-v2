@@ -5,75 +5,178 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Family Finance - ตั้งค่าระบบ</title>
   <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
+    body { margin: 0; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+    
+    .top-navbar {
+      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: #0f172a; }
+    .top-user-actions { display: flex; align-items: center; gap: 14px; }
+
+    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+    .sidebar {
+      width: 240px; background: #ffffff; border-right: 1px solid #e2e8f0;
+      padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
+      flex-shrink: 0; user-select: none;
+    }
+    .sidebar-section-title {
+      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 8px 10px 4px;
+    }
+    .sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      transition: all 0.15s ease;
+    }
+    .sidebar-link:hover { background: #f8fafc; color: #0f172a; }
+    .sidebar-link.active { background: #f0f9ff; color: #0284c7; font-weight: 800; border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0; }
+    
+    .content-area { flex: 1; padding: 28px 36px; overflow-y: auto; text-align: left; }
+
+    /* Modal Form Styling */
+    .role-option-card {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
+      border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; margin-bottom: 8px;
+      transition: all 0.15s ease;
+    }
+    .role-option-card:hover { border-color: #94a3b8; background: #f8fafc; }
+    .role-option-card.selected { border-color: #0284c7; background: #f0f9ff; }
+  </style>
 </head>
 <body>
 
   <!-- Top Navbar -->
   <header class="top-navbar">
-    <a href="portfolio.html" class="brand-logo">
-      Family <span>Finance</span>
-    </a>
-    <nav class="top-nav-links">
-      <a href="index.html" class="top-nav-link">ภาพรวมระบบ</a>
-      <a href="portfolio.html" class="top-nav-link">พอร์ตลงทุน</a>
-      <a href="cashflow.html" class="top-nav-link">รายรับรายจ่าย</a>
-      <a href="calculator.html" class="top-nav-link">คำนวณ</a>
-      <a href="settings.html" class="top-nav-link active">ตั้งค่าระบบ</a>
-    </nav>
+    <a href="index.html" class="brand-logo">Family <span>Finance</span></a>
+
+    <div class="top-user-actions">
+      <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
+        <div style="text-align: right;">
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+        </div>
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
+          ออกจากระบบ
+        </button>
+      </div>
+    </div>
   </header>
 
   <div class="app-layout">
     
     <!-- Sidebar ซ้าย -->
-    <aside class="sidebar" style="display: flex; flex-direction: column; gap: 20px; justify-content: flex-start; padding: 18px 14px;">
+    <aside class="sidebar">
       <div>
-        <div class="sidebar-section-title" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; padding-left: 10px;">ภาพรวมและการบันทึก</div>
-        <div class="sidebar-menu" style="display: flex; flex-direction: column; gap: 4px;">
-          <a href="cashflow.html#cashflow/dashboard" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">📊</span> Dashboard
+        <div class="sidebar-section-title">ภาพรวมและการบันทึก</div>
+        <div class="sidebar-menu">
+          <a href="index.html" class="sidebar-link">
+            <span style="font-size: 16px;">📊</span> Dashboard
           </a>
-          <a href="cashflow.html#cashflow/daily" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">📝</span> รายรับรายจ่าย
+          <a href="cashflow.html#daily" class="sidebar-link">
+            <span style="font-size: 16px;">📝</span> รายรับรายจ่าย
           </a>
-          <a href="cashflow.html#cashflow/annual" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">📅</span> สรุปรายเดือน รายปี
+          <a href="cashflow.html#annual" class="sidebar-link">
+            <span style="font-size: 16px;">📅</span> สรุปรายเดือน รายปี
           </a>
         </div>
       </div>
 
       <div>
-        <div class="sidebar-section-title" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; padding-left: 10px;">สินทรัพย์และหนี้สิน</div>
-        <div class="sidebar-menu" style="display: flex; flex-direction: column; gap: 4px;">
-          <a href="cashflow.html#cashflow/banking" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">🏦</span> บัญชีเงินฝาก
+        <div class="sidebar-section-title">สินทรัพย์และหนี้สิน</div>
+        <div class="sidebar-menu">
+          <a href="cashflow.html#banking" class="sidebar-link">
+            <span style="font-size: 16px;">🏦</span> บัญชีเงินฝาก
           </a>
-          <a href="portfolio.html" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">💰</span> การออมและลงทุน (พอร์ต)
+          <a href="portfolio.html" class="sidebar-link">
+            <span style="font-size: 16px;">💰</span> การออมและลงทุน (พอร์ต)
           </a>
-          <a href="cashflow.html#cashflow/debts" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">🏷️</span> หนี้สิน
+          <a href="cashflow.html#debts" class="sidebar-link">
+            <span style="font-size: 16px;">🏷️</span> หนี้สิน
           </a>
-          <a href="cashflow.html#cashflow/credit-cards" class="sidebar-link" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: #334155; font-size: 13px; font-weight: 600;">
-            <span class="sidebar-icon" style="font-size: 16px;">💳</span> รอบบิลบัตรเครดิต
+          <a href="cashflow.html#creditcards" class="sidebar-link">
+            <span style="font-size: 16px;">💳</span> รอบบิลบัตรเครดิต
           </a>
         </div>
       </div>
 
-      <div style="margin-top: 10px;">
-        <div class="sidebar-section-title" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; padding-left: 10px;">ระบบ</div>
-        <div class="sidebar-menu" style="display: flex; flex-direction: column; gap: 4px;">
-          <a href="settings.html" class="sidebar-link active" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; text-decoration: none; background: #e0f2fe; color: #0284c7; font-size: 13px; font-weight: 700;">
-            <span class="sidebar-icon" style="font-size: 16px;">⚙️</span> ตั้งค่าระบบ
+      <div style="margin-top: auto;">
+        <div class="sidebar-section-title">ระบบ</div>
+        <div class="sidebar-menu">
+          <a href="settings.html" class="sidebar-link active">
+            <span style="font-size: 16px;">⚙️</span> ตั้งค่าระบบ
           </a>
         </div>
       </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <main id="settings-content-area" class="content-area" style="padding: 24px 30px;"></main>
-
+    <!-- Main Content Area ให้ SettingsModule เรนเดอร์หน้าจอลงที่นี่ -->
+    <main id="settings-content-area" class="content-area"></main>
   </div>
 
+  <!-- Modal Popup แก้ไขข้อมูลสมาชิก -->
+  <div id="editMemberModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #ffffff; width: 92%; max-width: 440px; border-radius: 16px; padding: 26px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+          <span>✏️</span> จัดการข้อมูลสมาชิก
+        </h3>
+        <button onclick="SettingsModule.closeEditModal()" style="border: none; background: transparent; font-size: 20px; color: #94a3b8; cursor: pointer;">✕</button>
+      </div>
+
+      <input type="hidden" id="modalUserId">
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">อีเมลบัญชี</label>
+        <div id="modalUserEmail" style="font-size: 14px; color: #334155; font-weight: 600; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+      </div>
+
+      <div style="margin-bottom: 18px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">ชื่อที่ใช้เรียก</label>
+        <input type="text" id="modalFullName" placeholder="ระบุชื่อ เช่น แม่, ลูกสาว" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none;">
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">สิทธิ์การใช้งาน (ROLE)</label>
+        
+        <label class="role-option-card" id="cardRoleAdmin" onclick="SettingsModule.selectRoleInModal('admin')">
+          <input type="radio" name="modalRole" id="radioRoleAdmin" value="admin" style="margin-top: 3px;">
+          <div>
+            <div style="font-weight: 700; font-size: 13.5px; color: #0284c7;">🛡️ ผู้ดูแลระบบ (ADMIN)</div>
+            <div style="font-size: 12px; color: #64748b;">เห็นข้อมูลการเงินรวมทั้งบ้าน และจัดการสมาชิกได้</div>
+          </div>
+        </label>
+
+        <label class="role-option-card" id="cardRoleMember" onclick="SettingsModule.selectRoleInModal('member')">
+          <input type="radio" name="modalRole" id="radioRoleMember" value="member" style="margin-top: 3px;">
+          <div>
+            <div style="font-weight: 700; font-size: 13.5px; color: #334155;">👤 สมาชิกทั่วไป (MEMBER)</div>
+            <div style="font-size: 12px; color: #64748b;">เข้าถึงเฉพาะพอร์ตและบันทึกส่วนตัวเท่านั้น</div>
+          </div>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button onclick="SettingsModule.closeEditModal()" style="padding: 9px 16px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer;">
+          ยกเลิก
+        </button>
+        <button id="btnSaveMember" onclick="SettingsModule.saveMemberChanges()" style="padding: 9px 18px; background: #0284c7; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; color: #ffffff; cursor: pointer;">
+          💾 บันทึกการเปลี่ยนแปลง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- โหลดสคริปต์ Supabase และ Module จัดการระบบ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/modules/settings.js"></script>
 </body>
 </html>
