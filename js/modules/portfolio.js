@@ -1005,7 +1005,8 @@ var PortfolioModule = {
     let availableAssets = getPortAssets(currentSelectedPortId);
     let selectedSym = defaultSymbol || (availableAssets[0]?.symbol || 'ALLY');
 
-    let simBatches = [
+    const { isMember } = getPortfolioUserContext();
+    let simBatches = isMember ? [] : [
       { type: 'buy', date: '2026-01-15', shares: 5000, price: 9.80, note: 'ไม้ที่ 1' },
       { type: 'buy', date: '2026-02-20', shares: 4000, price: 9.20, note: 'ไม้ที่ 2' },
       { type: 'buy', date: '2026-03-10', shares: 2000, price: 9.10, note: 'ไม้ที่ 3' }
