@@ -3,6 +3,7 @@
  * Multi-Year Tax Planner & Dividend Tax Credit Engine for Family Finance
  * Fixed: Minimal Sidebar with "กลับหน้าหลัก" right below "คำนวณภาษี",
  * Sticky positioning, Multi-year support, Dynamic Insights, and Net Income Tax Rate.
+ * Added: JSON Export & Import with User Isolation Support.
  */
 
 var TaxModule = {
@@ -256,6 +257,117 @@ var TaxModule = {
       this.saveYearList();
     }
     this.switchYear(cleanYear);
+  },
+
+  exportTaxJSON() {
+    try {
+      const ctx = this.getUserContext();
+      this.saveState();
+
+      // รวบรวมข้อมูลทุกปีของผู้ใช้คนนี้
+      const allYearsData = {};
+      this.availableYears.forEach(y => {
+        const key = this.getStorageKey(y);
+        const item = localStorage.getItem(key);
+        if (item) {
+          try {
+            allYearsData[y] = JSON.parse(item);
+          } catch (e) {}
+        }
+      });
+
+      const backupPayload = {
+        appName: 'Family Finance Tax Planner',
+        version: '2.0',
+        user: ctx.userKey,
+        userName: ctx.userName,
+        activeYear: this.activeYear,
+        availableYears: this.availableYears,
+        exportDate: new Date().toISOString(),
+        currentYearData: {
+          incomes: this.incomes,
+          deductions: this.deductions,
+          dividends: this.dividends,
+          hiddenIncomes: this.hiddenIncomes,
+          hiddenDeductions: this.hiddenDeductions,
+          taxPaidWithheld: this.taxPaidWithheld
+        },
+        allYearsData: allYearsData
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `TaxPlanner_Backup_${ctx.userName}_${this.activeYear}_${dateStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการส่งออกข้อมูลภาษี: ' + err.message);
+    }
+  },
+
+  importTaxJSON() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          const ctx = this.getUserContext();
+
+          // 1. นำเข้าข้อมูลทุกปีถ้ามีระบุในไฟล์
+          if (parsed.allYearsData && typeof parsed.allYearsData === 'object') {
+            Object.keys(parsed.allYearsData).forEach(y => {
+              const yearData = parsed.allYearsData[y];
+              localStorage.setItem(`${this.storagePrefix}:${ctx.userKey}:${y}`, JSON.stringify(yearData));
+              if (!this.availableYears.includes(y)) {
+                this.availableYears.push(y);
+              }
+            });
+            this.availableYears.sort((a, b) => b - a);
+            this.saveYearList();
+          }
+
+          // 2. นำเข้าปีปัจจุบัน
+          const currentYearObj = parsed.currentYearData || (parsed.incomes && parsed.deductions ? parsed : null);
+          if (currentYearObj) {
+            const targetYear = parsed.activeYear || this.activeYear;
+            localStorage.setItem(`${this.storagePrefix}:${ctx.userKey}:${targetYear}`, JSON.stringify({
+              incomes: currentYearObj.incomes || this.defaultIncomes,
+              deductions: currentYearObj.deductions || this.defaultDeductions,
+              dividends: currentYearObj.dividends || [],
+              hiddenIncomes: currentYearObj.hiddenIncomes || [],
+              hiddenDeductions: currentYearObj.hiddenDeductions || [],
+              taxPaidWithheld: currentYearObj.taxPaidWithheld !== undefined ? currentYearObj.taxPaidWithheld : 0
+            }));
+
+            if (!this.availableYears.includes(targetYear)) {
+              this.availableYears.push(targetYear);
+              this.availableYears.sort((a, b) => b - a);
+              this.saveYearList();
+            }
+            this.activeYear = targetYear;
+          }
+
+          alert(`นำเข้าข้อมูลภาษีของ ${ctx.userName} เรียบร้อยแล้ว!`);
+          this.loadState(this.activeYear);
+          this.render();
+        } catch (err) {
+          alert('ไม่สามารถนำเข้าไฟล์ JSON ภาษีได้: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    fileInput.click();
   },
 
   bindTopNav() {
@@ -595,7 +707,6 @@ var TaxModule = {
     if (!container) return;
     container.style.display = 'block';
 
-    // ✅ บังคับเช็คตัวตนและโหลดข้อมูลของผู้ใช้นั้นๆ ทุกครั้งก่อนวาดหน้าจอ
     const ctx = this.getUserContext();
     if (this.currentUser !== ctx.userName) {
       this.currentUser = ctx.userName;
@@ -724,39 +835,42 @@ var TaxModule = {
       `<option value="${yr}" ${yr === this.activeYear ? 'selected' : ''}>ปี ${yr}</option>`
     ).join('');
 
-    // โครงสร้างหน้า 2 คอลัมน์: Sidebar ซ้ายตรงตามรูปตัวอย่างเป๊ะๆ
     container.innerHTML = `
       <div style="display: flex; width: 100%; min-height: 100vh; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         
-        <!-- SIDEBAR ซ้ายมือ (กลับหน้าหลักอยู่ต่อท้ายคำนวณภาษีทันทีตามรูป) -->
+        <!-- SIDEBAR ซ้ายมือ -->
         <aside style="width: 190px; min-width: 190px; height: 100vh; position: sticky; top: 0; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 20px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; z-index: 50;">
           <div>
-            <!-- หัวข้อกลุ่ม -->
             <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 10px; padding-left: 8px;">
               คำนวณภาษี
             </div>
             
-            <!-- เมนูแอคทีฟแถบสีฟ้าตามรูป -->
             <div style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 13.5px; padding: 9px 12px; border-radius: 8px; border-left: 3px solid #0284c7; cursor: default; user-select: none;">
               คำนวณภาษี
             </div>
 
-            <!-- เมนูกลับหน้าหลัก (อยู่ต่อท้ายด้านบนทันที) -->
             <button type="button" id="taxBackToHomeBtn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin-top: 6px; border-radius: 8px; border: none; background: transparent; color: #334155; font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.15s ease;">
               กลับหน้าหลัก
             </button>
           </div>
         </aside>
 
-        <!-- MAIN CONTENT พื้นที่ขวามือ แสดงทุกตารางครบถ้วน เลื่อนดูได้อย่างลื่นไหล -->
+        <!-- MAIN CONTENT -->
         <div style="flex: 1; padding: 24px 32px 80px 32px; box-sizing: border-box; min-width: 0;">
           
           <div style="font-size: 12px; font-weight: 700; color: #0284c7; margin-bottom: 2px;">Tax Planner</div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: #0f172a;">วางแผนภาษีบุคคลธรรมดา</h1>
             
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 14px; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button type="button" id="btnExportTaxJson" style="background: #fff; border: 1.5px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                📤 ส่งออก JSON
+              </button>
+              <button type="button" id="btnImportTaxJson" style="background: #fff; border: 1.5px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                📥 นำเข้า JSON
+              </button>
+
+              <div style="display: flex; align-items: center; gap: 8px; background: #fff; padding: 5px 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                 <span style="font-size: 13px; font-weight: 700; color: #475569;">ปีภาษี:</span>
                 <select id="taxYearSelect" style="padding: 4px 10px; border: 1.5px solid #0284c7; border-radius: 6px; font-weight: 900; font-size: 13.5px; color: #0369a1; background: #f0f9ff; cursor: pointer; outline: none;">
                   ${yearOptionsHtml}
@@ -764,7 +878,7 @@ var TaxModule = {
                 <button type="button" id="btnAddYearBtn" title="เพิ่มปีภาษีใหม่ เช่น 2025" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer;">
                   + เพิ่มปี
                 </button>
-                <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 6px;">บันทึกอัตโนมัติ - ${this.currentUser}</span>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 4px;">บันทึกอัตโนมัติ - ${this.currentUser}</span>
               </div>
             </div>
           </div>
@@ -1023,6 +1137,10 @@ var TaxModule = {
         </div>
       </div>
     `;
+
+    // Event ปุ่มส่งออก และนำเข้า JSON
+    container.querySelector("#btnExportTaxJson")?.addEventListener('click', () => this.exportTaxJSON());
+    container.querySelector("#btnImportTaxJson")?.addEventListener('click', () => this.importTaxJSON());
 
     // Event ปุ่มกลับหน้าหลัก
     container.querySelector("#taxBackToHomeBtn")?.addEventListener('click', () => {
