@@ -2266,7 +2266,7 @@ var CashFlowModule = {
         try {
           const parsed = JSON.parse(event.target.result);
           
-          if (parsed.data) {
+            if (parsed.data) {
             const ctx = CashFlowModule.getUserContext();
             const targetCashflowKey = ctx.isMember ? ctx.storageKey : 'family-finance:cashflow:v2';
 
@@ -2278,16 +2278,6 @@ var CashFlowModule = {
               if (parsed.data.credit_cards) localStorage.setItem('family-finance:credit-cards:v1', JSON.stringify(parsed.data.credit_cards));
               if (parsed.data.settings) localStorage.setItem('family-finance:settings', JSON.stringify(parsed.data.settings));
             }
-            alert('นำเข้าข้อมูลสำเร็จเรียบร้อยแล้ว!');
-            window.location.reload();
-            return;
-          }
-
-          if (parsed.data) {
-            if (parsed.data.cashflow_v2) localStorage.setItem('family-finance:cashflow:v2', JSON.stringify(parsed.data.cashflow_v2));
-            if (parsed.data.debts_contracts) localStorage.setItem('family-finance:debts-contracts:v1', JSON.stringify(parsed.data.debts_contracts));
-            if (parsed.data.credit_cards) localStorage.setItem('family-finance:credit-cards:v1', JSON.stringify(parsed.data.credit_cards));
-            if (parsed.data.settings) localStorage.setItem('family-finance:settings', JSON.stringify(parsed.data.settings));
             alert('นำเข้าข้อมูลสำเร็จเรียบร้อยแล้ว!');
             window.location.reload();
             return;
@@ -2412,13 +2402,15 @@ var CashFlowModule = {
           }
 
           if (confirm(`พบรายการใน CSV จำนวน ${newTxs.length} รายการ ต้องการนำเข้าข้อมูลใช่หรือไม่?`)) {
+            const ctx = CashFlowModule.getUserContext();
+            const targetKey = ctx.isMember ? ctx.storageKey : 'family-finance:cashflow:v2';
             let cashflowData = {};
             try {
-              cashflowData = JSON.parse(localStorage.getItem('family-finance:cashflow:v2') || '{}');
+              cashflowData = JSON.parse(localStorage.getItem(targetKey) || '{}');
             } catch(e) {}
 
             cashflowData.transactions = newTxs;
-            localStorage.setItem('family-finance:cashflow:v2', JSON.stringify(cashflowData));
+            localStorage.setItem(targetKey, JSON.stringify(cashflowData));
             alert('นำเข้ารายการจาก CSV สำเร็จเรียบร้อยแล้ว!');
             window.location.reload();
           }
