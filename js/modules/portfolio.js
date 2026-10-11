@@ -66,8 +66,54 @@ const stockPricePresetMap = {
   "ASML": { priceRange: "700.00 – 720.00", yield: 1.0, sector: "Semiconductor Equipment" }
 };
 
+function getPortfolioUserContext() {
+  try {
+    // 1. ตรวจสอบจาก Session ของ Supabase ใน LocalStorage ก่อนทันที (เร็วที่สุด ไม่ต้องรอ DOM)
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+    const userEmail = (sbData?.user?.email || '').toLowerCase();
+
+    // 2. ตรวจสอบข้อความบนหน้าจอร่วมด้วย
+    const pageText = document.body ? document.body.innerText : '';
+    const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
+    const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+
+    // ดึงชื่อ User
+    const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+    let rawName = (nameEl ? nameEl.textContent : '').trim();
+    if (!rawName && userEmail) {
+      rawName = userEmail.split('@')[0];
+    }
+
+    const isMemberUser = !isExplicitAdmin && (
+      isExplicitMember ||
+      rawName.includes('พลอย') ||
+      rawName.toLowerCase().includes('ploy') ||
+      userEmail.includes('ploy') ||
+      userEmail.includes('member')
+    );
+
+    if (isMemberUser) {
+      const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+      return {
+        isMember: true,
+        memberKey: `stock-trading-log:member:${cleanName}`
+      };
+    }
+  } catch (e) {}
+
+  return { isMember: false, memberKey: null };
+}
+
 function savePortfolioDataHelper(data) {
   try {
+    const { isMember, memberKey } = getPortfolioUserContext();
+
+    if (isMember && memberKey) {
+      localStorage.setItem(memberKey, JSON.stringify(data));
+      return;
+    }
+
     if (typeof DataStore !== 'undefined') {
       if (typeof DataStore.savePortfolioData === 'function') return DataStore.savePortfolioData(data);
       if (typeof DataStore.saveData === 'function') return DataStore.saveData(data);
@@ -81,11 +127,20 @@ function savePortfolioDataHelper(data) {
 }
 
 function getPortfolioDataHelper() {
-  if (typeof DataStore !== 'undefined') {
-    if (typeof DataStore.getPortfolioData === 'function') return DataStore.getPortfolioData();
-    if (typeof DataStore.getData === 'function') return DataStore.getData();
-  }
   try {
+    const { isMember, memberKey } = getPortfolioUserContext();
+
+    // ถ้าเป็น Member ให้ดึงกล่องข้อมูลของตัวเอง ถ้ายังไม่มีให้เป็นพอร์ตว่างเปล่า (0 บัญชี 0 สินทรัพย์)
+    if (isMember && memberKey) {
+      const rawMember = localStorage.getItem(memberKey);
+      return rawMember ? JSON.parse(rawMember) : { portfolios: [], trades: [] };
+    }
+
+    // ถ้าเป็น Admin (พ่อบี) ดึงข้อมูลหลักตามปกติ
+    if (typeof DataStore !== 'undefined') {
+      if (typeof DataStore.getPortfolioData === 'function') return DataStore.getPortfolioData();
+      if (typeof DataStore.getData === 'function') return DataStore.getData();
+    }
     const raw = localStorage.getItem('stock-trading-log:v3');
     return raw ? JSON.parse(raw) : { portfolios: [], trades: [] };
   } catch (e) {
@@ -2457,7 +2512,10 @@ this.openAssetModal(holding.symbol);
     const isProfit = overallSummary.unrealizedPL >= 0;
     const sortedPortfolios = this.getSortedPortfolios(data);
 
-    const targetAmount = overallSummary.targetAmount > 0 ? overallSummary.targetAmount : 5063000;
+    const { isMember } = getPortfolioUserContext();
+    const targetAmount = overallSummary.targetAmount > 0 
+  ? overallSummary.targetAmount 
+  : (isMember ? 0 : 5063000);
     const netTotal = overallSummary.totalNetWorth;
     const progressPct = targetAmount > 0 ? Math.min(100, (netTotal / targetAmount) * 100) : 0;
     const remainingToTarget = Math.max(0, targetAmount - netTotal);
@@ -3068,10 +3126,19 @@ this.openAssetModal(holding.symbol);
 
     // 2. ดึงปันผลอัตโนมัติจาก "บันทึกรายรับรายจ่าย (Cashflow)"
     try {
-      const rawCf = localStorage.getItem('family-finance:cashflow:v2') 
-                 || localStorage.getItem('family-finance:cashflow:v1') 
-                 || localStorage.getItem('family-finance-db')
-                 || localStorage.getItem('transactions');
+      const { isMember } = getPortfolioUserContext();
+      let rawCf = null;
+
+      if (isMember) {
+        const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+        const cleanName = ((nameEl ? nameEl.textContent : '').trim() || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+        rawCf = localStorage.getItem(`family-finance:cashflow:member:${cleanName}`);
+      } else {
+        rawCf = localStorage.getItem('family-finance:cashflow:v2') 
+             || localStorage.getItem('family-finance:cashflow:v1') 
+             || localStorage.getItem('family-finance-db')
+             || localStorage.getItem('transactions');
+      }
 
       if (rawCf) {
         const parsedCf = JSON.parse(rawCf);
@@ -3811,7 +3878,7 @@ this.openAssetModal(holding.symbol);
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => PortfolioModule.init());
 } else {
-  setTimeout(() => PortfolioModule.init(), 50);
+  setTimeout(() => PortfolioModule.init(), 200);
 }
 // ฟังก์ชัน Sort ตารางสรุปเงินปันผลสะสมรายตัวโดยตรงผ่าน DOM
 window.sortDivTable = function(colType) {

@@ -8,6 +8,44 @@ const CreditCardModule = {
   selectedCycleMonth: null,
   sortField: 'date',
   sortOrder: 'desc',
+  getUserContext() {
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+      const userEmail = (sbData?.user?.email || '').toLowerCase();
+
+      const pageText = document.body ? document.body.innerText : '';
+      const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
+      const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+
+      const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+      let rawName = (nameEl ? nameEl.textContent : '').trim();
+      if (!rawName && userEmail) rawName = userEmail.split('@')[0];
+
+      const isMemberUser = !isExplicitAdmin && (
+        isExplicitMember ||
+        rawName.includes('พลอย') ||
+        rawName.toLowerCase().includes('ploy') ||
+        userEmail.includes('ploy') ||
+        userEmail.includes('member')
+      );
+
+      if (isMemberUser) {
+        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+        return {
+          isMember: true,
+          cashflowKey: `family-finance:cashflow:member:${cleanName}`,
+          cardLimitsKey: `family-finance:card-limits:member:${cleanName}`
+        };
+      }
+    } catch (e) {}
+
+    return {
+      isMember: false,
+      cashflowKey: 'family-finance:cashflow:v2',
+      cardLimitsKey: 'family-finance:card-limits'
+    };
+  },
 
   defaultCardConfigs: [
     {
@@ -57,15 +95,26 @@ const CreditCardModule = {
 
   getState() {
     try {
-      const raw = localStorage.getItem('family-finance:cashflow:v2') || localStorage.getItem('family-finance:cashflow:v1');
+      const ctx = this.getUserContext();
+      const raw = localStorage.getItem(ctx.cashflowKey) || (!ctx.isMember ? localStorage.getItem('family-finance:cashflow:v1') : null);
       if (raw) return JSON.parse(raw);
     } catch (e) {}
     return { transactions: [], accounts: [] };
   },
 
   getCardConfigs() {
+    const ctx = this.getUserContext();
+    // ถ้าเป็น Member เริ่มต้นที่ 0 บัตร (ไม่ดึง 3 ใบของพ่อ)
+    if (ctx.isMember) {
+      try {
+        const raw = localStorage.getItem(ctx.cardLimitsKey);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return [];
+    }
+
     try {
-      const raw = localStorage.getItem('family-finance:card-limits');
+      const raw = localStorage.getItem(ctx.cardLimitsKey);
       if (raw) {
         const saved = JSON.parse(raw);
         return this.defaultCardConfigs.map(c => ({
@@ -81,13 +130,16 @@ const CreditCardModule = {
 
   saveCardConfig(cardId, limit, statementDay, dueDay) {
     try {
-      const raw = localStorage.getItem('family-finance:card-limits');
+      const ctx = this.getUserContext();
+      if (ctx.isMember) return;
+      const raw = localStorage.getItem(ctx.cardLimitsKey);
       let saved = raw ? JSON.parse(raw) : {};
       saved[cardId] = { limit, statementDay, dueDay };
-      localStorage.setItem('family-finance:card-limits', JSON.stringify(saved));
+      localStorage.setItem(ctx.cardLimitsKey, JSON.stringify(saved));
     } catch (e) {}
   },
 
+  
   formatBaht(num) {
     return Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },

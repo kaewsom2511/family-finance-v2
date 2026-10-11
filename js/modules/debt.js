@@ -8,7 +8,44 @@ window.DebtModule = {
   activeViewTab: 'cards',
   sortField: 'date',
   sortOrder: 'desc',
+  getUserContext() {
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+      const userEmail = (sbData?.user?.email || '').toLowerCase();
 
+      const pageText = document.body ? document.body.innerText : '';
+      const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
+      const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+
+      const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+      let rawName = (nameEl ? nameEl.textContent : '').trim();
+      if (!rawName && userEmail) rawName = userEmail.split('@')[0];
+
+      const isMemberUser = !isExplicitAdmin && (
+        isExplicitMember ||
+        rawName.includes('พลอย') ||
+        rawName.toLowerCase().includes('ploy') ||
+        userEmail.includes('ploy') ||
+        userEmail.includes('member')
+      );
+
+      if (isMemberUser) {
+        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+        return {
+          isMember: true,
+          storageKey: `family-finance:debt-plans:member:${cleanName}`,
+          cashflowKey: `family-finance:cashflow:member:${cleanName}`
+        };
+      }
+    } catch (e) {}
+
+    return {
+      isMember: false,
+      storageKey: this.storageKey,
+      cashflowKey: 'family-finance:cashflow:v2'
+    };
+  },
   defaultDebts: [
     {
       id: 'debt-condo',
@@ -100,17 +137,29 @@ window.DebtModule = {
   },
 
   getDebts() {
+    const ctx = this.getUserContext();
+    // ถ้าเป็น Member เริ่มต้นที่ 0 สัญญาผ่อน (ไม่ดึงหนี้ของพ่อบี)
+    if (ctx.isMember) {
+      try {
+        const raw = localStorage.getItem(ctx.storageKey);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return [];
+    }
+
+    // Admin (พ่อบี): ดึงข้อมูลหนี้และสัญญาผ่อนหลักตามปกติ
     try {
-      const raw = localStorage.getItem(this.storageKey);
+      const raw = localStorage.getItem(ctx.storageKey);
       if (raw) return JSON.parse(raw);
     } catch (e) {}
-    localStorage.setItem(this.storageKey, JSON.stringify(this.defaultDebts));
+    localStorage.setItem(ctx.storageKey, JSON.stringify(this.defaultDebts));
     return this.defaultDebts;
   },
 
   saveDebts(debts) {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(debts));
+      const ctx = this.getUserContext();
+      localStorage.setItem(ctx.storageKey, JSON.stringify(debts));
     } catch (e) {}
   },
 
@@ -386,11 +435,13 @@ window.DebtModule = {
       const cards = (typeof CreditCardModule !== 'undefined') ? CreditCardModule.getCardConfigs() : [];
       let rawState = null;
       try {
-        rawState = JSON.parse(localStorage.getItem('family-finance:cashflow:v2') || localStorage.getItem('family-finance:cashflow:v1') || '{}');
+        const ctx = this.getUserContext();
+        const raw = localStorage.getItem(ctx.cashflowKey) || (!ctx.isMember ? localStorage.getItem('family-finance:cashflow:v1') : null);
+        rawState = raw ? JSON.parse(raw) : {};
       } catch (e) {}
       const allTx = Array.isArray(rawState) ? rawState : (rawState?.transactions || []);
       const activeIdx = (typeof CreditCardModule !== 'undefined') ? CreditCardModule.activeCardIndex : 0;
-      const curCard = cards[activeIdx] || cards[0];
+      const curCard = cards[activeIdx] || cards[0] || { id: '', name: 'ไม่มีบัตรเครดิต', statementDay: 1, dueDay: 1 };
 
       const isTxMatchCard = (t, card) => {
         if (!card || !t) return false;
@@ -616,7 +667,7 @@ window.DebtModule = {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
               <div>
                 <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-                  <span>🧾</span> รายการรูดใช้จ่ายบัตรเครดิต (${curCard.name})
+                  <span>🧾</span> รายการรูดใช้จ่ายบัตรเครดิต (${curCard ? curCard.name : 'ไม่มีบัตร'})
                 </h3>
                 <div style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
                   รอบบิล: <strong>${startCycleDate}</strong> ถึง <strong>${endCycleDate}</strong> | ครบกำหนดชำระ: <strong style="color: #dc2626;">${dueDate}</strong>
@@ -627,7 +678,7 @@ window.DebtModule = {
                 <div>
                   <label style="display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">บัตรเครดิต</label>
                   <select id="cc-select-card-dropdown" style="padding: 7px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">
-                    ${cards.map((c, i) => `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${c.name}</option>`).join('')}
+                    ${cards.length > 0 ? cards.map((c, i) => `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${c.name}</option>`).join('') : '<option value="">ไม่มีบัตรเครดิต</option>'}
                   </select>
                 </div>
 

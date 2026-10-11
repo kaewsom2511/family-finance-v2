@@ -99,9 +99,9 @@ var DashboardModule = {
       .filter(p => p.name && p.name.toUpperCase().includes('PLOY'))
       .map(p => p.id);
 
-    const filteredTrades = role === 'admin'
-      ? trades
-      : trades.filter(t => ployPortIds.includes(t.portfolioId));
+    // ถ้าเป็น Admin ดึงทั้งหมด ถ้าเป็น Member ให้ดึงเฉพาะรายการที่เป็นของ user นั้น (ถ้าไม่มี ให้เป็น [])
+const filteredTrades = role === 'admin' ? trades : [];
+  
 
     // 2. คำนวณพอร์ตลงทุนแยกตามประเภทสินทรัพย์
     const holdings = {};

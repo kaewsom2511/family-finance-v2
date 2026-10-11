@@ -41,9 +41,70 @@ window.DividendPlannerModule = {
   },
 
   models: null,
+  getUserContext() {
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+      const userEmail = (sbData?.user?.email || '').toLowerCase();
+
+      const pageText = document.body ? document.body.innerText : '';
+      const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
+      const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+
+      const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+      let rawName = (nameEl ? nameEl.textContent : '').trim();
+      if (!rawName && userEmail) rawName = userEmail.split('@')[0];
+
+      const isMemberUser = !isExplicitAdmin && (
+        isExplicitMember ||
+        rawName.includes('พลอย') ||
+        rawName.toLowerCase().includes('ploy') ||
+        userEmail.includes('ploy') ||
+        userEmail.includes('member')
+      );
+
+      if (isMemberUser) {
+        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+        return {
+          isMember: true,
+          storageKey: `wealthport:dividend-plan-models:member:${cleanName}`,
+          targetKey: `wealthport:dividend-plan-target:member:${cleanName}`,
+          pillarKey: `wealthport:dividend-plan-pillars:member:${cleanName}`
+        };
+      }
+    } catch (e) {}
+
+    return {
+      isMember: false,
+      storageKey: this.STORAGE_KEY,
+      targetKey: this.TARGET_KEY,
+      pillarKey: this.PILLAR_KEY
+    };
+  },
 
   init() {
     try {
+      const ctx = this.getUserContext();
+
+      if (ctx.isMember) {
+        // สำหรับ Member: ค่าเริ่มต้นว่างเปล่าให้น้องฝึกเพิ่มเอง
+        const savedTarget = localStorage.getItem(ctx.targetKey);
+        this.targetMonthlyIncome = savedTarget ? parseFloat(savedTarget) : 0;
+
+        const savedPillars = localStorage.getItem(ctx.pillarKey);
+        this.pillarWeights = savedPillars ? JSON.parse(savedPillars) : { thai: 40, us: 30, fund: 30 };
+
+        const savedModels = localStorage.getItem(ctx.storageKey);
+        if (savedModels) {
+          this.models = JSON.parse(savedModels);
+        } else {
+          // สมาชิกเริ่มต้นด้วยพอร์ตว่างเปล่า
+          this.models = { thai: [], us: [], fund: [] };
+        }
+        return;
+      }
+
+      // สำหรับ Admin (คุณพ่อบี): ใช้โมเดล 40,000 บาทเดิมครบชุด
       const savedTarget = localStorage.getItem(this.TARGET_KEY);
       if (savedTarget) {
         const val = parseFloat(savedTarget);
@@ -70,15 +131,28 @@ window.DividendPlannerModule = {
 
   saveModels() {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.models));
-      localStorage.setItem(this.TARGET_KEY, String(this.targetMonthlyIncome));
-      localStorage.setItem(this.PILLAR_KEY, JSON.stringify(this.pillarWeights));
+      const ctx = this.getUserContext();
+      localStorage.setItem(ctx.storageKey, JSON.stringify(this.models));
+      localStorage.setItem(ctx.targetKey, String(this.targetMonthlyIncome));
+      localStorage.setItem(ctx.pillarKey, JSON.stringify(this.pillarWeights));
     } catch (e) {
       console.error("Save Dividend Plan failed:", e);
     }
   },
 
   resetToDefault(container) {
+    const ctx = this.getUserContext();
+    if (ctx.isMember) {
+      if (confirm("คุณต้องการล้างแผนปันผลเพื่อเริ่มต้นวางแผนใหม่ใช่หรือไม่?")) {
+        this.models = { thai: [], us: [], fund: [] };
+        this.pillarWeights = { thai: 40, us: 30, fund: 30 };
+        this.targetMonthlyIncome = 0;
+        this.saveModels();
+        this.render(container);
+      }
+      return;
+    }
+
     if (confirm("คุณต้องการคืนค่ารายชื่อหุ้นและสัดส่วนกลับเป็นค่าเริ่มต้น (ไทย 45% · US 30% · กองทุน 25%) ใช่หรือไม่?")) {
       this.models = JSON.parse(JSON.stringify(this.defaultModels));
       this.pillarWeights = { thai: 45, us: 30, fund: 25 };
