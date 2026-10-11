@@ -932,14 +932,23 @@ var PortfolioModule = {
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target.result);
-        if (typeof DataStore !== 'undefined' && typeof DataStore.saveFullBackup === 'function') {
-          DataStore.saveFullBackup(json);
-        } else {
-          if (json['stock-trading-log:v3']) {
-            localStorage.setItem('stock-trading-log:v3', JSON.stringify(json['stock-trading-log:v3']));
-          } else if (json.portfolios || json.trades) {
-            localStorage.setItem('stock-trading-log:v3', JSON.stringify(json));
-          }
+        const { isMember } = getPortfolioUserContext();
+
+        // 1. สกัดข้อมูลพอร์ตและรายการเทรดออกมาจาก JSON
+        let portData = null;
+        if (json['stock-trading-log:v3']) {
+          portData = json['stock-trading-log:v3'];
+        } else if (json.portfolios || json.trades) {
+          portData = json;
+        }
+
+        // 2. บันทึกลงกล่องข้อมูลของผู้ใช้ปัจจุบันผ่าน savePortfolioDataHelper
+        if (portData) {
+          savePortfolioDataHelper(portData);
+        }
+
+        // 3. ถ้าเป็น Admin ถึงจะอนุญาตให้อัปเดต Ledger กลางและ Quote Cache
+        if (!isMember) {
           if (json['wealthport:avg-cost-ledger:v1']) {
             localStorage.setItem('wealthport:avg-cost-ledger:v1', JSON.stringify(json['wealthport:avg-cost-ledger:v1']));
           }
@@ -947,10 +956,11 @@ var PortfolioModule = {
             localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(json['stock-trading-log:quote-cache:v1']));
           }
         }
-        alert('นำเข้าข้อมูลสำเร็จ');
+
+        alert('นำเข้าข้อมูลพอร์ตสำเร็จเรียบร้อยแล้ว!');
         this.render();
       } catch (err) {
-        alert('รูปแบบไฟล์ JSON ไม่ถูกต้อง');
+        alert('รูปแบบไฟล์ JSON ไม่ถูกต้อง: ' + err.message);
       }
     };
     reader.readAsText(file);
