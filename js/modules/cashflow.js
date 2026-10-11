@@ -2224,13 +2224,15 @@ var CashFlowModule = {
 
   exportFullBackup: function() {
     try {
+      const ctx = this.getUserContext();
+      const currentCashflow = this.getState();
       const backupData = {
         appName: 'Family Finance',
         version: '2.0',
         exportDate: new Date().toISOString(),
+        user: ctx.isMember ? ctx.storageKey : 'admin',
         data: {
-          cashflow_v2: JSON.parse(localStorage.getItem('family-finance:cashflow:v2') || '[]'),
-          cashflow_v1: JSON.parse(localStorage.getItem('family-finance:cashflow:v1') || '[]'),
+          cashflow_v2: currentCashflow,
           debts_contracts: JSON.parse(localStorage.getItem('family-finance:debts-contracts:v1') || '[]'),
           credit_cards: JSON.parse(localStorage.getItem('family-finance:credit-cards:v1') || '[]'),
           settings: JSON.parse(localStorage.getItem('family-finance:settings') || '{}')
@@ -2264,18 +2266,19 @@ var CashFlowModule = {
         try {
           const parsed = JSON.parse(event.target.result);
           
-          if (parsed.keys && typeof parsed.keys === 'object') {
-            let restoredCount = 0;
-            Object.keys(parsed.keys).forEach(key => {
-              const val = parsed.keys[key];
-              if (val !== undefined && val !== null) {
-                const valStr = typeof val === 'object' ? JSON.stringify(val) : String(val);
-                localStorage.setItem(key, valStr);
-                restoredCount++;
-              }
-            });
+          if (parsed.data) {
+            const ctx = CashFlowModule.getUserContext();
+            const targetCashflowKey = ctx.isMember ? ctx.storageKey : 'family-finance:cashflow:v2';
 
-            alert(`นำเข้าและกู้คืนข้อมูล WealthPort สำเร็จเรียบร้อยแล้ว (${restoredCount} รายการข้อมูล)!`);
+            if (parsed.data.cashflow_v2) {
+              localStorage.setItem(targetCashflowKey, JSON.stringify(parsed.data.cashflow_v2));
+            }
+            if (!ctx.isMember) {
+              if (parsed.data.debts_contracts) localStorage.setItem('family-finance:debts-contracts:v1', JSON.stringify(parsed.data.debts_contracts));
+              if (parsed.data.credit_cards) localStorage.setItem('family-finance:credit-cards:v1', JSON.stringify(parsed.data.credit_cards));
+              if (parsed.data.settings) localStorage.setItem('family-finance:settings', JSON.stringify(parsed.data.settings));
+            }
+            alert('นำเข้าข้อมูลสำเร็จเรียบร้อยแล้ว!');
             window.location.reload();
             return;
           }

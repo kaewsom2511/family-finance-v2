@@ -1,0 +1,2046 @@
+{
+  "stock-trading-log:v3": {
+    "portfolios": [
+      {
+        "id": "port-1791719392989",
+        "name": "เกษียญ",
+        "targetAmount": 3000000,
+        "createdAt": "2026-10-11T11:49:52.989Z"
+      }
+    ],
+    "trades": [
+      {
+        "id": "trade-1791719425380",
+        "portfolioId": "port-1791719392989",
+        "symbol": "PTT.BK",
+        "stockName": "PTT",
+        "side": "buy",
+        "type": "buy",
+        "assetType": "thai-stock",
+        "quantity": 100,
+        "shares": 100,
+        "price": 40,
+        "fee": 0,
+        "tradeDate": "2026-07-09",
+        "date": "2026-07-09",
+        "createdAt": "2026-10-11T11:50:25.380Z"
+      },
+      {
+        "id": "trade-1791719464709",
+        "portfolioId": "port-1791719392989",
+        "symbol": "NVAD",
+        "stockName": "NVAD",
+        "side": "buy",
+        "type": "buy",
+        "assetType": "foreign-stock",
+        "quantity": 2,
+        "shares": 2,
+        "price": 200,
+        "fee": 0,
+        "tradeDate": "2026-07-30",
+        "date": "2026-07-30",
+        "createdAt": "2026-10-11T11:51:04.709Z"
+      }
+    ]
+  },
+  "wealthport:avg-cost-ledger:v1": {},
+  "stock-trading-log:quote-cache:v1": {
+    "AP.BK": {
+      "price": 7.95,
+      "previousClose": 7.85,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:48.126Z"
+    },
+    "thai-stock|AP.BK": {
+      "price": 7.95,
+      "previousClose": 7.85,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:48.126Z"
+    },
+    "AP": {
+      "price": 7.95,
+      "previousClose": 7.85,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:48.126Z"
+    },
+    "thai-stock|AP": {
+      "price": 7.95,
+      "previousClose": 7.85,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:48.126Z"
+    },
+    "IRC.BK": {
+      "price": 13,
+      "previousClose": 13.1,
+      "high": 13.194999999999999,
+      "low": 12.805,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:18:35.857Z"
+    },
+    "IRC": {
+      "price": 13,
+      "previousClose": 13.1,
+      "high": 13.194999999999999,
+      "low": 12.805,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:18:35.857Z"
+    },
+    "thai-stock|IRC.BK": {
+      "price": 13,
+      "previousClose": 13.1,
+      "high": 13.194999999999999,
+      "low": 12.805,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:18:35.857Z"
+    },
+    "thai-stock|IRC": {
+      "price": 13,
+      "previousClose": 13.1,
+      "high": 13.194999999999999,
+      "low": 12.805,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:18:35.857Z"
+    },
+    "ALLY.BK": {
+      "price": 4.78,
+      "previousClose": 4.9,
+      "high": 4.8517,
+      "low": 4.7083,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T03:11:21.471Z"
+    },
+    "ALLY": {
+      "price": 4.78,
+      "previousClose": 4.9,
+      "high": 4.8517,
+      "low": 4.7083,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T03:11:21.471Z"
+    },
+    "thai-stock|ALLY.BK": {
+      "price": 4.78,
+      "previousClose": 4.9,
+      "high": 4.8517,
+      "low": 4.7083,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T03:11:21.471Z"
+    },
+    "thai-stock|ALLY": {
+      "price": 4.78,
+      "previousClose": 4.9,
+      "high": 4.8517,
+      "low": 4.7083,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T03:11:21.471Z"
+    },
+    "CPALL.BK": {
+      "price": 42.5,
+      "previousClose": 42.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.526Z"
+    },
+    "CPALL": {
+      "price": 42.5,
+      "previousClose": 42.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.526Z"
+    },
+    "thai-stock|CPALL.BK": {
+      "price": 42.5,
+      "previousClose": 42.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.526Z"
+    },
+    "thai-stock|CPALL": {
+      "price": 42.5,
+      "previousClose": 42.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.526Z"
+    },
+    "BDMS.BK": {
+      "price": 18.9,
+      "previousClose": 19,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.776Z"
+    },
+    "BDMS": {
+      "price": 18.9,
+      "previousClose": 19,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.776Z"
+    },
+    "thai-stock|BDMS.BK": {
+      "price": 18.9,
+      "previousClose": 19,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.776Z"
+    },
+    "thai-stock|BDMS": {
+      "price": 18.9,
+      "previousClose": 19,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:49.776Z"
+    },
+    "CRC.BK": {
+      "price": 30.75,
+      "previousClose": 30.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:41.126Z"
+    },
+    "CRC": {
+      "price": 30.75,
+      "previousClose": 30.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:41.126Z"
+    },
+    "thai-stock|CRC.BK": {
+      "price": 30.75,
+      "previousClose": 30.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:41.126Z"
+    },
+    "thai-stock|CRC": {
+      "price": 30.75,
+      "previousClose": 30.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:41.126Z"
+    },
+    "DIF.BK": {
+      "price": 10.1,
+      "previousClose": 10.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:39.794Z"
+    },
+    "DIF": {
+      "price": 10.1,
+      "previousClose": 10.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:39.794Z"
+    },
+    "thai-stock|DIF.BK": {
+      "price": 10.1,
+      "previousClose": 10.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:39.794Z"
+    },
+    "thai-stock|DIF": {
+      "price": 10.1,
+      "previousClose": 10.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:39.794Z"
+    },
+    "DMT.BK": {
+      "price": 12,
+      "previousClose": 12.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.564Z"
+    },
+    "DMT": {
+      "price": 12,
+      "previousClose": 12.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.564Z"
+    },
+    "thai-stock|DMT.BK": {
+      "price": 12,
+      "previousClose": 12.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.564Z"
+    },
+    "thai-stock|DMT": {
+      "price": 12,
+      "previousClose": 12.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.564Z"
+    },
+    "HMPRO.BK": {
+      "price": 6.4,
+      "previousClose": 6.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.807Z"
+    },
+    "HMPRO": {
+      "price": 6.4,
+      "previousClose": 6.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.807Z"
+    },
+    "thai-stock|HMPRO.BK": {
+      "price": 6.4,
+      "previousClose": 6.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.807Z"
+    },
+    "thai-stock|HMPRO": {
+      "price": 6.4,
+      "previousClose": 6.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:50.807Z"
+    },
+    "HTC.BK": {
+      "price": 15.1,
+      "previousClose": 15.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.085Z"
+    },
+    "HTC": {
+      "price": 15.1,
+      "previousClose": 15.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.085Z"
+    },
+    "thai-stock|HTC.BK": {
+      "price": 15.1,
+      "previousClose": 15.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.085Z"
+    },
+    "thai-stock|HTC": {
+      "price": 15.1,
+      "previousClose": 15.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.085Z"
+    },
+    "IMPACT.BK": {
+      "price": 12.7,
+      "previousClose": 12.8,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.328Z"
+    },
+    "IMPACT": {
+      "price": 12.7,
+      "previousClose": 12.8,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.328Z"
+    },
+    "thai-stock|IMPACT.BK": {
+      "price": 12.7,
+      "previousClose": 12.8,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.328Z"
+    },
+    "thai-stock|IMPACT": {
+      "price": 12.7,
+      "previousClose": 12.8,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:51.328Z"
+    },
+    "KSL.BK": {
+      "price": 1.72,
+      "previousClose": 1.64,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:43.254Z"
+    },
+    "KSL": {
+      "price": 1.72,
+      "previousClose": 1.64,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:43.254Z"
+    },
+    "thai-stock|KSL.BK": {
+      "price": 1.72,
+      "previousClose": 1.64,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:43.254Z"
+    },
+    "thai-stock|KSL": {
+      "price": 1.72,
+      "previousClose": 1.64,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:43.254Z"
+    },
+    "KTB.BK": {
+      "price": 41.75,
+      "previousClose": 41.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T11:42:15.954Z"
+    },
+    "KTB": {
+      "price": 41.75,
+      "previousClose": 41.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T11:42:15.954Z"
+    },
+    "thai-stock|KTB.BK": {
+      "price": 41.75,
+      "previousClose": 41.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T11:42:15.954Z"
+    },
+    "thai-stock|KTB": {
+      "price": 41.75,
+      "previousClose": 41.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T11:42:15.954Z"
+    },
+    "KTC.BK": {
+      "price": 35,
+      "previousClose": 34.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.039Z"
+    },
+    "KTC": {
+      "price": 35,
+      "previousClose": 34.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.039Z"
+    },
+    "thai-stock|KTC.BK": {
+      "price": 35,
+      "previousClose": 34.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.039Z"
+    },
+    "thai-stock|KTC": {
+      "price": 35,
+      "previousClose": 34.5,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.039Z"
+    },
+    "LANNA.BK": {
+      "price": 14.7,
+      "previousClose": 14.7,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.277Z"
+    },
+    "LANNA": {
+      "price": 14.7,
+      "previousClose": 14.7,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.277Z"
+    },
+    "thai-stock|LANNA.BK": {
+      "price": 14.7,
+      "previousClose": 14.7,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.277Z"
+    },
+    "thai-stock|LANNA": {
+      "price": 14.7,
+      "previousClose": 14.7,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.277Z"
+    },
+    "LH.BK": {
+      "price": 3.48,
+      "previousClose": 3.46,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.536Z"
+    },
+    "LH": {
+      "price": 3.48,
+      "previousClose": 3.46,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.536Z"
+    },
+    "thai-stock|LH.BK": {
+      "price": 3.48,
+      "previousClose": 3.46,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.536Z"
+    },
+    "thai-stock|LH": {
+      "price": 3.48,
+      "previousClose": 3.46,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:52.536Z"
+    },
+    "PROSPECT.BK": {
+      "price": 9.25,
+      "previousClose": 9.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:43.157Z"
+    },
+    "PROSPECT": {
+      "price": 9.25,
+      "previousClose": 9.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:43.157Z"
+    },
+    "thai-stock|PROSPECT.BK": {
+      "price": 9.25,
+      "previousClose": 9.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:43.157Z"
+    },
+    "thai-stock|PROSPECT": {
+      "price": 9.25,
+      "previousClose": 9.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:43.157Z"
+    },
+    "Q-CON.BK": {
+      "price": 5.95,
+      "previousClose": 5.95,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:45.448Z"
+    },
+    "Q-CON": {
+      "price": 5.95,
+      "previousClose": 5.95,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:45.448Z"
+    },
+    "thai-stock|Q-CON.BK": {
+      "price": 5.95,
+      "previousClose": 5.95,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:45.448Z"
+    },
+    "thai-stock|Q-CON": {
+      "price": 5.95,
+      "previousClose": 5.95,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:45.448Z"
+    },
+    "QH.BK": {
+      "price": 1.36,
+      "previousClose": 1.37,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:17.341Z"
+    },
+    "QH": {
+      "price": 1.36,
+      "previousClose": 1.37,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:17.341Z"
+    },
+    "thai-stock|QH.BK": {
+      "price": 1.36,
+      "previousClose": 1.37,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:17.341Z"
+    },
+    "thai-stock|QH": {
+      "price": 1.36,
+      "previousClose": 1.37,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:17.341Z"
+    },
+    "SAT.BK": {
+      "price": 16.3,
+      "previousClose": 16.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:53.316Z"
+    },
+    "SAT": {
+      "price": 16.3,
+      "previousClose": 16.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:53.316Z"
+    },
+    "thai-stock|SAT.BK": {
+      "price": 16.3,
+      "previousClose": 16.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:53.316Z"
+    },
+    "thai-stock|SAT": {
+      "price": 16.3,
+      "previousClose": 16.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:53.316Z"
+    },
+    "SIRI.BK": {
+      "price": 1.43,
+      "previousClose": 1.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:18.053Z"
+    },
+    "SIRI": {
+      "price": 1.43,
+      "previousClose": 1.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:18.053Z"
+    },
+    "thai-stock|SIRI.BK": {
+      "price": 1.43,
+      "previousClose": 1.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:18.053Z"
+    },
+    "thai-stock|SIRI": {
+      "price": 1.43,
+      "previousClose": 1.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:18.053Z"
+    },
+    "TCAP.BK": {
+      "price": 80,
+      "previousClose": 79.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:44.629Z"
+    },
+    "TCAP": {
+      "price": 80,
+      "previousClose": 79.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:44.629Z"
+    },
+    "thai-stock|TCAP.BK": {
+      "price": 80,
+      "previousClose": 79.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:44.629Z"
+    },
+    "thai-stock|TCAP": {
+      "price": 80,
+      "previousClose": 79.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:44.629Z"
+    },
+    "TPIPP.BK": {
+      "price": 1.62,
+      "previousClose": 1.62,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.309Z"
+    },
+    "TPIPP": {
+      "price": 1.62,
+      "previousClose": 1.62,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.309Z"
+    },
+    "thai-stock|TPIPP.BK": {
+      "price": 1.62,
+      "previousClose": 1.62,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.309Z"
+    },
+    "thai-stock|TPIPP": {
+      "price": 1.62,
+      "previousClose": 1.62,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.309Z"
+    },
+    "TU.BK": {
+      "price": 12.4,
+      "previousClose": 12.4,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:45.335Z"
+    },
+    "TU": {
+      "price": 12.4,
+      "previousClose": 12.4,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:45.335Z"
+    },
+    "thai-stock|TU.BK": {
+      "price": 12.4,
+      "previousClose": 12.4,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:45.335Z"
+    },
+    "thai-stock|TU": {
+      "price": 12.4,
+      "previousClose": 12.4,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:37:45.335Z"
+    },
+    "UV.BK": {
+      "price": 0.87,
+      "previousClose": 0.86,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.824Z"
+    },
+    "UV": {
+      "price": 0.87,
+      "previousClose": 0.86,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.824Z"
+    },
+    "thai-stock|UV.BK": {
+      "price": 0.87,
+      "previousClose": 0.86,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.824Z"
+    },
+    "thai-stock|UV": {
+      "price": 0.87,
+      "previousClose": 0.86,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-09T00:04:54.824Z"
+    },
+    "VAYU1.BK": {
+      "price": 11.2,
+      "previousClose": 11.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:46.872Z"
+    },
+    "VAYU1": {
+      "price": 11.2,
+      "previousClose": 11.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:46.872Z"
+    },
+    "thai-stock|VAYU1.BK": {
+      "price": 11.2,
+      "previousClose": 11.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:46.872Z"
+    },
+    "thai-stock|VAYU1": {
+      "price": 11.2,
+      "previousClose": 11.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:46.872Z"
+    },
+    "CPNREIT.BK": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:47.580Z"
+    },
+    "CPNREIT": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:47.580Z"
+    },
+    "thai-stock|CPNREIT.BK": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:47.580Z"
+    },
+    "thai-stock|CPNREIT": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:17:47.580Z"
+    },
+    "FTREIT.BK": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:48.706Z"
+    },
+    "FTREIT": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:48.706Z"
+    },
+    "thai-stock|FTREIT.BK": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:48.706Z"
+    },
+    "thai-stock|FTREIT": {
+      "price": 12.9,
+      "previousClose": 12.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:15:48.706Z"
+    },
+    "WHABT.BK": {
+      "price": 6.25,
+      "previousClose": 6.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:19.866Z"
+    },
+    "WHABT": {
+      "price": 6.25,
+      "previousClose": 6.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:19.866Z"
+    },
+    "thai-stock|WHABT.BK": {
+      "price": 6.25,
+      "previousClose": 6.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:19.866Z"
+    },
+    "thai-stock|WHABT": {
+      "price": 6.25,
+      "previousClose": 6.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T23:54:19.866Z"
+    },
+    "O": {
+      "price": 54.25,
+      "previousClose": 53.77,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:38:00.850Z"
+    },
+    "foreign-stock|O": {
+      "price": 54.25,
+      "previousClose": 53.77,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:38:00.850Z"
+    },
+    "SMH": {
+      "price": 630.6,
+      "previousClose": 617.81,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:18.272Z"
+    },
+    "foreign-stock|SMH": {
+      "price": 630.6,
+      "previousClose": 617.81,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:18.272Z"
+    },
+    "NVDA": {
+      "price": 239.24,
+      "previousClose": 238.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:28.503Z"
+    },
+    "foreign-stock|NVDA": {
+      "price": 239.24,
+      "previousClose": 238.9,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:28.503Z"
+    },
+    "CRWD": {
+      "price": 278.86,
+      "previousClose": 272.67,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:43.389Z"
+    },
+    "foreign-stock|CRWD": {
+      "price": 278.86,
+      "previousClose": 272.67,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:43.389Z"
+    },
+    "JEPQ": {
+      "price": 61.19,
+      "previousClose": 61.04,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:12:44.658Z"
+    },
+    "foreign-stock|JEPQ": {
+      "price": 61.19,
+      "previousClose": 61.04,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:12:44.658Z"
+    },
+    "MU": {
+      "price": 1045.56,
+      "previousClose": 1063.96,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:47.486Z"
+    },
+    "foreign-stock|MU": {
+      "price": 1045.56,
+      "previousClose": 1063.96,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:47.486Z"
+    },
+    "ASML": {
+      "price": 1859.86,
+      "previousClose": 1867.31,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:13:12.082Z"
+    },
+    "foreign-stock|ASML": {
+      "price": 1859.86,
+      "previousClose": 1867.31,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:13:12.082Z"
+    },
+    "BAC": {
+      "price": 54.09,
+      "previousClose": 54,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:32.469Z"
+    },
+    "foreign-stock|BAC": {
+      "price": 54.09,
+      "previousClose": 54,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:32.469Z"
+    },
+    "VOO": {
+      "price": 716.2,
+      "previousClose": 712.32,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:32.707Z"
+    },
+    "foreign-stock|VOO": {
+      "price": 716.2,
+      "previousClose": 712.32,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:32.707Z"
+    },
+    "WMT": {
+      "price": 105.07,
+      "previousClose": 104.26,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:12:50.372Z"
+    },
+    "foreign-stock|WMT": {
+      "price": 105.07,
+      "previousClose": 104.26,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:12:50.372Z"
+    },
+    "AVGO": {
+      "price": 362.51,
+      "previousClose": 355.14,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:13:13.381Z"
+    },
+    "foreign-stock|AVGO": {
+      "price": 362.51,
+      "previousClose": 355.14,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:13:13.381Z"
+    },
+    "TSM": {
+      "price": 485.8,
+      "previousClose": 472.78,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:13:11.044Z"
+    },
+    "foreign-stock|TSM": {
+      "price": 485.8,
+      "previousClose": 472.78,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-06T03:13:11.044Z"
+    },
+    "INTC": {
+      "price": 119.33,
+      "previousClose": 120,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:27:23.927Z"
+    },
+    "foreign-stock|INTC": {
+      "price": 119.33,
+      "previousClose": 120,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:27:23.927Z"
+    },
+    "AAPL": {
+      "price": 330.32,
+      "previousClose": 333.02,
+      "dividendRate": 0,
+      "source": "Yahoo Finance",
+      "updatedAt": "2026-10-02T11:03:12.093Z"
+    },
+    "foreign-stock|AAPL": {
+      "price": 330.32,
+      "previousClose": 333.02,
+      "dividendRate": 0,
+      "source": "Yahoo Finance",
+      "updatedAt": "2026-10-02T11:03:12.093Z"
+    },
+    "ELF": {
+      "price": 102.79,
+      "previousClose": 103.75,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:46.983Z"
+    },
+    "foreign-stock|ELF": {
+      "price": 102.79,
+      "previousClose": 103.75,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:46.983Z"
+    },
+    "ENPH": {
+      "price": 33.91,
+      "previousClose": 33.45,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:47.228Z"
+    },
+    "foreign-stock|ENPH": {
+      "price": 33.91,
+      "previousClose": 33.45,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:47.228Z"
+    },
+    "KO": {
+      "price": 85.65,
+      "previousClose": 86.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:21.915Z"
+    },
+    "foreign-stock|KO": {
+      "price": 85.65,
+      "previousClose": 86.1,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:21.915Z"
+    },
+    "BBY": {
+      "price": 87.97,
+      "previousClose": 87.7,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:22.159Z"
+    },
+    "foreign-stock|BBY": {
+      "price": 87.97,
+      "previousClose": 87.7,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:22.159Z"
+    },
+    "QQQ": {
+      "price": 759.66,
+      "previousClose": 756.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:49.507Z"
+    },
+    "foreign-stock|QQQ": {
+      "price": 759.66,
+      "previousClose": 756.2,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:49.507Z"
+    },
+    "SCHD": {
+      "price": 32.85,
+      "previousClose": 32.72,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:50.575Z"
+    },
+    "foreign-stock|SCHD": {
+      "price": 32.85,
+      "previousClose": 32.72,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:50.575Z"
+    },
+    "UNH": {
+      "price": 376.32,
+      "previousClose": 378.58,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:49.249Z"
+    },
+    "foreign-stock|UNH": {
+      "price": 376.32,
+      "previousClose": 378.58,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:49.249Z"
+    },
+    "AMZN": {
+      "price": 251.52,
+      "previousClose": 248.23,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:23.156Z"
+    },
+    "foreign-stock|AMZN": {
+      "price": 251.52,
+      "previousClose": 248.23,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:23.156Z"
+    },
+    "LLY": {
+      "price": 1157.49,
+      "previousClose": 1143.12,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:31.762Z"
+    },
+    "foreign-stock|LLY": {
+      "price": 1157.49,
+      "previousClose": 1143.12,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:31.762Z"
+    },
+    "GOOGL": {
+      "price": 347.68,
+      "previousClose": 346.47,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:46.175Z"
+    },
+    "foreign-stock|GOOGL": {
+      "price": 347.68,
+      "previousClose": 346.47,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:46.175Z"
+    },
+    "CELH": {
+      "price": 27.29,
+      "previousClose": 27.52,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:46.744Z"
+    },
+    "foreign-stock|CELH": {
+      "price": 27.29,
+      "previousClose": 27.52,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:46.744Z"
+    },
+    "MSFT": {
+      "price": 517.53,
+      "previousClose": 512.8,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:18.524Z"
+    },
+    "foreign-stock|MSFT": {
+      "price": 517.53,
+      "previousClose": 512.8,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:28:18.524Z"
+    },
+    "MRK": {
+      "price": 141.94,
+      "previousClose": 139.54,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:45.673Z"
+    },
+    "foreign-stock|MRK": {
+      "price": 141.94,
+      "previousClose": 139.54,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:45.673Z"
+    },
+    "SMCI": {
+      "price": 43.46,
+      "previousClose": 43.19,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:45.926Z"
+    },
+    "foreign-stock|SMCI": {
+      "price": 43.46,
+      "previousClose": 43.19,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:45.926Z"
+    },
+    "SGOV": {
+      "price": 100.46,
+      "previousClose": 100.45,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:49.004Z"
+    },
+    "foreign-stock|SGOV": {
+      "price": 100.46,
+      "previousClose": 100.45,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:49.004Z"
+    },
+    "MCD": {
+      "price": 231.89,
+      "previousClose": 231.83,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:35:11.071Z"
+    },
+    "foreign-stock|MCD": {
+      "price": 231.89,
+      "previousClose": 231.83,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:35:11.071Z"
+    },
+    "ABBV": {
+      "price": 266.69,
+      "previousClose": 265.76,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:31.518Z"
+    },
+    "foreign-stock|ABBV": {
+      "price": 266.69,
+      "previousClose": 265.76,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:31.518Z"
+    },
+    "PEP": {
+      "price": 125.89,
+      "previousClose": 125.6,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:35:11.786Z"
+    },
+    "foreign-stock|PEP": {
+      "price": 125.89,
+      "previousClose": 125.6,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-03T07:35:11.786Z"
+    },
+    "NVO": {
+      "price": 37.53,
+      "previousClose": 37.54,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:30.754Z"
+    },
+    "foreign-stock|NVO": {
+      "price": 37.53,
+      "previousClose": 37.54,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:32:30.754Z"
+    },
+    "BJCHI.BK": {
+      "price": 3.16,
+      "previousClose": 3.12,
+      "high": 3.2074,
+      "low": 3.1126,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:33:18.764Z"
+    },
+    "BJCHI": {
+      "price": 3.16,
+      "previousClose": 3.12,
+      "high": 3.2074,
+      "low": 3.1126,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:33:18.764Z"
+    },
+    "thai-stock|BJCHI.BK": {
+      "price": 3.16,
+      "previousClose": 3.12,
+      "high": 3.2074,
+      "low": 3.1126,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:33:18.764Z"
+    },
+    "thai-stock|BJCHI": {
+      "price": 3.16,
+      "previousClose": 3.12,
+      "high": 3.2074,
+      "low": 3.1126,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:33:18.764Z"
+    },
+    "COMAN.BK": {
+      "price": 0.45,
+      "previousClose": 0.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.432Z"
+    },
+    "COMAN": {
+      "price": 0.45,
+      "previousClose": 0.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.432Z"
+    },
+    "thai-stock|COMAN.BK": {
+      "price": 0.45,
+      "previousClose": 0.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.432Z"
+    },
+    "thai-stock|COMAN": {
+      "price": 0.45,
+      "previousClose": 0.43,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.432Z"
+    },
+    "DELTA.BK": {
+      "price": 272,
+      "previousClose": 265,
+      "high": 276.08,
+      "low": 267.92,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:33.815Z"
+    },
+    "DELTA": {
+      "price": 272,
+      "previousClose": 265,
+      "high": 276.08,
+      "low": 267.92,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:33.815Z"
+    },
+    "thai-stock|DELTA.BK": {
+      "price": 272,
+      "previousClose": 265,
+      "high": 276.08,
+      "low": 267.92,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:33.815Z"
+    },
+    "thai-stock|DELTA": {
+      "price": 272,
+      "previousClose": 265,
+      "high": 276.08,
+      "low": 267.92,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:33.815Z"
+    },
+    "HANA.BK": {
+      "price": 53.25,
+      "previousClose": 52.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.971Z"
+    },
+    "HANA": {
+      "price": 53.25,
+      "previousClose": 52.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.971Z"
+    },
+    "thai-stock|HANA.BK": {
+      "price": 53.25,
+      "previousClose": 52.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.971Z"
+    },
+    "thai-stock|HANA": {
+      "price": 53.25,
+      "previousClose": 52.25,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-07T01:33:05.971Z"
+    },
+    "JAS.BK": {
+      "price": 0.77,
+      "previousClose": 0.76,
+      "high": 0.78155,
+      "low": 0.75845,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:56.081Z"
+    },
+    "JAS": {
+      "price": 0.77,
+      "previousClose": 0.76,
+      "high": 0.78155,
+      "low": 0.75845,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:56.081Z"
+    },
+    "thai-stock|JAS.BK": {
+      "price": 0.77,
+      "previousClose": 0.76,
+      "high": 0.78155,
+      "low": 0.75845,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:56.081Z"
+    },
+    "thai-stock|JAS": {
+      "price": 0.77,
+      "previousClose": 0.76,
+      "high": 0.78155,
+      "low": 0.75845,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:34:56.081Z"
+    },
+    "SGC.BK": {
+      "price": 1.66,
+      "previousClose": 1.65,
+      "high": 1.6848999999999998,
+      "low": 1.6351,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:35:04.663Z"
+    },
+    "SGC": {
+      "price": 1.66,
+      "previousClose": 1.65,
+      "high": 1.6848999999999998,
+      "low": 1.6351,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:35:04.663Z"
+    },
+    "thai-stock|SGC.BK": {
+      "price": 1.66,
+      "previousClose": 1.65,
+      "high": 1.6848999999999998,
+      "low": 1.6351,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:35:04.663Z"
+    },
+    "thai-stock|SGC": {
+      "price": 1.66,
+      "previousClose": 1.65,
+      "high": 1.6848999999999998,
+      "low": 1.6351,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:35:04.663Z"
+    },
+    "K-SFRMF": {
+      "price": 15.3201,
+      "previousClose": 15.3201,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:19.057Z"
+    },
+    "mutual-fund|K-SFRMF": {
+      "price": 15.3201,
+      "previousClose": 15.3201,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:19.057Z"
+    },
+    "K-GHRMF": {
+      "price": 13.5657,
+      "previousClose": 13.5657,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:20.275Z"
+    },
+    "mutual-fund|K-GHRMF": {
+      "price": 13.5657,
+      "previousClose": 13.5657,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:20.275Z"
+    },
+    "K-JPRMF": {
+      "price": 26.0765,
+      "previousClose": 26.0765,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:21.470Z"
+    },
+    "mutual-fund|K-JPRMF": {
+      "price": 26.0765,
+      "previousClose": 26.0765,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:21.470Z"
+    },
+    "K-EURMF": {
+      "price": 17.3917,
+      "previousClose": 17.3917,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:22.835Z"
+    },
+    "mutual-fund|K-EURMF": {
+      "price": 17.3917,
+      "previousClose": 17.3917,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:22.835Z"
+    },
+    "KFCASHRMF": {
+      "price": 14.0572,
+      "previousClose": 14.0572,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:24.009Z"
+    },
+    "mutual-fund|KFCASHRMF": {
+      "price": 14.0572,
+      "previousClose": 14.0572,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:24.009Z"
+    },
+    "KFGTECHRMF": {
+      "price": 25.8963,
+      "previousClose": 25.8963,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:24.988Z"
+    },
+    "mutual-fund|KFGTECHRMF": {
+      "price": 25.8963,
+      "previousClose": 25.8963,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:24.988Z"
+    },
+    "KFUSRMF": {
+      "price": 5.8852,
+      "previousClose": 5.8852,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:26.497Z"
+    },
+    "mutual-fund|KFUSRMF": {
+      "price": 5.8852,
+      "previousClose": 5.8852,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:26.497Z"
+    },
+    "SCBRM1": {
+      "price": 15.3949,
+      "previousClose": 15.3949,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:27.628Z"
+    },
+    "mutual-fund|SCBRM1": {
+      "price": 15.3949,
+      "previousClose": 15.3949,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:27.628Z"
+    },
+    "SCBRMS&P500": {
+      "price": 23.1508,
+      "previousClose": 23.1508,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:28.780Z"
+    },
+    "mutual-fund|SCBRMS&P500": {
+      "price": 23.1508,
+      "previousClose": 23.1508,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:28.780Z"
+    },
+    "SCBRMEU": {
+      "price": 19.7136,
+      "previousClose": 19.7136,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:29.904Z"
+    },
+    "mutual-fund|SCBRMEU": {
+      "price": 19.7136,
+      "previousClose": 19.7136,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:29.904Z"
+    },
+    "ES-MRMF": {
+      "price": 13.9011,
+      "previousClose": 13.9011,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:30.941Z"
+    },
+    "mutual-fund|ES-MRMF": {
+      "price": 13.9011,
+      "previousClose": 13.9011,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:30.941Z"
+    },
+    "ES-CORMF": {
+      "price": 10.5742,
+      "previousClose": 10.5742,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:32.086Z"
+    },
+    "mutual-fund|ES-CORMF": {
+      "price": 10.5742,
+      "previousClose": 10.5742,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:32.086Z"
+    },
+    "ES-GQGRMF": {
+      "price": 23.3382,
+      "previousClose": 23.3382,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:33.258Z"
+    },
+    "mutual-fund|ES-GQGRMF": {
+      "price": 23.3382,
+      "previousClose": 23.3382,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:33.258Z"
+    },
+    "ES-ASIARMF": {
+      "price": 18.2376,
+      "previousClose": 18.2376,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:34.230Z"
+    },
+    "mutual-fund|ES-ASIARMF": {
+      "price": 18.2376,
+      "previousClose": 18.2376,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:34.230Z"
+    },
+    "ES-PIPFRMF": {
+      "price": 14.6945,
+      "previousClose": 14.6945,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:35.485Z"
+    },
+    "mutual-fund|ES-PIPFRMF": {
+      "price": 14.6945,
+      "previousClose": 14.6945,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:35.485Z"
+    },
+    "ES-US500RMF": {
+      "price": 42.2745,
+      "previousClose": 42.2745,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:36.647Z"
+    },
+    "mutual-fund|ES-US500RMF": {
+      "price": 42.2745,
+      "previousClose": 42.2745,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:36.647Z"
+    },
+    "LHTPROPRMF": {
+      "price": 14.6802,
+      "previousClose": 14.6802,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:37.757Z"
+    },
+    "mutual-fund|LHTPROPRMF": {
+      "price": 14.6802,
+      "previousClose": 14.6802,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:20:37.757Z"
+    },
+    "thai-stock|ASML": {
+      "price": 1867.31,
+      "previousClose": 1808.49,
+      "dividendRate": 0,
+      "source": "Yahoo Live",
+      "updatedAt": "2026-10-04T14:27:06.398Z"
+    },
+    "thai-stock|GULF.BK": {
+      "price": 59.5,
+      "previousClose": 59.75,
+      "high": 60.39249999999999,
+      "low": 58.6075,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:35:52.978Z"
+    },
+    "thai-stock|GULF": {
+      "price": 59.5,
+      "previousClose": 59.75,
+      "high": 60.39249999999999,
+      "low": 58.6075,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:35:52.978Z"
+    },
+    "GULF": {
+      "price": 59.5,
+      "previousClose": 59.75,
+      "high": 60.39249999999999,
+      "low": 58.6075,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:35:52.978Z"
+    },
+    "GULF.BK": {
+      "price": 59.5,
+      "previousClose": 59.75,
+      "high": 60.39249999999999,
+      "low": 58.6075,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:35:52.978Z"
+    },
+    "thai-stock|ADVANC.BK": {
+      "price": 343,
+      "previousClose": 344,
+      "high": 348.145,
+      "low": 337.855,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:38:28.343Z"
+    },
+    "thai-stock|ADVANC": {
+      "price": 343,
+      "previousClose": 344,
+      "high": 348.145,
+      "low": 337.855,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:38:28.343Z"
+    },
+    "ADVANC": {
+      "price": 343,
+      "previousClose": 344,
+      "high": 348.145,
+      "low": 337.855,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:38:28.343Z"
+    },
+    "ADVANC.BK": {
+      "price": 343,
+      "previousClose": 344,
+      "high": 348.145,
+      "low": 337.855,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T05:38:28.343Z"
+    },
+    "thai-stock|SCBBANKING.BK": {
+      "price": 11.0065,
+      "previousClose": 11.2816625,
+      "high": 11.171597499999999,
+      "low": 10.841402500000001,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T06:20:58.899Z"
+    },
+    "thai-stock|SCBBANKING": {
+      "price": 11.0065,
+      "previousClose": 11.2816625,
+      "high": 11.171597499999999,
+      "low": 10.841402500000001,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T06:20:58.899Z"
+    },
+    "SCBBANKING": {
+      "price": 11.0065,
+      "previousClose": 11.0065,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-06T06:21:25.038Z"
+    },
+    "SCBBANKING.BK": {
+      "price": 11.0065,
+      "previousClose": 11.2816625,
+      "high": 11.171597499999999,
+      "low": 10.841402500000001,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-06T06:20:58.899Z"
+    },
+    "TCLOUD": {
+      "price": 10.7073,
+      "previousClose": 10.7073,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-06T06:21:13.577Z"
+    },
+    "mutual-fund|TCLOUD": {
+      "price": 10.7073,
+      "previousClose": 10.7073,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-06T06:21:13.577Z"
+    },
+    "mutual-fund|SCBBANKING": {
+      "price": 11.0065,
+      "previousClose": 11.0065,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-06T06:21:25.038Z"
+    },
+    "SCBGOLDH": {
+      "price": 18.2172,
+      "previousClose": 18.2172,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:22.120Z"
+    },
+    "mutual-fund|SCBGOLDH": {
+      "price": 18.2172,
+      "previousClose": 18.2172,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:22.120Z"
+    },
+    "ES-ASIA-A": {
+      "price": 19.7009,
+      "previousClose": 19.7009,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:26.919Z"
+    },
+    "mutual-fund|ES-ASIA-A": {
+      "price": 19.7009,
+      "previousClose": 19.7009,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:26.919Z"
+    },
+    "KKP S-PLUS": {
+      "price": 10.9277,
+      "previousClose": 10.9277,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:28.068Z"
+    },
+    "mutual-fund|KKP S-PLUS": {
+      "price": 10.9277,
+      "previousClose": 10.9277,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:28.068Z"
+    },
+    "K-US500X-A(A)": {
+      "price": 16.179,
+      "previousClose": 16.179,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:29.425Z"
+    },
+    "mutual-fund|K-US500X-A(A)": {
+      "price": 16.179,
+      "previousClose": 16.179,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:29.425Z"
+    },
+    "K-SET50": {
+      "price": 41.4833,
+      "previousClose": 41.4833,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:30.621Z"
+    },
+    "mutual-fund|K-SET50": {
+      "price": 41.4833,
+      "previousClose": 41.4833,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:30.621Z"
+    },
+    "SCBNDQ(A)": {
+      "price": 17.6819,
+      "previousClose": 17.6819,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:31.796Z"
+    },
+    "mutual-fund|SCBNDQ(A)": {
+      "price": 17.6819,
+      "previousClose": 17.6819,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:31.796Z"
+    },
+    "SCBWORLD(A)": {
+      "price": 14.0858,
+      "previousClose": 14.0858,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:32.643Z"
+    },
+    "mutual-fund|SCBWORLD(A)": {
+      "price": 14.0858,
+      "previousClose": 14.0858,
+      "dividendRate": 0,
+      "source": "Settrade Nuxt Live",
+      "updatedAt": "2026-10-07T01:35:32.643Z"
+    },
+    "thai-stock|PRINCIPAL IPROPEN-A.BK": {
+      "price": 8.6709,
+      "previousClose": 8.887672499999999,
+      "high": 8.800963499999998,
+      "low": 8.5408365,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:36:46.063Z"
+    },
+    "thai-stock|PRINCIPAL IPROPEN-A": {
+      "price": 8.6709,
+      "previousClose": 8.887672499999999,
+      "high": 8.800963499999998,
+      "low": 8.5408365,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:36:46.063Z"
+    },
+    "PRINCIPAL IPROPEN-A": {
+      "price": 8.6709,
+      "previousClose": 8.887672499999999,
+      "high": 8.800963499999998,
+      "low": 8.5408365,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:36:46.063Z"
+    },
+    "PRINCIPAL IPROPEN-A.BK": {
+      "price": 8.6709,
+      "previousClose": 8.887672499999999,
+      "high": 8.800963499999998,
+      "low": 8.5408365,
+      "dividendRate": 0.3,
+      "source": "Settrade API",
+      "updatedAt": "2026-10-07T01:36:46.063Z"
+    }
+  },
+  "exportDate": "2026-10-11T12:23:53.835Z"
+}
