@@ -12,6 +12,45 @@ var TaxModule = {
   currentTab: 'all',
   storagePrefix: 'family-finance:tax-planner',
 
+  getUserContext() {
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+      const userEmail = (sbData?.user?.email || '').toLowerCase();
+
+      const pageText = document.body ? document.body.innerText : '';
+      const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
+      const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+
+      const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+      let rawName = (nameEl ? nameEl.textContent : '').trim();
+      if (!rawName && userEmail) rawName = userEmail.split('@')[0];
+
+      const isMemberUser = !isExplicitAdmin && (
+        isExplicitMember ||
+        rawName.includes('พลอย') ||
+        rawName.toLowerCase().includes('ploy') ||
+        userEmail.includes('ploy') ||
+        userEmail.includes('member')
+      );
+
+      if (isMemberUser) {
+        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+        return {
+          isMember: true,
+          userName: cleanName,
+          userKey: `member_${cleanName}`
+        };
+      }
+    } catch (e) {}
+
+    return {
+      isMember: false,
+      userName: 'DAD',
+      userKey: 'DAD'
+    };
+  },
+
   groupOrder: [
     'ลดหย่อนทั่วไป',
     'ประกันภัย',
@@ -86,16 +125,19 @@ var TaxModule = {
   },
 
   getStorageKey(year) {
-    return `${this.storagePrefix}:${this.currentUser}:${year}`;
+    const ctx = this.getUserContext();
+    return `${this.storagePrefix}:${ctx.userKey}:${year}`;
   },
 
   loadYearList() {
     try {
-      const savedYears = localStorage.getItem(`${this.storagePrefix}:${this.currentUser}:years`);
+      const ctx = this.getUserContext();
+      this.currentUser = ctx.userName;
+      const savedYears = localStorage.getItem(`${this.storagePrefix}:${ctx.userKey}:years`);
       if (savedYears) {
         this.availableYears = JSON.parse(savedYears);
       }
-      const savedActive = localStorage.getItem(`${this.storagePrefix}:${this.currentUser}:activeYear`);
+      const savedActive = localStorage.getItem(`${this.storagePrefix}:${ctx.userKey}:activeYear`);
       if (savedActive && this.availableYears.includes(savedActive)) {
         this.activeYear = savedActive;
       }
@@ -106,8 +148,9 @@ var TaxModule = {
 
   saveYearList() {
     try {
-      localStorage.setItem(`${this.storagePrefix}:${this.currentUser}:years`, JSON.stringify(this.availableYears));
-      localStorage.setItem(`${this.storagePrefix}:${this.currentUser}:activeYear`, this.activeYear);
+      const ctx = this.getUserContext();
+      localStorage.setItem(`${this.storagePrefix}:${ctx.userKey}:years`, JSON.stringify(this.availableYears));
+      localStorage.setItem(`${this.storagePrefix}:${ctx.userKey}:activeYear`, this.activeYear);
     } catch (e) {}
   },
 
@@ -148,7 +191,8 @@ var TaxModule = {
       console.warn("Fallback to defaults for year " + this.activeYear, e);
     }
 
-    if (this.activeYear === '2026') {
+    const ctx = this.getUserContext();
+    if (!ctx.isMember && this.activeYear === '2026') {
       this.incomes = JSON.parse(JSON.stringify(this.defaultIncomes));
       const inc1 = this.incomes.find(i => i.id === 'inc-40-1');
       if (inc1) inc1.amount = 1017308.50;
@@ -551,6 +595,13 @@ var TaxModule = {
     if (!container) return;
     container.style.display = 'block';
 
+    // ✅ บังคับเช็คตัวตนและโหลดข้อมูลของผู้ใช้นั้นๆ ทุกครั้งก่อนวาดหน้าจอ
+    const ctx = this.getUserContext();
+    if (this.currentUser !== ctx.userName) {
+      this.currentUser = ctx.userName;
+      this.loadState(this.activeYear);
+    }
+
     const s = this.calculateAll();
     const fmt = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtInput = (num) => (num !== undefined && num !== null && num !== 0) ? Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
@@ -713,7 +764,7 @@ var TaxModule = {
                 <button type="button" id="btnAddYearBtn" title="เพิ่มปีภาษีใหม่ เช่น 2025" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer;">
                   + เพิ่มปี
                 </button>
-                <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 6px;">บันทึกอัตโนมัติ - DAD</span>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 6px;">บันทึกอัตโนมัติ - ${this.currentUser}</span>
               </div>
             </div>
           </div>
