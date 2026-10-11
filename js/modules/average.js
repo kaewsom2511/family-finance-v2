@@ -1,5 +1,5 @@
 // ==========================================
-// 1. ฟังก์ชันตัวช่วย (Helpers)
+// 1. ฟังก์ชันตัวช่วย (Helpers) & ตรวจจับสิทธิ์ (RBAC)
 // ==========================================
 function normalizeSymbol(sym) {
   if (!sym) return '';
@@ -14,14 +14,62 @@ function parseNum(val) {
   return isNaN(num) ? 0 : num;
 }
 
-window.currentHolding = window.currentHolding || {
+function getAverageUserContext() {
+  try {
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+    const userEmail = (sbData?.user?.email || '').toLowerCase();
+
+    const pageText = document.body ? document.body.innerText : '';
+    const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
+    const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+
+    const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
+    let rawName = (nameEl ? nameEl.textContent : '').trim();
+    if (!rawName && userEmail) rawName = userEmail.split('@')[0];
+
+    const isMemberUser = !isExplicitAdmin && (
+      isExplicitMember ||
+      rawName.includes('พลอย') ||
+      rawName.toLowerCase().includes('ploy') ||
+      userEmail.includes('ploy') ||
+      userEmail.includes('member')
+    );
+
+    if (isMemberUser) {
+      const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+      // ค้นหาคีย์ที่มีอยู่จริงใน localStorage เช่น stock-trading-log:member:ploy
+      const existingMemberKey = Object.keys(localStorage).find(k => k.startsWith('stock-trading-log:member:'));
+      return {
+        isMember: true,
+        storageKey: existingMemberKey || `stock-trading-log:member:${cleanName}`
+      };
+    }
+  } catch (e) {}
+
+  return {
+    isMember: false,
+    storageKey: 'stock-trading-log:v3'
+  };
+}
+
+// กำหนดค่าเริ่มต้นตามสิทธิ์ผู้ใช้ (Member จะไม่ดึง ALLY ของ Admin มาค้างไว้)
+const _userCtx = getAverageUserContext();
+window.currentHolding = window.currentHolding || (_userCtx.isMember ? {
+  shares: 0,
+  avgCost: 0,
+  totalCost: 0,
+  txCount: 0,
+  marketPrice: 0,
+  symbol: ''
+} : {
   shares: 11000,
   avgCost: 4.90,
   totalCost: 53882.60,
   txCount: 3,
   marketPrice: 4.90,
   symbol: 'ALLY'
-};
+});
 
 // ==========================================
 // 2. ฟังก์ชันดึงประวัติจากพอร์ต (loadFromPortfolio)
@@ -37,8 +85,11 @@ function loadFromPortfolio() {
     rawAssetValue = rawAssetValue.split('(')[0].trim();
   }
   const targetSymbol = normalizeSymbol(rawAssetValue);
-  const rawLog = localStorage.getItem('stock-trading-log:v3') || 
-                 localStorage.getItem('wealthport:avg-cost-ledger:v1');
+
+  // ดึงข้อมูลตาม Storage Key ของผู้ใช้ปัจจุบัน
+  const ctx = getAverageUserContext();
+  const rawLog = localStorage.getItem(ctx.storageKey) || 
+                 (!ctx.isMember ? localStorage.getItem('wealthport:avg-cost-ledger:v1') : null);
   if (!rawLog) return;
 
   try {
@@ -120,7 +171,7 @@ function loadFromPortfolio() {
       symbol: targetSymbol
     };
 
-    // อัปเดตการ์ดสรุป 4 ใบด้านบนตาม ID จริงใน DevTools
+    // อัปเดตการ์ดสรุป 4 ใบด้านบน
     const cardValues = document.querySelectorAll('.card-value, .stat-val, .summary-card-val');
     const elShares = document.getElementById('disp-shares') || document.getElementById('avgCostShares') || cardValues[0];
     const elAvg = document.getElementById('disp-avg') || document.getElementById('avgCostPrice') || cardValues[1];
@@ -246,15 +297,15 @@ function updateTargetComparison() {
   const targetAvg = parseNum(targetAvgInput ? targetAvgInput.value : 0);
   const extraBudget = parseNum(extraMoneyInput ? extraMoneyInput.value : 0);
 
-  const currentShares = (window.currentHolding && window.currentHolding.shares > 0)
+  const currentShares = (window.currentHolding && window.currentHolding.shares !== undefined)
     ? window.currentHolding.shares
-    : parseNum(document.getElementById('disp-shares')?.textContent || 11000);
+    : parseNum(document.getElementById('disp-shares')?.textContent || 0);
 
-  const currentAvg = (window.currentHolding && window.currentHolding.avgCost > 0)
+  const currentAvg = (window.currentHolding && window.currentHolding.avgCost !== undefined)
     ? window.currentHolding.avgCost
-    : parseNum(document.getElementById('disp-avg')?.textContent || 4.90);
+    : parseNum(document.getElementById('disp-avg')?.textContent || 0);
 
-  const currentTotalCost = (window.currentHolding && window.currentHolding.totalCost > 0)
+  const currentTotalCost = (window.currentHolding && window.currentHolding.totalCost !== undefined)
     ? window.currentHolding.totalCost
     : (currentShares * currentAvg);
 
@@ -267,7 +318,7 @@ function updateTargetComparison() {
     extraShares = extraBudget / buyPrice;
     newTotalSharesFromMoney = currentShares + extraShares;
     newTotalCostFromMoney = currentTotalCost + extraBudget;
-    newAvgFromMoney = newTotalCostFromMoney / newTotalSharesFromMoney;
+    newAvgFromMoney = newTotalSharesFromMoney > 0 ? (newTotalCostFromMoney / newTotalSharesFromMoney) : 0;
   }
 
   let needShares = 0;
@@ -280,7 +331,7 @@ function updateTargetComparison() {
     }
   }
 
-  // 1. อัปเดตการ์ดย่อย 3 ใบตาม ID จริงใน average.html
+  // 1. อัปเดตการ์ดย่อย 3 ใบ
   const elNeedShares = document.getElementById('res-target-shares');
   const elNeedMoney = document.getElementById('res-target-money');
   const elNewAvg = document.getElementById('res-new-avg');
@@ -311,7 +362,6 @@ function updateTargetComparison() {
     const elAfterTotal = document.getElementById('cmpAfterTotal');
     const elBadge = document.getElementById('avgStrategyBadge');
 
-    // ปรับทศนิยมหุ้นให้เหลือ 2 ตำแหน่ง
     const extraSharesFormatted = extraShares.toLocaleString(undefined, { 
       minimumFractionDigits: 0, 
       maximumFractionDigits: 2 
@@ -333,12 +383,7 @@ function updateTargetComparison() {
     if (elDynamicText) {
       elDynamicText.innerHTML = `💡 หากซื้อเพิ่ม <b>${extraSharesFormatted} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> (ใช้เงิน <b>${extraBudget.toLocaleString(undefined, {minimumFractionDigits: 2})} ฿</b>) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>${currentAvg.toFixed(2)} ฿</b> เป็น <b>${newAvgFromMoney.toFixed(2)} ฿</b>`;
     }
-    if (elDynamicText) {
-      elDynamicText.innerHTML = `💡 หากซื้อเพิ่ม <b>${extraSharesFormatted} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> (ใช้เงิน <b>${extraBudget.toLocaleString(undefined, {minimumFractionDigits: 2})} ฿</b>) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>${currentAvg.toFixed(2)} ฿</b> เป็น <b>${newAvgFromMoney.toFixed(2)} ฿</b>`;
-    }
 
-    // อัปเดตข้อความในการ์ดย่อยใบที่ 3 ให้เป็น 2 ตำแหน่งด้วย
-    const elNewShares = document.getElementById('res-new-shares');
     if (elNewShares) {
       elNewShares.textContent = `ซื้อได้ ${extraSharesFormatted} หุ้น`;
     }
@@ -377,17 +422,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.querySelector(sel);
     if (el) el.addEventListener('input', updateTargetComparison);
   });
+
   // รันดึงข้อมูลและคำนวณอัตโนมัติตอนเปิดหน้าเว็บ
   setTimeout(() => {
+    const ctx = getAverageUserContext();
     const selectPort = document.getElementById('select-port') || document.getElementById('avgImportPortfolio');
     const selectAsset = document.getElementById('select-asset') || document.getElementById('avgImportSymbol');
 
-    if (selectPort && !selectPort.value) selectPort.value = 'BLS';
-    if (selectAsset) {
-      for (let opt of selectAsset.options) {
-        if (opt.value.includes('ALLY') || opt.text.includes('ALLY')) {
-          selectAsset.value = opt.value;
-          break;
+    if (!ctx.isMember) {
+      // ถ้าเป็น Admin (พ่อบี) ให้เลือก BLS และ ALLY ตามเดิม
+      if (selectPort && !selectPort.value) selectPort.value = 'BLS';
+      if (selectAsset) {
+        for (let opt of selectAsset.options) {
+          if (opt.value.includes('ALLY') || opt.text.includes('ALLY')) {
+            selectAsset.value = opt.value;
+            break;
+          }
+        }
+      }
+    } else {
+      // ถ้าเป็น Member (น้องพลอย) ให้เลือกสินทรัพย์ตัวแรกที่มีใน Dropdown ของตนเอง
+      if (selectAsset && selectAsset.options.length > 0) {
+        // ข้าม option แรกที่เป็นหัวข้อถ้ามี หรือเลือกตัวแรกที่มีรายการ
+        for (let opt of selectAsset.options) {
+          if (opt.value && opt.value !== 'ALL') {
+            selectAsset.value = opt.value;
+            break;
+          }
         }
       }
     }
@@ -401,8 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const inExtra = document.getElementById('avgTargetExtra') || document.querySelector('input[placeholder*="20,000"]');
 
     if (inBuy) inBuy.value = '';
-if (inTarget) inTarget.value = '';
-if (inExtra) inExtra.value = '';
+    if (inTarget) inTarget.value = '';
+    if (inExtra) inExtra.value = '';
 
     if (typeof updateTargetComparison === 'function') {
       updateTargetComparison();
