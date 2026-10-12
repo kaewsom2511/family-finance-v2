@@ -301,34 +301,39 @@ var CashFlowModule = {
   },
 
     getSystemCategories() {
+    if (typeof SettingsModule !== 'undefined' && typeof SettingsModule.getCategories === 'function') {
+      return SettingsModule.getCategories();
+    }
     try {
-      const raw = localStorage.getItem('family-finance:categories:v1');
+      const ctx = this.getUserContext();
+      const catKey = ctx.isMember 
+        ? ctx.storageKey.replace('cashflow', 'categories') 
+        : 'family-finance:categories:v1';
+      const raw = localStorage.getItem(catKey);
       if (raw) return JSON.parse(raw);
     } catch (e) {}
-    if (typeof SettingsModule !== 'undefined' && SettingsModule.defaultCategories) {
-      return SettingsModule.defaultCategories;
-    }
     return this.fallbackCategories;
   },
 
   getAllAccountNames() {
+    if (typeof SettingsModule !== 'undefined' && typeof SettingsModule.getAccounts === 'function') {
+      const accs = SettingsModule.getAccounts();
+      if (Array.isArray(accs) && accs.length > 0) {
+        return accs.map(a => a.name);
+      }
+    }
     try {
-      const raw = localStorage.getItem('family-finance:accounts:v1');
+      const ctx = this.getUserContext();
+      const accKey = ctx.isMember 
+        ? ctx.storageKey.replace('cashflow', 'master-accounts') 
+        : 'family-finance:master-accounts:v1';
+      const raw = localStorage.getItem(accKey);
       if (raw) {
         const accs = JSON.parse(raw);
-        if (Array.isArray(accs) && accs.length > 0) {
-          const names = accs.map(a => a.name);
-          if (!names.includes('Truemoney')) names.push('Truemoney');
-          return names;
-        }
+        if (Array.isArray(accs) && accs.length > 0) return accs.map(a => a.name);
       }
     } catch (e) {}
-    return [
-      'เงินสด', 'กรุงเทพ', 'กรุงไทย', 'ทหารไทย', 'ไทยพาณิชย์', 'ธกส.', 
-      'กสิกรไทย', 'เป๋าตัง', 'Truemoney', 'Dime! Save (3%)', 'K-eSavings', 'SCB ออมทรัพย์', 
-      'ออมทรัพย์ สอท', 'ทุนเรือนหุ้น สอท', 'กองทุนสำรองเลี้ยงชีพ', 
-      'พอร์ต BLS', 'Finnomena', 'บัตรเครดิตกรุงศรี', 'บัตรเครดิตกรุงไทย', 'บัตรเครดิตทีทีบี'
-    ];
+    return ['เงินสด', 'กสิกรไทย', 'ไทยพาณิชย์', 'Truemoney'];
   },
 
   bindEvents() {
