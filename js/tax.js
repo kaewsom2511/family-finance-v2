@@ -3,7 +3,7 @@
  * Multi-Year Tax Planner & Dividend Tax Credit Engine for Family Finance
  * Fixed: Minimal Sidebar with "กลับหน้าหลัก" right below "คำนวณภาษี",
  * Sticky positioning, Multi-year support, Dynamic Insights, and Net Income Tax Rate.
- * Added: JSON Export & Import with User Isolation Support.
+ * Added: JSON Export & Import with User Isolation Support and Ownership Metadata Validation.
  */
 
 var TaxModule = {
@@ -277,6 +277,14 @@ var TaxModule = {
       });
 
       const backupPayload = {
+        _metadata: {
+          system: 'FamilyFinance',
+          module: 'TaxPlanner',
+          ownerRole: ctx.isMember ? 'MEMBER' : 'ADMIN',
+          ownerUser: ctx.userName,
+          userKey: ctx.userKey,
+          exportDate: new Date().toISOString()
+        },
         appName: 'Family Finance Tax Planner',
         version: '2.0',
         user: ctx.userKey,
@@ -322,6 +330,21 @@ var TaxModule = {
         try {
           const parsed = JSON.parse(event.target.result);
           const ctx = this.getUserContext();
+
+          // 🔒 ตรวจสอบสิทธิ์เจ้าของไฟล์ JSON
+          if (parsed._metadata) {
+            const fileRole = (parsed._metadata.ownerRole || '').toUpperCase();
+            const fileUser = parsed._metadata.ownerUser || '';
+
+            if (ctx.isMember && fileRole === 'ADMIN') {
+              alert(`⚠️ ไม่อนุญาตให้นำเข้า!\nไฟล์นี้เป็นข้อมูลภาษีของแอดมิน (${fileUser || 'DAD'}) ไม่สามารถนำเข้าสู่บัญชีสมาชิกได้`);
+              return;
+            }
+            if (!ctx.isMember && fileRole === 'MEMBER') {
+              const confirmAdmin = confirm(`⚠️ คำเตือน: ไฟล์นี้เป็นข้อมูลของสมาชิก (${fileUser})\nคุณต้องการนำเข้าข้อมูลนี้ทับลงในบัญชีของคุณหรือไม่?`);
+              if (!confirmAdmin) return;
+            }
+          }
 
           // 1. นำเข้าข้อมูลทุกปีถ้ามีระบุในไฟล์
           if (parsed.allYearsData && typeof parsed.allYearsData === 'object') {
