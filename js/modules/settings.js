@@ -1,19 +1,20 @@
 /**
  * js/modules/settings.js
  * System Settings & Financial Category / Account / Member Management Module
+ * (Fully Isolated: Admin vs Member Mode)
  */
 
 var SettingsModule = {
-  categoriesStorageKey: 'family-finance:categories:v1',
-  accountsStorageKey: 'family-finance:master-accounts:v1',
   activeTab: 'categories', // 'categories' | 'accounts' | 'members'
   activeCategoryGroup: 'เงินออมและลงทุน',
   editingCategoryName: null,
   cachedMembers: [],
   currentUserRole: 'member',
   currentUserId: null,
+  currentUserName: 'member',
 
-  defaultCategories: {
+  // ค่าเริ่มต้นสำหรับ Admin (DAD)
+  defaultAdminCategories: {
     'รายรับ': [
       'เงินเดือน', 'โบนัส', 'ค่าคอมมิชชั่น', 'เงินปันผล', 
       'ค่าบ้านเช่า', 'ดอกเบี้ย', 'เงินคืน NT', 'เงินกู้/ยืม', 
@@ -37,11 +38,11 @@ var SettingsModule = {
     'เงินออมและลงทุน': [
       'ออมทรัพย์ สอท', 'INOVESTX RMF', 'INOVESTX ROBO', 'K+', 
       'กองทุนสำรองเลี้ยงชีพ', 'Finnomina', 'ทุนเรือนหุ้น สอท', 
-      'SCB Click', 'DIME PLOY', 'DIME DAD', 'หุ้นไทย BLS', 'BLS'
+      'SCB Click', 'DIME DAD', 'หุ้นไทย BLS', 'BLS'
     ]
   },
 
-  defaultAccounts: [
+  defaultAdminAccounts: [
     { id: 'acc-1', name: 'เงินสด', type: 'เงินสด' },
     { id: 'acc-2', name: 'กรุงเทพ', type: 'ธนาคาร' },
     { id: 'acc-3', name: 'กรุงไทย', type: 'ธนาคาร' },
@@ -65,6 +66,51 @@ var SettingsModule = {
     { id: 'acc-21', name: 'บัตรเครดิตทีทีบี', type: 'บัตรเครดิต' }
   ],
 
+  // ค่าเริ่มต้นสำหรับ Member (ลูก/น้องพลอย) - สะอาดตา ไม่มีข้อมูลของพ่อ
+  defaultMemberCategories: {
+    'รายรับ': [
+      'เงินเดือน/ค่าขนม', 'รับจากคุณพ่อ', 'รับจากคุณแม่', 'โบนัส', 'รายได้พิเศษ', 'เงินคืน/รางวัล'
+    ],
+    'รายจ่าย': [
+      'ค่าอาหาร/เครื่องดื่ม', 'ของใช้ส่วนตัว', 'ค่าเดินทาง/BTS/MRT', 
+      'ความบันเทิง/ช็อปปิ้ง', 'หนังสือ/การเรียน', 'สุขภาพ/ยา', 'รายจ่ายอื่นๆ'
+    ],
+    'บิล': [
+      'ค่าโทรศัพท์/เน็ต', 'สมัครสมาชิก/แอป', 'บิลอื่นๆ'
+    ],
+    'หนี้สิน': [
+      'ยืม/คืนเพื่อน', 'ภาระส่วนตัว'
+    ],
+    'เงินออมและลงทุน': [
+      'DIME PLOY', 'เงินออมฉุกเฉิน', 'เงินฝากดอกเบี้ยสูง'
+    ]
+  },
+
+  defaultMemberAccounts: [
+    { id: 'm-acc-1', name: 'เงินสด', type: 'เงินสด' },
+    { id: 'm-acc-2', name: 'กสิกรไทย', type: 'ธนาคาร' },
+    { id: 'm-acc-3', name: 'ไทยพาณิชย์', type: 'ธนาคาร' },
+    { id: 'm-acc-4', name: 'Truemoney', type: 'กระเป๋าเงิน' },
+    { id: 'm-acc-5', name: 'DIME PLOY', type: 'ดิจิทัล' }
+  ],
+
+  // กำหนด Storage Key แบบแยกตามบทบาทและชื่อผู้ใช้
+  getCategoriesStorageKey() {
+    if (this.currentUserRole === 'admin') {
+      return 'family-finance:categories:v1';
+    }
+    const safeUser = (this.currentUserName || 'ploy').toLowerCase().replace(/\s+/g, '_');
+    return `family-finance:categories:member:${safeUser}`;
+  },
+
+  getAccountsStorageKey() {
+    if (this.currentUserRole === 'admin') {
+      return 'family-finance:master-accounts:v1';
+    }
+    const safeUser = (this.currentUserName || 'ploy').toLowerCase().replace(/\s+/g, '_');
+    return `family-finance:master-accounts:member:${safeUser}`;
+  },
+
   async init() {
     await this.checkAuthRole();
     this.bindEvents();
@@ -79,11 +125,12 @@ var SettingsModule = {
       this.currentUserId = session.user.id;
       const { data: profile } = await supabaseClient
         .from('profiles')
-        .select('role')
+        .select('role, full_name, email')
         .eq('id', this.currentUserId)
         .single();
       if (profile) {
         this.currentUserRole = profile.role || 'member';
+        this.currentUserName = profile.full_name || (session.user.email ? session.user.email.split('@')[0] : 'member');
       }
     } catch (e) {
       console.warn('Could not verify role:', e);
@@ -92,29 +139,37 @@ var SettingsModule = {
 
   getCategories() {
     try {
-      const data = localStorage.getItem(this.categoriesStorageKey);
+      const key = this.getCategoriesStorageKey();
+      const data = localStorage.getItem(key);
       if (data) return JSON.parse(data);
     } catch(e) {}
-    return this.defaultCategories;
+    return this.currentUserRole === 'admin' 
+      ? JSON.parse(JSON.stringify(this.defaultAdminCategories)) 
+      : JSON.parse(JSON.stringify(this.defaultMemberCategories));
   },
 
   saveCategories(cats) {
     try {
-      localStorage.setItem(this.categoriesStorageKey, JSON.stringify(cats));
+      const key = this.getCategoriesStorageKey();
+      localStorage.setItem(key, JSON.stringify(cats));
     } catch(e) {}
   },
 
   getAccounts() {
     try {
-      const data = localStorage.getItem(this.accountsStorageKey);
+      const key = this.getAccountsStorageKey();
+      const data = localStorage.getItem(key);
       if (data) return JSON.parse(data);
     } catch(e) {}
-    return this.defaultAccounts;
+    return this.currentUserRole === 'admin' 
+      ? JSON.parse(JSON.stringify(this.defaultAdminAccounts)) 
+      : JSON.parse(JSON.stringify(this.defaultMemberAccounts));
   },
 
   saveAccounts(accs) {
     try {
-      localStorage.setItem(this.accountsStorageKey, JSON.stringify(accs));
+      const key = this.getAccountsStorageKey();
+      localStorage.setItem(key, JSON.stringify(accs));
     } catch(e) {}
   },
 
@@ -171,7 +226,7 @@ var SettingsModule = {
         return;
       }
 
-      // 4. กดปุ่มแก้ไข ✏️ หมวดหมู่ (Inline Edit)
+      // 4. Inline Edit หมวดหมู่
       const editCatBtn = e.target.closest('.btn-edit-cat');
       if (editCatBtn) {
         this.editingCategoryName = editCatBtn.dataset.name;
@@ -508,7 +563,7 @@ var SettingsModule = {
     const accounts = this.getAccounts();
     const isAdmin = this.currentUserRole === 'admin';
 
-    // แถบ 3 แท็บ (แท็บสมาชิกครอบครัวจะแสดงเมื่อเป็น Admin)
+    // แถบ 3 แท็บ (แท็บสมาชิกครอบครัวจะแสดงเมื่อเป็น Admin เท่านั้น)
     const tabHeadersHtml = `
       <div style="display: flex; gap: 18px; border-bottom: 2px solid #e2e8f0; margin-bottom: 22px;">
         <button class="settings-main-tab" data-tab="categories" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'categories' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'categories' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
