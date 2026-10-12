@@ -126,6 +126,11 @@
               <span class="sidebar-icon">📅</span> สรุปรายเดือน รายปี
             </a>
           </li>
+          <li>
+            <a href="javascript:void(0)" onclick="window.BackupModule.openBackupModal()" class="sidebar-link">
+              <span class="sidebar-icon">📦</span> สำรอง / กู้คืนข้อมูลรวม
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -203,6 +208,7 @@
   <script src="js/supabase.js"></script>  
   <script src="js/modules/portfolio.js"></script>
   <script src="js/modules/dividend-planner.js"></script>
+  <script src="js/modules/backup.js"></script>
   <script>
     // สลับเปิด-ปิด กลุ่มเมนูย่อย
     function toggleNavGroup(groupId) {
