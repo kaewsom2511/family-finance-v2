@@ -68,17 +68,14 @@ const stockPricePresetMap = {
 
 function getPortfolioUserContext() {
   try {
-    // 1. ตรวจสอบจาก Session ของ Supabase ใน LocalStorage ก่อนทันที (เร็วที่สุด ไม่ต้องรอ DOM)
     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
     const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
     const userEmail = (sbData?.user?.email || '').toLowerCase();
 
-    // 2. ตรวจสอบข้อความบนหน้าจอร่วมด้วย
     const pageText = document.body ? document.body.innerText : '';
     const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
     const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
 
-    // ดึงชื่อ User
     const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
     let rawName = (nameEl ? nameEl.textContent : '').trim();
     if (!rawName && userEmail) {
@@ -97,12 +94,13 @@ function getPortfolioUserContext() {
       const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
       return {
         isMember: true,
+        memberName: cleanName,
         memberKey: `stock-trading-log:member:${cleanName}`
       };
     }
   } catch (e) {}
 
-  return { isMember: false, memberKey: null };
+  return { isMember: false, memberName: 'DAD', memberKey: null };
 }
 
 function savePortfolioDataHelper(data) {
@@ -932,12 +930,33 @@ var PortfolioModule = {
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target.result);
-        const { isMember } = getPortfolioUserContext();
+        const { isMember, memberName } = getPortfolioUserContext();
+
+        // 🔒 ตรวจสอบสิทธิ์เจ้าของไฟล์ JSON
+        if (json._metadata) {
+          const fileRole = (json._metadata.ownerRole || '').toUpperCase();
+          const fileUser = json._metadata.ownerUser || '';
+
+          if (isMember && fileRole === 'ADMIN') {
+            alert(`⚠️ ไม่อนุญาตให้นำเข้า!\nไฟล์นี้เป็นข้อมูลพอร์ตของแอดมิน (${fileUser || 'DAD'}) ไม่สามารถนำเข้าสู่บัญชีสมาชิกได้`);
+            inputEl.value = '';
+            return;
+          }
+          if (!isMember && fileRole === 'MEMBER') {
+            const confirmAdmin = confirm(`⚠️ คำเตือน: ไฟล์นี้เป็นข้อมูลพอร์ตของสมาชิก (${fileUser})\nคุณต้องการนำเข้าข้อมูลนี้ทับลงในบัญชีของคุณหรือไม่?`);
+            if (!confirmAdmin) {
+              inputEl.value = '';
+              return;
+            }
+          }
+        }
 
         // 1. สกัดข้อมูลพอร์ตและรายการเทรดออกมาจาก JSON
         let portData = null;
         if (json['stock-trading-log:v3']) {
           portData = json['stock-trading-log:v3'];
+        } else if (json['stock-trading-log:member:' + memberName]) {
+          portData = json['stock-trading-log:member:' + memberName];
         } else if (json.portfolios || json.trades) {
           portData = json;
         }
@@ -958,27 +977,51 @@ var PortfolioModule = {
         }
 
         alert('นำเข้าข้อมูลพอร์ตสำเร็จเรียบร้อยแล้ว!');
+        inputEl.value = '';
         this.render();
       } catch (err) {
         alert('รูปแบบไฟล์ JSON ไม่ถูกต้อง: ' + err.message);
+        inputEl.value = '';
       }
     };
     reader.readAsText(file);
   },
 
   handleExportJson() {
-    let currentCache = getQuoteCacheHelper();
-    const fullBackup = {
-      'stock-trading-log:v3': getPortfolioDataHelper(),
-      'wealthport:avg-cost-ledger:v1': (typeof DataStore !== 'undefined' && DataStore.getAvgCostLedger) ? DataStore.getAvgCostLedger() : {},
-      'stock-trading-log:quote-cache:v1': currentCache,
-      exportDate: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `wealthport-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
+    try {
+      const { isMember, memberName, memberKey } = getPortfolioUserContext();
+      const currentPortKey = isMember ? memberKey : 'stock-trading-log:v3';
+      const portData = getPortfolioDataHelper();
+
+      const exportPayload = {
+        _metadata: {
+          system: 'FamilyFinance',
+          module: 'Portfolio',
+          ownerRole: isMember ? 'MEMBER' : 'ADMIN',
+          ownerUser: isMember ? memberName : 'DAD',
+          exportDate: new Date().toISOString()
+        },
+        [currentPortKey]: portData
+      };
+
+      if (!isMember) {
+        const ledger = localStorage.getItem('wealthport:avg-cost-ledger:v1');
+        if (ledger) exportPayload['wealthport:avg-cost-ledger:v1'] = JSON.parse(ledger);
+        const quotes = localStorage.getItem('stock-trading-log:quote-cache:v1');
+        if (quotes) exportPayload['stock-trading-log:quote-cache:v1'] = JSON.parse(quotes);
+      }
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `wealthport-backup-${dateStr}-${isMember ? memberName : 'DAD'}.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      alert('ส่งออกไฟล์พอร์ตไม่สำเร็จ: ' + err.message);
+    }
   },
 
   openAverageCostModal(defaultSymbol = "") {
