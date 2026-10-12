@@ -1,284 +1,296 @@
 /**
  * js/modules/backup.js
- * One-Click Full Family Backup & Restore Engine
- * Isolates Admin (Full System) vs Member (Personal Data) backups.
+ * One-Click Full System Backup & Restore Module
+ * Handles cross-module data aggregation (Cashflow, Portfolio, Tax, Categories, Accounts)
+ * with strict role-based isolation (ADMIN vs MEMBER).
  */
 
-var BackupModule = {
-  getUserContext() {
-    try {
-      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
-      const userEmail = (sbData?.user?.email || '').toLowerCase();
+(function () {
+  const BackupModule = {
+    // ดึงข้อมูลตัวตนและบทบาทของผู้ใช้ปัจจุบัน
+    async getUserContext() {
+      let role = 'member';
+      let name = 'member';
 
-      const pageText = document.body ? document.body.innerText : '';
-      const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
-      const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
+      if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        try {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session && session.user) {
+            const { data: profile } = await supabaseClient
+              .from('profiles')
+              .select('role, full_name, email')
+              .eq('id', session.user.id)
+              .single();
 
-      const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
-      let rawName = (nameEl ? nameEl.textContent : '').trim();
-      if (!rawName && userEmail) rawName = userEmail.split('@')[0];
-
-      const isMemberUser = !isExplicitAdmin && (
-        isExplicitMember ||
-        rawName.includes('พลอย') ||
-        rawName.toLowerCase().includes('ploy') ||
-        userEmail.includes('ploy') ||
-        userEmail.includes('member')
-      );
-
-      if (isMemberUser) {
-        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
-        return {
-          isMember: true,
-          userName: cleanName,
-          userKey: `member_${cleanName}`
-        };
+            if (profile) {
+              role = profile.role || 'member';
+              name = profile.full_name || (session.user.email ? session.user.email.split('@')[0] : 'member');
+            }
+          }
+        } catch (e) {
+          console.warn('BackupModule: Could not fetch user context from Supabase', e);
+        }
       }
-    } catch (e) {}
 
-    return {
-      isMember: false,
-      userName: 'DAD',
-      userKey: 'DAD'
-    };
-  },
-
-  // 1. ฟังก์ชันส่งออกรวมทุกโมดูล
-  exportFullBackup() {
-    try {
-      const ctx = this.getUserContext();
-      const dateStr = new Date().toISOString().slice(0, 10);
-      const backupPayload = {
-        _metadata: {
-          system: 'FamilyFinance',
-          type: 'FULL_BACKUP',
-          ownerRole: ctx.isMember ? 'MEMBER' : 'ADMIN',
-          ownerUser: ctx.userName,
-          userKey: ctx.userKey,
-          exportDate: new Date().toISOString()
-        },
-        cashflow: null,
-        portfolio: null,
-        tax: {
-          years: [],
-          activeYear: null,
-          data: {}
-        },
-        ledger: null
+      return {
+        role,
+        name,
+        isDad: role === 'admin'
       };
+    },
 
-      if (ctx.isMember) {
-        // --- กรณี Member: เก็บเฉพาะของ Member ---
-        // Cashflow
-        const cfKey = `family-finance:cashflow:member:${ctx.userName}`;
-        const cfData = localStorage.getItem(cfKey);
-        if (cfData) backupPayload.cashflow = JSON.parse(cfData);
+    // แสดง Modal สำรอง / กู้คืนข้อมูล
+    async openBackupModal() {
+      const user = await this.getUserContext();
+      let modal = document.getElementById('fullBackupModal');
 
-        // Portfolio
-        const portKey = `stock-trading-log:member:${ctx.userName}`;
-        const portData = localStorage.getItem(portKey);
-        if (portData) backupPayload.portfolio = JSON.parse(portData);
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'fullBackupModal';
+        modal.style.cssText = `
+          display: flex; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7);
+          backdrop-filter: blur(4px); z-index: 10000; align-items: center; justify-content: center;
+          padding: 16px; font-family: 'Sarabun', sans-serif;
+        `;
 
-        // Tax Planner
-        const taxYearsKey = `family-finance:tax-planner:${ctx.userKey}:years`;
-        const taxYears = localStorage.getItem(taxYearsKey);
-        if (taxYears) backupPayload.tax.years = JSON.parse(taxYears);
-
-        const activeYearKey = `family-finance:tax-planner:${ctx.userKey}:activeYear`;
-        backupPayload.tax.activeYear = localStorage.getItem(activeYearKey) || '2026';
-
-        (backupPayload.tax.years || ['2026', '2025']).forEach(yr => {
-          const item = localStorage.getItem(`family-finance:tax-planner:${ctx.userKey}:${yr}`);
-          if (item) backupPayload.tax.data[yr] = JSON.parse(item);
-        });
-
-      } else {
-        // --- กรณี Admin (DAD): รวมข้อมูลทั้งหมด ---
-        // Cashflow
-        const cfRaw = localStorage.getItem('family-finance:cashflow:v2') 
-                   || localStorage.getItem('family-finance:cashflow:v1') 
-                   || localStorage.getItem('family-finance-db')
-                   || localStorage.getItem('transactions');
-        if (cfRaw) backupPayload.cashflow = JSON.parse(cfRaw);
-
-        // Portfolio
-        const portRaw = localStorage.getItem('stock-trading-log:v3');
-        if (portRaw) backupPayload.portfolio = JSON.parse(portRaw);
-
-        // Ledger
-        const ledgerRaw = localStorage.getItem('wealthport:avg-cost-ledger:v1');
-        if (ledgerRaw) backupPayload.ledger = JSON.parse(ledgerRaw);
-
-        // Tax Planner
-        const taxYears = localStorage.getItem(`family-finance:tax-planner:DAD:years`);
-        if (taxYears) backupPayload.tax.years = JSON.parse(taxYears);
-        backupPayload.tax.activeYear = localStorage.getItem(`family-finance:tax-planner:DAD:activeYear`) || '2026';
-
-        (backupPayload.tax.years || ['2026', '2025']).forEach(yr => {
-          const item = localStorage.getItem(`family-finance:tax-planner:DAD:${yr}`);
-          if (item) backupPayload.tax.data[yr] = JSON.parse(item);
-        });
-      }
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `FamilyFinance_FullBackup_${ctx.userName}_${dateStr}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-
-      alert(`✅ สำรองข้อมูลทั้งหมดของ ${ctx.userName} สำเร็จแล้ว!`);
-    } catch (err) {
-      alert('เกิดข้อผิดพลาดในการสำรองข้อมูลรวม: ' + err.message);
-    }
-  },
-
-  // 2. ฟังก์ชันกู้คืนข้อมูลรวม
-  importFullBackup(inputEl) {
-    const file = inputEl.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target.result);
-        const ctx = this.getUserContext();
-
-        // 🔒 ตรวจสอบสิทธิ์เจ้าของไฟล์
-        if (json._metadata) {
-          const fileRole = (json._metadata.ownerRole || '').toUpperCase();
-          const fileUser = json._metadata.ownerUser || '';
-
-          if (ctx.isMember && fileRole === 'ADMIN') {
-            alert(`⚠️ ไม่อนุญาตให้นำเข้า!\nไฟล์นี้เป็นข้อมูลสำรองของแอดมิน (${fileUser || 'DAD'}) ไม่สามารถนำเข้าสู่บัญชีสมาชิกได้`);
-            inputEl.value = '';
-            return;
-          }
-
-          if (!ctx.isMember && fileRole === 'MEMBER') {
-            const confirmAdmin = confirm(`⚠️ คำเตือน: ไฟล์นี้เป็นข้อมูลสำรองของสมาชิก (${fileUser})\nคุณต้องการกู้คืนข้อมูลนี้ทับบัญชีของคุณหรือไม่?`);
-            if (!confirmAdmin) {
-              inputEl.value = '';
-              return;
-            }
-          }
-        }
-
-        const confirmRestore = confirm(`⚠️ ยืนยันการกู้คืนข้อมูลทั้งหมดของ "${ctx.userName}"?\nการดำเนินการนี้จะเขียนทับข้อมูล Cashflow, Portfolio และ Tax เดิมในระบบ`);
-        if (!confirmRestore) {
-          inputEl.value = '';
-          return;
-        }
-
-        if (ctx.isMember) {
-          // --- Restore ให้ Member ---
-          if (json.cashflow) {
-            localStorage.setItem(`family-finance:cashflow:member:${ctx.userName}`, JSON.stringify(json.cashflow));
-          }
-          if (json.portfolio) {
-            localStorage.setItem(`stock-trading-log:member:${ctx.userName}`, JSON.stringify(json.portfolio));
-          }
-          if (json.tax) {
-            if (json.tax.years) localStorage.setItem(`family-finance:tax-planner:${ctx.userKey}:years`, JSON.stringify(json.tax.years));
-            if (json.tax.activeYear) localStorage.setItem(`family-finance:tax-planner:${ctx.userKey}:activeYear`, json.tax.activeYear);
-            if (json.tax.data) {
-              Object.keys(json.tax.data).forEach(yr => {
-                localStorage.setItem(`family-finance:tax-planner:${ctx.userKey}:${yr}`, JSON.stringify(json.tax.data[yr]));
-              });
-            }
-          }
-        } else {
-          // --- Restore ให้ Admin (DAD) ---
-          if (json.cashflow) {
-            localStorage.setItem('family-finance:cashflow:v2', JSON.stringify(json.cashflow));
-          }
-          if (json.portfolio) {
-            localStorage.setItem('stock-trading-log:v3', JSON.stringify(json.portfolio));
-          }
-          if (json.ledger) {
-            localStorage.setItem('wealthport:avg-cost-ledger:v1', JSON.stringify(json.ledger));
-          }
-          if (json.tax) {
-            if (json.tax.years) localStorage.setItem('family-finance:tax-planner:DAD:years', JSON.stringify(json.tax.years));
-            if (json.tax.activeYear) localStorage.setItem('family-finance:tax-planner:DAD:activeYear', json.tax.activeYear);
-            if (json.tax.data) {
-              Object.keys(json.tax.data).forEach(yr => {
-                localStorage.setItem(`family-finance:tax-planner:DAD:${yr}`, JSON.stringify(json.tax.data[yr]));
-              });
-            }
-          }
-        }
-
-        alert('🎉 กู้คืนข้อมูลทั้งระบบเรียบร้อยแล้ว! ระบบจะรีเฟรชหน้าเว็บเพื่ออัปเดตข้อมูล');
-        inputEl.value = '';
-        location.reload();
-      } catch (err) {
-        alert('รูปแบบไฟล์ JSON สำรองไม่ถูกต้อง: ' + err.message);
-        inputEl.value = '';
-      }
-    };
-    reader.readAsText(file);
-  },
-
-  // 3. แสดง Modal สวยงามสำหรับจัดการ Backup
-  openBackupModal() {
-    const modalId = "family-backup-modal";
-    document.getElementById(modalId)?.remove();
-
-    const ctx = this.getUserContext();
-
-    const modalHtml = `
-      <div id="${modalId}" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <div style="background: #ffffff; border-radius: 16px; width: 500px; max-width: 95vw; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #e2e8f0;">
-          <div style="padding: 18px 22px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">📦 สำรองและกู้คืนข้อมูลรวมทั้งระบบ</h3>
-              <span style="font-size: 12px; color: #64748b;">บัญชีปัจจุบัน: <strong>${ctx.userName}</strong> (${ctx.isMember ? 'สมาชิก MEMBER' : 'ผู้ดูแล ADMIN'})</span>
-            </div>
-            <button id="btn-close-backup-modal" style="background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer;">&times;</button>
-          </div>
-
-          <div style="padding: 22px; display: flex; flex-direction: column; gap: 16px;">
-            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 14px;">
-              <div style="font-weight: 700; font-size: 13.5px; color: #0369a1; margin-bottom: 4px;">📤 สำรองข้อมูลทั้งหมด (One-Click Backup)</div>
-              <div style="font-size: 12px; color: #475569; margin-bottom: 12px; line-height: 1.4;">
-                ดาวน์โหลดข้อมูลทุกโมดูล (รายรับรายจ่าย + พอร์ตลงทุน + วางแผนภาษี) รวมเป็นไฟล์ JSON ไฟล์เดียว
+        modal.innerHTML = `
+          <div style="background: #ffffff; width: 100%; max-width: 520px; border-radius: 16px; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: left; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+              <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                  📦 สำรองและกู้คืนข้อมูลรวมทั้งระบบ
+                </h3>
+                <div id="backupModalUserBadge" style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
+                  บัญชีปัจจุบัน: <strong style="color: #0284c7;">${user.name}</strong> (${user.isDad ? 'ผู้ดูแล ADMIN' : 'สมาชิก MEMBER'})
+                </div>
               </div>
-              <button id="btn-run-full-export" style="background: #0284c7; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%;">
+              <button onclick="window.BackupModule.closeBackupModal()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer; padding: 4px;">✕</button>
+            </div>
+
+            <!-- กล่องที่ 1: การสำรองข้อมูล (Export) -->
+            <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+              <div style="font-weight: 700; color: #0369a1; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                📥 สำรองข้อมูลทั้งหมด (One-Click Backup)
+              </div>
+              <div style="font-size: 12px; color: #475569; margin-bottom: 12px; line-height: 1.5;">
+                ดาวน์โหลดข้อมูลทุกโมดูล (รายรับรายจ่าย + พอร์ตลงทุน + ภาษี + หมวดหมู่และบัญชี) รวมเป็นไฟล์ JSON ไฟล์เดียว
+              </div>
+              <button onclick="window.BackupModule.exportFullBackup()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 📥 ดาวน์โหลดไฟล์สำรองข้อมูลรวม
               </button>
             </div>
 
-            <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 10px; padding: 14px;">
-              <div style="font-weight: 700; font-size: 13.5px; color: #854d0e; margin-bottom: 4px;">📥 กู้คืนข้อมูลทั้งหมด (One-Click Restore)</div>
-              <div style="font-size: 12px; color: #713f12; margin-bottom: 12px; line-height: 1.4;">
+            <!-- กล่องที่ 2: การกู้คืนข้อมูล (Restore) -->
+            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+              <div style="font-weight: 700; color: #b45309; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                📤 กู้คืนข้อมูลทั้งหมด (One-Click Restore)
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.5;">
                 เลือกไฟล์ Backup รวม เพื่อนำข้อมูลทั้งหมดกลับคืนสู่ระบบในครั้งเดียว (มีระบบตรวจสิทธิ์เจ้าของไฟล์)
               </div>
-              <label style="display: block; text-align: center; background: #eab308; color: #000; padding: 9px 18px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer;">
+              <input type="file" id="inputFullBackupFile" accept=".json" style="display: none;" onchange="window.BackupModule.handleFileSelect(event)">
+              <button onclick="document.getElementById('inputFullBackupFile').click()" style="width: 100%; background: #d97706; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 📂 เลือกไฟล์ JSON เพื่อกู้คืน
-                <input type="file" id="full-backup-file-input" accept=".json" style="display: none;">
-              </label>
+              </button>
+            </div>
+
+            <div style="text-align: right;">
+              <button onclick="window.BackupModule.closeBackupModal()" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569; padding: 7px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+                ปิดหน้าต่าง
+              </button>
             </div>
           </div>
+        `;
+        document.body.appendChild(modal);
+      } else {
+        const badge = document.getElementById('backupModalUserBadge');
+        if (badge) {
+          badge.innerHTML = `บัญชีปัจจุบัน: <strong style="color: #0284c7;">${user.name}</strong> (${user.isDad ? 'ผู้ดูแล ADMIN' : 'สมาชิก MEMBER'})`;
+        }
+        modal.style.display = 'flex';
+      }
+    },
 
-          <div style="padding: 12px 22px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end;">
-            <button id="btn-close-backup-modal-bottom" style="background: #fff; border: 1px solid #cbd5e1; color: #475569; padding: 7px 16px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">ปิดหน้าต่าง</button>
-          </div>
-        </div>
-      </div>
-    `;
+    closeBackupModal() {
+      const modal = document.getElementById('fullBackupModal');
+      if (modal) modal.style.display = 'none';
+      const fileInput = document.getElementById('inputFullBackupFile');
+      if (fileInput) fileInput.value = '';
+    },
 
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    // รวบรวมข้อมูลทุกโมดูลแล้วดาวน์โหลดไฟล์ JSON
+    async exportFullBackup() {
+      const user = await this.getUserContext();
+      const isDad = user.isDad;
+      const safeUsername = (user.name || 'member').toLowerCase().replace(/\s+/g, '_');
 
-    const closeModal = () => document.getElementById(modalId)?.remove();
-    document.getElementById('btn-close-backup-modal').onclick = closeModal;
-    document.getElementById('btn-close-backup-modal-bottom').onclick = closeModal;
+      // 1. ดึง Cashflow
+      const cashflowKey = isDad ? 'family-finance:cashflow:v2' : `family-finance:cashflow:member:${safeUsername}`;
+      let cashflowData = null;
+      try {
+        cashflowData = JSON.parse(localStorage.getItem(cashflowKey) || 'null');
+      } catch (e) {}
 
-    document.getElementById('btn-run-full-export').onclick = () => this.exportFullBackup();
-    document.getElementById('full-backup-file-input').onchange = (e) => this.importFullBackup(e.target);
-  }
-};
+      // 2. ดึง Portfolio
+      const portKey = isDad ? 'stock-trading-log:v3' : `stock-trading-log:member:${safeUsername}`;
+      let portfolioData = null;
+      try {
+        portfolioData = JSON.parse(localStorage.getItem(portKey) || 'null');
+      } catch (e) {}
 
-window.BackupModule = BackupModule;
+      // 3. ดึง Tax Planner
+      const taxPrefix = isDad ? 'family-finance:tax-planner:DAD' : `family-finance:tax-planner:member_${safeUsername}`;
+      const taxData = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(taxPrefix)) {
+          try {
+            taxData[key] = JSON.parse(localStorage.getItem(key));
+          } catch (e) {
+            taxData[key] = localStorage.getItem(key);
+          }
+        }
+      }
+
+      // 4. ดึง Categories & Accounts ตามบทบาท
+      const catKey = isDad ? 'family-finance:categories:v1' : `family-finance:categories:member:${safeUsername}`;
+      const accKey = isDad ? 'family-finance:master-accounts:v1' : `family-finance:master-accounts:member:${safeUsername}`;
+      let categoriesData = null;
+      let accountsData = null;
+      try {
+        categoriesData = JSON.parse(localStorage.getItem(catKey) || 'null');
+        accountsData = JSON.parse(localStorage.getItem(accKey) || 'null');
+      } catch (e) {}
+
+      const backupPayload = {
+        _metadata: {
+          appName: 'FamilyFinance',
+          type: 'FULL_BACKUP',
+          version: '1.1',
+          exportedAt: new Date().toISOString(),
+          ownerRole: isDad ? 'ADMIN' : 'MEMBER',
+          ownerName: user.name
+        },
+        cashflow: cashflowData,
+        portfolio: portfolioData,
+        tax: taxData,
+        categories: categoriesData,
+        accounts: accountsData
+      };
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const rolePrefix = isDad ? 'DAD' : safeUsername;
+      const fileName = `FamilyFinance_FullBackup_${rolePrefix}_${dateStr}.json`;
+
+      const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+
+    // รับไฟล์ที่ผู้ใช้เลือกมาตรวจสอบ
+    handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          await this.restoreFullBackup(parsed);
+        } catch (err) {
+          alert('❌ ไฟล์ไม่ถูกต้องหรือไม่ใช่รูปแบบ JSON ที่สมบูรณ์');
+        }
+      };
+      reader.readAsText(file);
+    },
+
+    // ตรวจสอบสิทธิ์ความปลอดภัยและนำเข้าข้อมูล
+    async restoreFullBackup(data) {
+      if (!data || !data._metadata || data._metadata.type !== 'FULL_BACKUP') {
+        alert('⚠️ ไฟล์นี้ไม่ใช่ไฟล์สำรองข้อมูลรวมของระบบ Family Finance');
+        return;
+      }
+
+      const currentUser = await this.getUserContext();
+      const currentIsDad = currentUser.isDad;
+      const safeUsername = (currentUser.name || 'member').toLowerCase().replace(/\s+/g, '_');
+      const backupRole = data._metadata.ownerRole || 'MEMBER';
+      const backupOwnerName = data._metadata.ownerName || 'ไม่ระบุ';
+
+      // Security Constraint: สมาชิกห้ามนำเข้าข้อมูลของแอดมิน
+      if (!currentIsDad && backupRole === 'ADMIN') {
+        alert('⚠️ ไม่อนุญาตให้นำเข้า! ไฟล์นี้เป็นข้อมูลสำรองของแอดมิน (DAD) ไม่สามารถนำเข้าสู่บัญชีสมาชิกได้ เพื่อป้องกันข้อมูลการเงินปะปนกัน');
+        return;
+      }
+
+      const confirmMsg = `ยืนยันการกู้คืนข้อมูลรวมทั้งระบบ?\n` +
+        `- เจ้าของไฟล์: ${backupOwnerName} (${backupRole})\n` +
+        `- วันที่สำรอง: ${new Date(data._metadata.exportedAt).toLocaleString('th-TH')}\n\n` +
+        `⚠️ ข้อมูลเดิมของบัญชีปัจจุบัน (${currentUser.name}) จะถูกเขียนทับด้วยข้อมูลในไฟล์นี้`;
+
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        // 1. กู้คืน Cashflow
+        const cashflowKey = currentIsDad ? 'family-finance:cashflow:v2' : `family-finance:cashflow:member:${safeUsername}`;
+        if (data.cashflow) {
+          localStorage.setItem(cashflowKey, JSON.stringify(data.cashflow));
+        }
+
+        // 2. กู้คืน Portfolio
+        const portKey = currentIsDad ? 'stock-trading-log:v3' : `stock-trading-log:member:${safeUsername}`;
+        if (data.portfolio) {
+          localStorage.setItem(portKey, JSON.stringify(data.portfolio));
+        }
+
+        // 3. กู้คืน Tax Planner
+        const currentTaxPrefix = currentIsDad ? 'family-finance:tax-planner:DAD' : `family-finance:tax-planner:member_${safeUsername}`;
+        if (data.tax && typeof data.tax === 'object') {
+          // ลบ tax เดิมของตนเองก่อน
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(currentTaxPrefix)) keysToRemove.push(k);
+          }
+          keysToRemove.forEach(k => localStorage.removeItem(k));
+
+          // เขียน tax ใหม่
+          Object.keys(data.tax).forEach(oldKey => {
+            let newKey = oldKey;
+            if (oldKey.includes(':DAD:')) {
+              newKey = oldKey.replace(':DAD:', currentIsDad ? ':DAD:' : `:member_${safeUsername}:`);
+            } else if (oldKey.includes(':member_')) {
+              newKey = oldKey.replace(/:member_[^:]+:/, currentIsDad ? ':DAD:' : `:member_${safeUsername}:`);
+            }
+            const val = typeof data.tax[oldKey] === 'string' ? data.tax[oldKey] : JSON.stringify(data.tax[oldKey]);
+            localStorage.setItem(newKey, val);
+          });
+        }
+
+        // 4. กู้คืน Categories & Accounts ตามบทบาทของผู้ใช้
+        const catKey = currentIsDad ? 'family-finance:categories:v1' : `family-finance:categories:member:${safeUsername}`;
+        const accKey = currentIsDad ? 'family-finance:master-accounts:v1' : `family-finance:master-accounts:member:${safeUsername}`;
+
+        if (data.categories) {
+          localStorage.setItem(catKey, JSON.stringify(data.categories));
+        }
+        if (data.accounts) {
+          localStorage.setItem(accKey, JSON.stringify(data.accounts));
+        }
+
+        alert('✅ กู้คืนข้อมูลรวมทั้งระบบสำเร็จ! ระบบจะรีเฟรชหน้าเว็บเพื่อปรับปรุงข้อมูล');
+        window.location.reload();
+      } catch (err) {
+        alert('❌ เกิดข้อผิดพลาดในการกู้คืนข้อมูล: ' + err.message);
+      }
+    }
+  };
+
+  window.BackupModule = BackupModule;
+})();
