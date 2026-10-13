@@ -755,8 +755,18 @@ if (typeof window !== 'undefined') {
   window.SettingsModule = SettingsModule;
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => SettingsModule.init());
+// สั่ง init และ render อัตโนมัติเฉพาะเมื่อเปิดหน้า settings.html เท่านั้น ไม่แย่งหน้า cashflow.html
+const isSettingsPage = window.location.pathname.includes('settings.html');
+
+if (isSettingsPage) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => SettingsModule.init());
+  } else {
+    setTimeout(() => SettingsModule.init(), 50);
+  }
 } else {
-  setTimeout(() => SettingsModule.init(), 50);
+  // หากถูกโหลดในหน้าอื่น ให้ตรวจสอบ Role เงียบๆ เพื่อเตรียมข้อมูล Dropdown โดยไม่ render ทับหน้าจอ
+  if (typeof SettingsModule.checkAuthRole === 'function') {
+    SettingsModule.checkAuthRole();
+  }
 }
