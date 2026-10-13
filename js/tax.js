@@ -1,9 +1,12 @@
 /**
  * js/modules/tax.js
  * Multi-Year Tax Planner & Dividend Tax Credit Engine for Family Finance
- * Fixed: Minimal Sidebar with "กลับหน้าหลัก" right below "คำนวณภาษี",
- * Sticky positioning, Multi-year support, Dynamic Insights, and Net Income Tax Rate.
- * Added: JSON Export & Import with User Isolation Support and Ownership Metadata Validation.
+ * Features:
+ * - TSD Summary By Tax Rate (Inline 4-row Grid: 20%, 25%, 0% BOI, REITs)
+ * - Auto-sync with Section 40(4) Gross Income & Total Tax Credit Withholding
+ * - Auto Import TSD Excel File (.xlsx / .xls / .csv) via SheetJS
+ * - Multi-Year Support, User Context Isolation (DAD vs Member)
+ * - JSON Export & Import with Ownership Metadata Validation
  */
 
 var TaxModule = {
@@ -12,6 +15,16 @@ var TaxModule = {
   currentUser: 'DAD',
   currentTab: 'all',
   storagePrefix: 'family-finance:tax-planner',
+
+  // 4 กลุ่มอัตราภาษีมาตรฐานตามใบสรุป TSD (Summary By Tax Rate)
+  defaultTsdGroups: [
+    { key: 'rate-20', label: '🟢 กำไรเสียภาษี 20% (เครดิต 20/80)', rate: 20, isCredit: true },
+    { key: 'rate-25', label: '🔵 กำไรเสียภาษี 25% (เครดิต 25/75)', rate: 25, isCredit: true },
+    { key: 'rate-10', label: '🟡 กำไรเสียภาษี 10% (เครดิต 10/90)', rate: 10, isCredit: true },
+    { key: 'rate-other', label: '🟣 กำไรเสียภาษีอัตราอื่น ๆ (23%, 3%)', rate: 23, isCredit: true, customCredit: 4.39 },
+    { key: 'rate-0',  label: '⚪ ไม่ได้รับเครดิตภาษี (BOI / ยกเว้น)', rate: 0, isCredit: false },
+    { key: 'rate-reit', label: '🏢 กองทุนรวม / REITs (หัก 10%)', rate: 0, isCredit: false }
+  ],
 
   getUserContext() {
     try {
@@ -65,7 +78,7 @@ var TaxModule = {
     { id: 'inc-40-1', code: '40(1)', name: 'รายได้ประจำ เช่น เงินเดือน', defaultName: 'รายได้ประจำ เช่น เงินเดือน', rule: '50% รวมกับ 40(2) ไม่เกิน 100,000 บาท', rateType: 'salary', defaultRate: 50, rate: 50, amount: 0 },
     { id: 'inc-40-2', code: '40(2)', name: 'เงินได้จากการจ้างทำของ / รับจ้าง', defaultName: 'เงินได้จากการจ้างทำของ / รับจ้าง', rule: '50% รวมกับ 40(1) ไม่เกิน 100,000 บาท', rateType: 'salary', defaultRate: 50, rate: 50, amount: 0 },
     { id: 'inc-40-3', code: '40(3)', name: 'ค่าลิขสิทธิ์ / สิทธิต่างๆ', defaultName: 'ค่าลิขสิทธิ์ / สิทธิต่างๆ', rule: '50% ไม่เกิน 100,000 บาท หรือหักจริง', rateType: 'salary_single', defaultRate: 50, rate: 50, amount: 0 },
-    { id: 'inc-40-4', code: '40(4)', name: 'ดอกเบี้ย เงินปันผล และการลงทุน', defaultName: 'ดอกเบี้ย เงินปันผล และการลงทุน', rule: 'หักค่าใช้จ่ายไม่ได้', rateType: 'none', defaultRate: 0, rate: 0, amount: 0 },
+    { id: 'inc-40-4', code: '40(4)', name: 'ดอกเบี้ย เงินปันผล และการลงทุน', defaultName: 'ดอกเบี้ย เงินปันผล และการลงทุน', rule: 'หักค่าใช้จ่ายไม่ได้ (คำนวณอัตโนมัติ)', rateType: 'none', defaultRate: 0, rate: 0, amount: 0 },
     { id: 'inc-40-5', code: '40(5)', name: 'ค่าเช่าทรัพย์สิน', defaultName: 'ค่าเช่าทรัพย์สิน', rule: '30%', rateType: 'pct30', defaultRate: 30, rate: 30, amount: 0 },
     { id: 'inc-40-5-house', code: '', name: 'บ้าน โรงเรือน สิ่งปลูกสร้าง แพ', defaultName: 'บ้าน โรงเรือน สิ่งปลูกสร้าง แพ', rule: '30%', rateType: 'pct30', defaultRate: 30, rate: 30, amount: 0 },
     { id: 'inc-40-5-agri', code: '', name: 'ที่ดินที่ใช้ในการเกษตร', defaultName: 'ที่ดินที่ใช้ในการเกษตร', rule: '20%', rateType: 'pct20', defaultRate: 20, rate: 20, amount: 0 },
@@ -90,7 +103,7 @@ var TaxModule = {
     { id: 'd-health-self', group: 'ประกันภัย', name: 'ประกันสุขภาพของตนเอง', defaultName: 'ประกันสุขภาพของตนเอง', rule: 'ลดหย่อนได้สูงสุด 25,000 บาท', defaultRule: 'ลดหย่อนได้สูงสุด 25,000 บาท', defaultLimit: 25000, limit: 25000, current: 0, plan: 0 },
     { id: 'd-health-parents', group: 'ประกันภัย', name: 'ประกันสุขภาพของพ่อ แม่ หรือคู่สมรส', defaultName: 'ประกันสุขภาพของพ่อ แม่ หรือคู่สมรส', rule: 'ตามจริงไม่เกิน 15,000 บาท', defaultRule: 'ตามจริงไม่เกิน 15,000 บาท', defaultLimit: 15000, limit: 15000, current: 0, plan: 0 },
     { id: 'd-sso', group: 'ประกันภัย', name: 'ประกันสังคม (มาตรา 33)', defaultName: 'ประกันสังคม (มาตรา 33)', rule: 'ตามจริงไม่เกิน 9,000 บาท', defaultRule: 'ตามจริงไม่เกิน 9,000 บาท', defaultLimit: 9000, limit: 9000, current: 0, plan: 0 },
-    { id: 'd-life-ins', group: 'ประกันภัย', name: 'ประกันชีวิต หรือประกันสะสมทรัพย์', defaultName: 'ประกันชีวิต หรือประกันสะสมทรัพย์', rule: 'ตามจริงไม่เกิน 100,000 บาท', defaultRule: 'ตามจริงไม่เกิน 100,000 บาท', defaultLimit: 100000, limit: 100000, current: 0, plan: 0 },
+    { id: 'd-life-ins', group: 'ประกันภัย', name: 'ประกันชีวิต หรือประกันสะสมทรัพย์', defaultName: 'ประกันชีวิต หรือประกันสะสมทรัพย์', rule: 'ตามจริงไม่เกิน 100,000 บาท', defaultRule: 'ตามจริงไม่เกิน 100,000 บาท', defaultLimit: 10000, limit: 100000, current: 0, plan: 0 },
     { id: 'd-annuity', group: 'ประกันภัย', name: 'เบี้ยประกันชีวิตแบบบำนาญ', defaultName: 'เบี้ยประกันชีวิตแบบบำนาญ', rule: '15% ของเงินได้ แต่ไม่เกิน 200,000 บาท', defaultRule: '15% ของเงินได้ แต่ไม่เกิน 200,000 บาท', defaultLimit: 200000, limit: 200000, current: 0, plan: 0 },
     
     { id: 'd-home-loan', group: 'กระตุ้นเศรษฐกิจ', name: 'ดอกเบี้ยบ้าน', defaultName: 'ดอกเบี้ยบ้าน', rule: 'ตามจริงไม่เกิน 100,000 บาท', defaultRule: 'ตามจริงไม่เกิน 100,000 บาท', defaultLimit: 100000, limit: 100000, current: 0, plan: 0 },
@@ -128,6 +141,25 @@ var TaxModule = {
   getStorageKey(year) {
     const ctx = this.getUserContext();
     return `${this.storagePrefix}:${ctx.userKey}:${year}`;
+  },
+
+  getTsdDividends() {
+    if (!this.dividends || !Array.isArray(this.dividends) || this.dividends.length === 0) {
+      this.dividends = this.defaultTsdGroups.map(g => ({
+        key: g.key,
+        label: g.label,
+        rate: g.rate,
+        amount: 0,
+        wht: 0
+      }));
+    } else {
+      this.defaultTsdGroups.forEach(g => {
+        if (!this.dividends.some(d => d.key === g.key)) {
+          this.dividends.push({ key: g.key, label: g.label, rate: g.rate, amount: 0, wht: 0 });
+        }
+      });
+    }
+    return this.dividends;
   },
 
   loadYearList() {
@@ -186,6 +218,7 @@ var TaxModule = {
             i.rate = this.getItemRate(i);
           }
         });
+        this.getTsdDividends();
         return;
       }
     } catch (e) {
@@ -216,6 +249,7 @@ var TaxModule = {
     }
 
     this.dividends = [];
+    this.getTsdDividends();
     this.hiddenIncomes = [];
     this.hiddenDeductions = [];
   },
@@ -225,7 +259,7 @@ var TaxModule = {
       const data = {
         incomes: this.incomes,
         deductions: this.deductions,
-        dividends: this.dividends,
+        dividends: this.getTsdDividends(),
         hiddenIncomes: this.hiddenIncomes,
         hiddenDeductions: this.hiddenDeductions,
         taxPaidWithheld: this.taxPaidWithheld
@@ -264,7 +298,6 @@ var TaxModule = {
       const ctx = this.getUserContext();
       this.saveState();
 
-      // รวบรวมข้อมูลทุกปีของผู้ใช้คนนี้
       const allYearsData = {};
       this.availableYears.forEach(y => {
         const key = this.getStorageKey(y);
@@ -295,7 +328,7 @@ var TaxModule = {
         currentYearData: {
           incomes: this.incomes,
           deductions: this.deductions,
-          dividends: this.dividends,
+          dividends: this.getTsdDividends(),
           hiddenIncomes: this.hiddenIncomes,
           hiddenDeductions: this.hiddenDeductions,
           taxPaidWithheld: this.taxPaidWithheld
@@ -331,7 +364,6 @@ var TaxModule = {
           const parsed = JSON.parse(event.target.result);
           const ctx = this.getUserContext();
 
-          // 🔒 ตรวจสอบสิทธิ์เจ้าของไฟล์ JSON
           if (parsed._metadata) {
             const fileRole = (parsed._metadata.ownerRole || '').toUpperCase();
             const fileUser = parsed._metadata.ownerUser || '';
@@ -346,7 +378,6 @@ var TaxModule = {
             }
           }
 
-          // 1. นำเข้าข้อมูลทุกปีถ้ามีระบุในไฟล์
           if (parsed.allYearsData && typeof parsed.allYearsData === 'object') {
             Object.keys(parsed.allYearsData).forEach(y => {
               const yearData = parsed.allYearsData[y];
@@ -359,7 +390,6 @@ var TaxModule = {
             this.saveYearList();
           }
 
-          // 2. นำเข้าปีปัจจุบัน
           const currentYearObj = parsed.currentYearData || (parsed.incomes && parsed.deductions ? parsed : null);
           if (currentYearObj) {
             const targetYear = parsed.activeYear || this.activeYear;
@@ -391,6 +421,116 @@ var TaxModule = {
     };
 
     fileInput.click();
+  },
+
+  // -------------------------------------------------------------
+  // ระบบนำเข้าไฟล์ Excel ของ TSD (Summary By Tax Rate)
+  // -------------------------------------------------------------
+  loadSheetJs(callback) {
+    if (window.XLSX) return callback();
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    script.onload = () => callback();
+    script.onerror = () => alert('ไม่สามารถโหลดโมดูลอ่านไฟล์ Excel ได้ กรุณาเชื่อมต่ออินเทอร์เน็ต');
+    document.head.appendChild(script);
+  },
+
+  handleTsdFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.loadSheetJs(() => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+          // ค้นหาแถวสรุป "รวมเงินปันผล (Total)"
+          const totalRow = rows.find(r => {
+            const firstCell = String(r[0] || '').trim();
+            return firstCell.includes('รวมเงินปันผล') || firstCell.includes('Total');
+          });
+
+          if (!totalRow) {
+            alert('⚠️ ไม่พบแถวสรุป "รวมเงินปันผล (Total)" ในไฟล์ Excel นี้');
+            return;
+          }
+
+          const parseNum = (val) => {
+            if (!val || val === '-') return 0;
+            const n = parseFloat(String(val).replace(/,/g, ''));
+            return isNaN(n) ? 0 : n;
+          };
+
+          // อ่านยอดตามตำแหน่งคอลัมน์มาตรฐานของใบสรุป TSD
+          const r25 = parseNum(totalRow[6]);  // เรท 25%
+          const r23 = parseNum(totalRow[7]);  // เรท 23%
+          const r20 = parseNum(totalRow[8]);  // เรท 20%
+          const r10 = parseNum(totalRow[12]); // เรท 10%
+          const r3  = parseNum(totalRow[13]); // เรท 3%
+          const boi = parseNum(totalRow[16]); // ยกเว้นภาษี (BOI)
+          const nonCred = parseNum(totalRow[17]); // ไม่ได้รับเครดิต (REITs/กองทุน)
+
+          // หยอดค่าลงตาราง
+          const tsdData = this.getTsdDividends();
+          
+          // 1. เรท 20%
+          const row20 = tsdData.find(d => d.key === 'rate-20');
+          if (row20) {
+            row20.amount = r20;
+            row20.wht = Math.round(r20 * 0.10 * 100) / 100;
+          }
+
+          // 2. เรท 25%
+          const row25 = tsdData.find(d => d.key === 'rate-25');
+          if (row25) {
+            row25.amount = r25;
+            row25.wht = Math.round(r25 * 0.10 * 100) / 100;
+          }
+
+          // 3. เรท 10% (เช่น SAT)
+          const row10 = tsdData.find(d => d.key === 'rate-10');
+          if (row10) {
+            row10.amount = r10;
+            row10.wht = Math.round(r10 * 0.10 * 100) / 100;
+          }
+
+          // 4. อัตราอื่น ๆ (23% + 3%)
+          const rowOther = tsdData.find(d => d.key === 'rate-other');
+          if (rowOther) {
+            const sumOther = Math.round((r23 + r3) * 100) / 100;
+            rowOther.amount = sumOther;
+            rowOther.wht = Math.round(sumOther * 0.10 * 100) / 100;
+            // คำนวณเครดิตภาษีจริงแยกก้อน (23% และ 3%)
+            rowOther.customCredit = Math.round(((r23 * 23 / 77) + (r3 * 3 / 97)) * 100) / 100;
+          }
+
+          // 5. ยกเว้นภาษี / BOI (ไม่เสียภาษีหัก ณ ที่จ่าย)
+          const row0 = tsdData.find(d => d.key === 'rate-0');
+          if (row0) {
+            row0.amount = boi;
+            row0.wht = 0.00;
+          }
+
+          // 6. กองทุนรวม / REITs (หัก ณ ที่จ่าย 10%)
+          const rowReit = tsdData.find(d => d.key === 'rate-reit');
+          if (rowReit) {
+            rowReit.amount = nonCred;
+            rowReit.wht = Math.round(nonCred * 0.10 * 100) / 100;
+          }
+
+          this.saveState();
+          this.render();
+          alert('✅ นำเข้าข้อมูลสรุปจากไฟล์ TSD ถูกต้องเรียบร้อยแล้ว!');
+        } catch (err) {
+          alert('⚠️ เกิดข้อผิดพลาดในการประมวลผลไฟล์: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
   },
 
   bindTopNav() {
@@ -454,6 +594,27 @@ var TaxModule = {
     let totalIncome = 0;
     let totalExpense = 0;
 
+    // 1. รวมยอดเงินปันผล เครดิตภาษี และหัก ณ ที่จ่าย (TSD Summary By Tax Rate)
+    let divNetSum = 0;
+    let divCreditSum = 0;
+    let divWhtSum = 0;
+
+    const tsdItems = this.getTsdDividends();
+    tsdItems.forEach(d => {
+      const amt = Number(d.amount || 0);
+      const wht = Number(d.wht || 0);
+      const rate = Number(d.rate || 0);
+      divNetSum += amt;
+      divWhtSum += wht;
+      if (d.customCredit !== undefined && amt > 0) {
+        divCreditSum += d.customCredit;
+      } else if (rate > 0) {
+        divCreditSum += amt * (rate / (100 - rate));
+      }
+    });
+
+    const grossDividendIncome = divNetSum + divCreditSum; // เงินได้รวมเครดิตภาษี มาตรา 40(4)(ข)
+
     const visibleList = this.visibleIncomes();
     const inc1 = (visibleList.find(i => i.id === 'inc-40-1')?.amount || 0);
     const inc2 = (visibleList.find(i => i.id === 'inc-40-2')?.amount || 0);
@@ -470,7 +631,12 @@ var TaxModule = {
     }
 
     visibleList.forEach(i => {
-      const amt = (i.amount || 0);
+      let amt = (i.amount || 0);
+      // เชื่อมโยงเงินปันผลรวมเครดิตเข้า 40(4) อัตโนมัติ
+      if (i.id === 'inc-40-4') {
+        amt = grossDividendIncome;
+        i.amount = grossDividendIncome;
+      }
       totalIncome += amt;
       const rate = this.getItemRate(i);
 
@@ -490,17 +656,6 @@ var TaxModule = {
     });
 
     const incomeAfterExpense = Math.max(0, totalIncome - totalExpense);
-
-    let divNetSum = 0;
-    let divCreditSum = 0;
-    let divWhtSum = 0;
-    this.dividends.forEach(d => {
-      divNetSum += (d.amount || 0);
-      divWhtSum += (d.wht || 0);
-      if ((d.rate || 0) > 0) {
-        divCreditSum += (d.amount || 0) * (d.rate / (100 - d.rate));
-      }
-    });
 
     const limit30Pct = Math.min(incomeAfterExpense * 0.30, 500000);
     const limit15Pct = Math.min(incomeAfterExpense * 0.15, 500000);
@@ -567,7 +722,8 @@ var TaxModule = {
     const effectiveRateCurrent = taxableNetCurrent > 0 ? ((taxEstimatedCurrent / taxableNetCurrent) * 100).toFixed(2) : '0.00';
     const effectiveRatePlan = taxableNetPlan > 0 ? ((taxEstimatedPlan / taxableNetPlan) * 100).toFixed(2) : '0.00';
 
-    const totalCreditAndWht = this.taxPaidWithheld + divCreditSum;
+    // รวมภาษีที่จ่ายไว้แล้ว = หัก ณ ที่จ่ายเดิม + หัก ณ ที่จ่ายเงินปันผล 10% + เครดิตภาษีเงินปันผล
+    const totalCreditAndWht = this.taxPaidWithheld + divWhtSum + divCreditSum;
     const refundOrPayCurrent = totalCreditAndWht - taxEstimatedCurrent;
     const refundOrPayPlan = totalCreditAndWht - taxEstimatedPlan;
     
@@ -605,6 +761,30 @@ var TaxModule = {
     };
   },
 
+  updateTsdDOMRow(key) {
+    const s = this.calculateAll();
+    const fmt = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const row = this.getTsdDividends().find(d => d.key === key);
+    if (row) {
+      const credit = (row.customCredit !== undefined && row.amount > 0)
+        ? row.customCredit
+        : (row.rate > 0 ? (row.amount * (row.rate / (100 - row.rate))) : 0);
+      const gross = (row.amount || 0) + credit;
+      const elCredit = document.querySelector(`[data-tsd-credit="${key}"]`);
+      const elGross = document.querySelector(`[data-tsd-gross="${key}"]`);
+      if (elCredit) elCredit.textContent = fmt(credit);
+      if (elGross) elGross.textContent = fmt(gross);
+    }
+    const totAmt = document.getElementById('tsdTotalAmount');
+    const totCred = document.getElementById('tsdTotalCredit');
+    const totWht = document.getElementById('tsdTotalWht');
+    const totGross = document.getElementById('tsdTotalGross');
+    if (totAmt) totAmt.textContent = fmt(s.divNetSum);
+    if (totCred) totCred.textContent = fmt(s.divCreditSum);
+    if (totWht) totWht.textContent = fmt(s.divWhtSum);
+    if (totGross) totGross.textContent = fmt(s.divNetSum + s.divCreditSum);
+  },
+
   updateDOMValues() {
     const s = this.calculateAll();
     const fmt = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -612,10 +792,14 @@ var TaxModule = {
     this.visibleIncomes().forEach(i => {
       const expEl = document.querySelector(`[data-income-expense="${i.id}"]`);
       const netEl = document.querySelector(`[data-income-net="${i.id}"]`);
+      const inpEl = document.querySelector(`[data-income-id="${i.id}"]`);
       const exp = s.expenseMap[i.id] || 0;
       const after = Math.max(0, (i.amount || 0) - exp);
       if (expEl) expEl.textContent = fmt(exp);
       if (netEl) netEl.textContent = fmt(after);
+      if (inpEl && i.id === 'inc-40-4') {
+        inpEl.value = (i.amount || 0) > 0 ? fmt(i.amount) : '';
+      }
     });
 
     const totIncEl = document.querySelector("#incomeTotalAmount");
@@ -685,10 +869,12 @@ var TaxModule = {
     const bBurdenDesc = document.querySelector("#bBurdenDesc");
     const bYieldDesc = document.querySelector("#bYieldDesc");
 
+    const totalPaidBeforeTax = this.taxPaidWithheld + s.divWhtSum + s.divCreditSum;
+
     if (bTotalTax) bTotalTax.textContent = fmt(s.taxEstimatedCurrent);
     if (bTotalTaxPlan) bTotalTaxPlan.textContent = fmt(s.taxEstimatedPlan);
-    if (bTotalCredit) bTotalCredit.textContent = fmt(this.taxPaidWithheld + s.divCreditSum);
-    if (bTotalCreditPlan) bTotalCreditPlan.textContent = fmt(this.taxPaidWithheld + s.divCreditSum);
+    if (bTotalCredit) bTotalCredit.textContent = fmt(totalPaidBeforeTax);
+    if (bTotalCreditPlan) bTotalCreditPlan.textContent = fmt(totalPaidBeforeTax);
     if (bRefund) {
       bRefund.textContent = s.refundOrPayCurrent >= 0 ? `รับคืน ${fmt(s.refundOrPayCurrent)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayCurrent))}`;
       bRefund.style.color = s.refundOrPayCurrent >= 0 ? '#059669' : '#dc2626';
@@ -744,38 +930,25 @@ var TaxModule = {
     const incomeRowsHtml = visibleList.map(i => {
       const expense = s.expenseMap[i.id] || 0;
       const after = Math.max(0, (i.amount || 0) - expense);
+      const isAutoCalc = (i.id === 'inc-40-4');
 
       return `
         <tr style="border-bottom: 1px solid #dbeafe; font-size: 13px;">
           <td style="padding: 8px 12px; font-weight: ${i.code ? '700' : '400'}; color: #1e293b; background: #fff;">
             ${i.code ? `<strong>${i.code}</strong>${i.name}` : `<span style="padding-left: 14px;">${i.name}</span>`}
             ${i.custom ? `<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 5px; border-radius:4px; margin-left:6px; font-weight:700;">เพิ่มเอง</span>` : ''}
+            ${isAutoCalc ? `<span style="font-size:10px; background:#f0fdf4; color:#166534; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700; border:1px solid #bbf7d0;">ออโต้จากตารางปันผล</span>` : ''}
           </td>
           <td style="padding: 8px 12px; color: #475569; font-size: 12.5px; background: #f0f7ff;">${i.rule}</td>
           <td style="padding: 4px 8px; background: #fff; width: 140px; text-align: right;">
-            <input type="text" inputmode="decimal" data-income-id="${i.id}" value="${fmtInput(i.amount)}" placeholder="" 
-              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #fff;">
+            <input type="text" inputmode="decimal" data-income-id="${i.id}" value="${fmtInput(i.amount)}" placeholder="" ${isAutoCalc ? 'readonly title="คำนวณอัตโนมัติจากตารางเงินปันผล TSD ด้านล่าง"' : ''}
+              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: ${isAutoCalc ? '#f8fafc' : '#fff'}; color: ${isAutoCalc ? '#0369a1' : '#0f172a'};">
           </td>
           <td class="number" data-income-expense="${i.id}" style="padding: 8px 12px; text-align: right; color: #334155; background: #f0f7ff;">${fmt(expense)}</td>
           <td class="number" data-income-net="${i.id}" style="padding: 8px 12px; text-align: right; font-weight: 700; color: #0f172a; background: #f0f7ff;">${fmt(after)}</td>
           <td style="padding: 6px 8px; text-align: center; background: #fff;">
-            <button type="button" class="btn-manage-income" data-id="${i.id}" style="background: #1e293b; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">⚙ จัดการ</button>
+            ${!isAutoCalc ? `<button type="button" class="btn-manage-income" data-id="${i.id}" style="background: #1e293b; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">⚙ จัดการ</button>` : '<span style="color:#94a3b8; font-size:11px;">-</span>'}
           </td>
-        </tr>
-      `;
-    }).join('');
-
-    const divRowsHtml = this.dividends.map((d, index) => {
-      const credit = d.rate > 0 ? (d.amount * (d.rate / (100 - d.rate))) : 0;
-      return `
-        <tr style="border-bottom: 1px solid #dbeafe; font-size: 13px;">
-          <td style="padding: 8px 12px; font-weight: 700;">${d.ticker}</td>
-          <td style="padding: 8px 12px; text-align: right;">${fmt(d.amount)}</td>
-          <td style="padding: 8px 12px; text-align: center;">${d.rate}%</td>
-          <td style="padding: 8px 12px; text-align: right; color: #059669; font-weight: 700;">${fmt(credit)}</td>
-          <td style="padding: 8px 12px; text-align: right; color: #dc2626;">${fmt(d.wht)}</td>
-          <td style="padding: 8px 12px; text-align: right; font-weight: 700;">${fmt(d.amount + credit)}</td>
-          <td style="padding: 8px 12px; text-align: center;"><button type="button" class="btn-del-div" data-index="${index}" style="background: #ef4444; color: #fff; border: none; padding: 3px 6px; border-radius: 4px; font-size: 10px; cursor: pointer;">ลบ</button></td>
         </tr>
       `;
     }).join('');
@@ -976,43 +1149,79 @@ var TaxModule = {
             </div>
           </div>
 
-          <!-- ตารางเงินปันผลหุ้น -->
+          <!-- ตารางเงินปันผลหุ้น / เครดิตภาษี (TSD Summary By Tax Rate: Inline 4-Row Grid) -->
           <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">เงินปันผลหุ้น / เครดิตภาษี</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">เงินปันผลหุ้น / เครดิตภาษี (มาตรา 40(4)(ข))</h3>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">💡 กรอกตัวเลขตามตาราง "สรุปเงินได้ตามอัตราภาษี (Summary By Tax Rate)" หรือกดปุ่มนำเข้าไฟล์ Excel</div>
+              </div>
+              <div>
+                <input type="file" id="inputTsdFileHidden" accept=".xlsx, .xls, .csv" style="display: none;">
+                <button type="button" id="btnTriggerTsdImport" style="background: #0284c7; color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(2,132,199,0.25);">
+                  <span>📥</span> นำเข้าไฟล์ TSD (.xlsx)
+                </button>
+              </div>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-              <input type="text" id="input-div-ticker" placeholder="หุ้น / บริษัท" style="flex: 1.2; min-width: 120px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
-              <input type="number" id="input-div-amount" placeholder="เงินปันผล" style="flex: 1; min-width: 100px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
-              <input type="number" id="input-div-rate" placeholder="อัตราภาษีนิติบุคคล %" style="flex: 1; min-width: 110px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
-              <input type="number" id="input-div-wht" placeholder="หัก ณ ที่จ่าย" style="flex: 1; min-width: 100px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
-              <button type="button" id="btn-save-dividend" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700; padding: 6px 16px; border-radius: 4px; font-size: 12.5px; cursor: pointer;">
-                บันทึกปันผล
-              </button>
-            </div>
+
             <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                   <tr style="background: #2b3a4a; color: #fff; font-size: 12.5px;">
-                    <th style="padding: 10px 12px;">หุ้น / บริษัท</th>
-                    <th style="padding: 10px 12px; text-align: right;">เงินปันผล</th>
-                    <th style="padding: 10px 12px; text-align: center;">อัตราภาษี</th>
-                    <th style="padding: 10px 12px; text-align: right;">เครดิตภาษี</th>
-                    <th style="padding: 10px 12px; text-align: right;">หัก ณ ที่จ่าย</th>
-                    <th style="padding: 10px 12px; text-align: right;">เงินได้รวมเครดิต</th>
-                    <th style="padding: 10px 12px; text-align: center;">จัดการ</th>
+                    <th style="padding: 10px 12px; width: 28%;">กลุ่มอัตราภาษี (ตามใบสรุป TSD)</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 18%;">เงินปันผล (บาท)</th>
+                    <th style="padding: 10px 12px; text-align: center; width: 12%;">อัตราภาษี</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 14%;">เครดิตภาษี</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 16%;">หัก ณ ที่จ่าย (บาท)</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 16%;">เงินได้รวมเครดิต</th>
+                    <th style="padding: 10px 12px; text-align: center; width: 8%;">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${divRowsHtml || ''}
+                  ${this.getTsdDividends().map(d => {
+                    const credit = (d.customCredit !== undefined && d.amount > 0)
+                      ? d.customCredit
+                      : (d.rate > 0 ? (d.amount * (d.rate / (100 - d.rate))) : 0);
+                    const gross = (d.amount || 0) + credit;
+                    return `
+                      <tr style="border-bottom: 1px solid #dbeafe; font-size: 13px;">
+                        <td style="padding: 10px 12px; font-weight: 700; color: #1e293b; background: #fff;">
+                          ${d.label}
+                        </td>
+                        <td style="padding: 4px 8px; background: #fff; text-align: right;">
+                          <input type="text" inputmode="decimal" class="input-tsd-amount" data-key="${d.key}" value="${fmtInput(d.amount)}" placeholder="0.00"
+                            style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #fff;">
+                        </td>
+                        <td style="padding: 10px 12px; text-align: center; color: #475569; background: #f0f7ff; font-weight: 700;">
+                          ${d.rate > 0 ? d.rate + '%' : (d.key === 'rate-0' ? '0%' : '-')}
+                        </td>
+                        <td class="number" data-tsd-credit="${d.key}" style="padding: 10px 12px; text-align: right; color: #059669; font-weight: 700; background: #f0f7ff;">
+                          ${fmt(credit)}
+                        </td>
+                        <td style="padding: 4px 8px; background: #fff; text-align: right;">
+                          <input type="text" inputmode="decimal" class="input-tsd-wht" data-key="${d.key}" value="${fmtInput(d.wht)}" placeholder="0.00"
+                            style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #fff; color: #dc2626;">
+                        </td>
+                        <td class="number" data-tsd-gross="${d.key}" style="padding: 10px 12px; text-align: right; font-weight: 800; color: #0f172a; background: #f0f7ff;">
+                          ${fmt(gross)}
+                        </td>
+                        <td style="padding: 6px 8px; text-align: center; background: #fff;">
+                          <button type="button" class="btn-clear-tsd-row" data-key="${d.key}" title="ล้างแถวนี้เป็น 0"
+                            style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                            ล้าง
+                          </button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                   <tr style="background: #fefce8; font-weight: 900; font-size: 13.5px; border-top: 2px solid #cbd5e1;">
-                    <td style="padding: 10px 12px;">รวม</td>
-                    <td style="padding: 10px 12px; text-align: right;">${fmt(s.divNetSum)}</td>
-                    <td></td>
-                    <td style="padding: 10px 12px; text-align: right;">${fmt(s.divCreditSum)}</td>
-                    <td style="padding: 10px 12px; text-align: right;">${fmt(s.divWhtSum)}</td>
-                    <td style="padding: 10px 12px; text-align: right;">${fmt(s.divNetSum + s.divCreditSum)}</td>
-                    <td></td>
+                    <td style="padding: 10px 12px; color: #0f172a;">รวมทั้งสิ้น</td>
+                    <td id="tsdTotalAmount" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.divNetSum)}</td>
+                    <td style="background: #f0f7ff;"></td>
+                    <td id="tsdTotalCredit" style="padding: 10px 12px; text-align: right; color: #059669;">${fmt(s.divCreditSum)}</td>
+                    <td id="tsdTotalWht" style="padding: 10px 12px; text-align: right; color: #dc2626;">${fmt(s.divWhtSum)}</td>
+                    <td id="tsdTotalGross" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.divNetSum + s.divCreditSum)}</td>
+                    <td style="background: #fff;"></td>
                   </tr>
                 </tbody>
               </table>
@@ -1104,15 +1313,15 @@ var TaxModule = {
                     <td id="bTotalTaxPlan" style="padding: 10px 12px; text-align: right; color: #0f172a; background: #fefce8;">${fmt(s.taxEstimatedPlan)}</td>
                   </tr>
                   <tr style="border-top: 1px solid #e2e8f0; font-weight: 700; font-size: 13px;">
-                    <td colspan="5" style="padding: 8px 12px;">ภาษีหัก ณ ที่จ่ายแล้ว</td>
+                    <td colspan="5" style="padding: 8px 12px;">ภาษีหัก ณ ที่จ่ายแล้ว (เงินเดือน / อื่นๆ)</td>
                     <td colspan="2" style="padding: 6px 12px; text-align: left;">
                       <input type="text" inputmode="decimal" id="tax-withheld-input" value="${fmtInput(this.taxPaidWithheld)}" style="width: 120px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 800; text-align: right; font-size: 13px;">
                     </td>
                   </tr>
                   <tr style="border-top: 1px solid #e2e8f0; font-weight: 800; font-size: 13px;">
-                    <td colspan="5" style="padding: 8px 12px;">ภาษีหัก ณ ที่จ่าย / เครดิตภาษี</td>
-                    <td id="bTotalCredit" style="padding: 8px 12px; text-align: right; color: #0f172a;">${fmt(this.taxPaidWithheld + s.divCreditSum)}</td>
-                    <td id="bTotalCreditPlan" style="padding: 8px 12px; text-align: right; color: #0f172a; background: #fefce8;">${fmt(this.taxPaidWithheld + s.divCreditSum)}</td>
+                    <td colspan="5" style="padding: 8px 12px;">ภาษีหัก ณ ที่จ่ายรวม / เครดิตภาษี</td>
+                    <td id="bTotalCredit" style="padding: 8px 12px; text-align: right; color: #0f172a;">${fmt(this.taxPaidWithheld + s.divWhtSum + s.divCreditSum)}</td>
+                    <td id="bTotalCreditPlan" style="padding: 8px 12px; text-align: right; color: #0f172a; background: #fefce8;">${fmt(this.taxPaidWithheld + s.divWhtSum + s.divCreditSum)}</td>
                   </tr>
                   <tr style="border-top: 1px solid #e2e8f0; font-weight: 900; font-size: 13.5px;">
                     <td colspan="5" style="padding: 8px 12px;">ภาษีที่ต้อง (รับคืน/จ่ายเพิ่ม)</td>
@@ -1165,6 +1374,14 @@ var TaxModule = {
     container.querySelector("#btnExportTaxJson")?.addEventListener('click', () => this.exportTaxJSON());
     container.querySelector("#btnImportTaxJson")?.addEventListener('click', () => this.importTaxJSON());
 
+    // Event ปุ่มนำเข้าไฟล์ TSD (.xlsx)
+    const fileInput = container.querySelector("#inputTsdFileHidden");
+    const triggerBtn = container.querySelector("#btnTriggerTsdImport");
+    if (triggerBtn && fileInput) {
+      triggerBtn.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => this.handleTsdFileImport(e));
+    }
+
     // Event ปุ่มกลับหน้าหลัก
     container.querySelector("#taxBackToHomeBtn")?.addEventListener('click', () => {
       window.location.hash = '';
@@ -1209,27 +1426,75 @@ var TaxModule = {
       });
     });
 
-    container.querySelectorAll(".btn-del-div").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const idx = parseInt(e.currentTarget.dataset.index, 10);
-        this.dividends.splice(idx, 1);
-        this.saveState();
-        this.render();
+    // Event กรอกยอดเงินปันผล TSD แบบ Inline (Auto 10% WHT & Auto Gross-up)
+    container.querySelectorAll(".input-tsd-amount").forEach(input => {
+      const handleInput = (e, isBlur = false) => {
+        const key = e.target.dataset.key;
+        const raw = e.target.value.replace(/,/g, '').trim();
+        const amt = parseFloat(raw) || 0;
+        const row = this.getTsdDividends().find(d => d.key === key);
+        if (row) {
+          row.amount = amt;
+          row.wht = amt > 0 ? Math.round(amt * 0.10 * 100) / 100 : 0;
+          const whtInput = container.querySelector(`.input-tsd-wht[data-key="${key}"]`);
+          if (whtInput) {
+            whtInput.value = row.wht > 0 ? row.wht.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+          }
+        }
+        if (isBlur) {
+          e.target.value = amt > 0 ? amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+          this.saveState();
+        }
+        this.updateDOMValues();
+        this.updateTsdDOMRow(key);
+      };
+
+      input.addEventListener("input", (e) => handleInput(e, false));
+      input.addEventListener("blur", (e) => handleInput(e, true));
+      input.addEventListener("focus", (e) => {
+        const raw = e.target.value.replace(/,/g, '').trim();
+        if (parseFloat(raw) > 0) { e.target.value = raw; e.target.select(); }
       });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); input.blur(); } });
     });
 
-    container.querySelector("#btn-save-dividend")?.addEventListener("click", () => {
-      const ticker = (container.querySelector("#input-div-ticker").value || '').trim();
-      const amount = parseFloat(container.querySelector("#input-div-amount").value) || 0;
-      const rate = parseFloat(container.querySelector("#input-div-rate").value) || 0;
-      const wht = parseFloat(container.querySelector("#input-div-wht").value) || 0;
-      if (!ticker || amount <= 0) {
-        alert('กรุณากรอกชื่อหุ้นและจำนวนเงินปันผล');
-        return;
-      }
-      this.dividends.push({ ticker, amount, rate, wht });
-      this.saveState();
-      this.render();
+    // Event กรอก/ปรับแก้ภาษีหัก ณ ที่จ่าย TSD แบบ Inline
+    container.querySelectorAll(".input-tsd-wht").forEach(input => {
+      const handleWht = (e, isBlur = false) => {
+        const key = e.target.dataset.key;
+        const raw = e.target.value.replace(/,/g, '').trim();
+        const wht = parseFloat(raw) || 0;
+        const row = this.getTsdDividends().find(d => d.key === key);
+        if (row) row.wht = wht;
+        if (isBlur) {
+          e.target.value = wht > 0 ? wht.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+          this.saveState();
+        }
+        this.updateDOMValues();
+        this.updateTsdDOMRow(key);
+      };
+
+      input.addEventListener("input", (e) => handleWht(e, false));
+      input.addEventListener("blur", (e) => handleWht(e, true));
+      input.addEventListener("focus", (e) => {
+        const raw = e.target.value.replace(/,/g, '').trim();
+        if (parseFloat(raw) > 0) { e.target.value = raw; e.target.select(); }
+      });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); input.blur(); } });
+    });
+
+    // Event ล้างข้อมูลแถว TSD
+    container.querySelectorAll(".btn-clear-tsd-row").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const key = e.currentTarget.dataset.key;
+        const row = this.getTsdDividends().find(d => d.key === key);
+        if (row) {
+          row.amount = 0;
+          row.wht = 0;
+          this.saveState();
+          this.render();
+        }
+      });
     });
 
     const setupRealtimeInput = (selector, updateObj) => {
@@ -1268,7 +1533,7 @@ var TaxModule = {
       });
     };
 
-    setupRealtimeInput("[data-income-id]", (ds, val) => {
+    setupRealtimeInput("[data-income-id]:not([readonly])", (ds, val) => {
       const item = this.incomes.find(i => i.id === ds.incomeId);
       if (item) item.amount = val;
     });
