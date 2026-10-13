@@ -1659,12 +1659,18 @@ var PortfolioModule = {
         const type = jumpChartBtn.dataset.type;
         const clean = sym.replace('.BK', '').toUpperCase();
 
-        if (type === 'mutual-fund') {
-          this.currentChartSymbol = `FUND:${clean}`;
-        } else if (type === 'thai-stock' || sym.endsWith('.BK')) {
-          this.currentChartSymbol = `SET:${clean}`;
+        if (typeof TechnicalModule !== 'undefined') {
+          const mType = (type === 'mutual-fund') ? 'FUND' : ((type === 'thai-stock' || sym.endsWith('.BK')) ? 'TH' : 'US');
+          TechnicalModule.currentChartSymbol = TechnicalModule.formatTradingViewSymbol(clean, mType);
         } else {
-          this.currentChartSymbol = `NASDAQ:${clean}`;
+          const etfList = ['VOO', 'SPY', 'IVV', 'VTI', 'DIA', 'VNQ', 'SCHD', 'JEPI', 'JEPQ'];
+          if (type === 'mutual-fund') {
+            this.currentChartSymbol = `FUND:${clean}`;
+          } else if (type === 'thai-stock' || sym.endsWith('.BK')) {
+            this.currentChartSymbol = `SET:${clean}`;
+          } else {
+            this.currentChartSymbol = etfList.includes(clean) ? `AMEX:${clean}` : clean;
+          }
         }
 
         this.currentTab = 'charts';
@@ -3919,7 +3925,11 @@ this.openAssetModal(holding.symbol);
       } else if (this.currentTab === 'dividend') {
         this.renderDividendTracker(container);
       } else if (this.currentTab === 'charts') {
-        this.renderTechnicalCharts(container);
+        if (typeof TechnicalModule !== 'undefined') {
+          TechnicalModule.render(container);
+        } else {
+          this.renderTechnicalCharts(container);
+        }
       } else {
         this.renderOverviewDashboard(container);
       }
