@@ -252,7 +252,7 @@ if (price <= 0) price = (cleanSym === 'VOO') ? 716.20 : (cleanSym === 'VT' ? 159
         analyzeBtn.disabled = true;
       }
 
-      // ดึงราคาตลาดสดมาอัปเดตลง Cache ก่อนเรนเดอร์หน้าจอ
+      // ดึงราคาตลาดสดผ่าน API มาเก็บลง Quote Cache ก่อนเรนเดอร์หน้าจอ
       if (typeof QuoteSyncService !== 'undefined') {
         const qType = (mType === 'FUND') ? 'mutual-fund' : (mType === 'TH' ? 'thai-stock' : 'foreign-stock');
         try {

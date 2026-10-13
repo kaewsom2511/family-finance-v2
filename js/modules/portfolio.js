@@ -273,10 +273,8 @@ window.WealthPortSettings = {
 
 var QuoteSyncService = {
   getApiBaseUrl() {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'https://wealthport.onrender.com';
-    }
-    return '';
+    // ให้ชี้ไปที่ Backend Server ของ WealthPort เสมอ ไม่ว่าจะรันบน Local หรือ Web
+    return 'https://wealthport.onrender.com';
   },
 
   async fetchExchangeRate() {
