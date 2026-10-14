@@ -1,3 +1,4 @@
+// js/modules/average.js
 // ==========================================
 // 1. ฟังก์ชันตัวช่วย (Helpers) & ตรวจจับสิทธิ์ (RBAC)
 // ==========================================
@@ -38,7 +39,6 @@ function getAverageUserContext() {
 
     if (isMemberUser) {
       const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
-      // ค้นหาคีย์ที่มีอยู่จริงใน localStorage เช่น stock-trading-log:member:ploy
       const existingMemberKey = Object.keys(localStorage).find(k => k.startsWith('stock-trading-log:member:'));
       return {
         isMember: true,
@@ -53,48 +53,172 @@ function getAverageUserContext() {
   };
 }
 
-// กำหนดค่าเริ่มต้นตามสิทธิ์ผู้ใช้ (Member จะไม่ดึง ALLY ของ Admin มาค้างไว้)
-const _userCtx = getAverageUserContext();
-window.currentHolding = window.currentHolding || (_userCtx.isMember ? {
+// ตัวแปร Global จัดการสถานะ
+window.currentHolding = {
   shares: 0,
   avgCost: 0,
   totalCost: 0,
   txCount: 0,
   marketPrice: 0,
   symbol: ''
-} : {
-  shares: 11000,
-  avgCost: 4.90,
-  totalCost: 53882.60,
-  txCount: 3,
-  marketPrice: 4.90,
-  symbol: 'ALLY'
-});
+};
+
+window.activeCalcTab = 'sim'; // 'sim' | 'goal'
 
 // ==========================================
-// 2. ฟังก์ชันดึงประวัติจากพอร์ต (loadFromPortfolio)
+// 2. การควบคุมแท็บและ UI (Tab Controller)
 // ==========================================
+function switchCalcTab(mode) {
+  window.activeCalcTab = mode;
+  const btnSim = document.getElementById('btn-tab-sim');
+  const btnGoal = document.getElementById('btn-tab-goal');
+  const formSim = document.getElementById('form-tab-sim');
+  const formGoal = document.getElementById('form-tab-goal');
+  const panelSim = document.getElementById('avgComparePanel');
+  const panelGoal = document.getElementById('panel-goal-result');
+
+  if (mode === 'sim') {
+    if (btnSim) btnSim.classList.add('active');
+    if (btnGoal) btnGoal.classList.remove('active');
+    if (formSim) formSim.style.display = 'flex';
+    if (formGoal) formGoal.style.display = 'none';
+    if (panelSim) panelSim.style.display = 'block';
+    if (panelGoal) panelGoal.style.display = 'none';
+  } else {
+    if (btnSim) btnSim.classList.remove('active');
+    if (btnGoal) btnGoal.classList.add('active');
+    if (formSim) formSim.style.display = 'none';
+    if (formGoal) formGoal.style.display = 'flex';
+    if (panelSim) panelSim.style.display = 'none';
+    if (panelGoal) panelGoal.style.display = 'block';
+
+    // ดึงราคาซื้อเพิ่มจากแท็บแรกมาใส่ช่องเป้าหมายให้อัตโนมัติถ้ายังว่าง
+    const simPrice = document.getElementById('input-buy-price')?.value;
+    const goalBuyPrice = document.getElementById('input-goal-buy-price');
+    if (goalBuyPrice && !goalBuyPrice.value && simPrice) {
+      goalBuyPrice.value = simPrice;
+    }
+  }
+
+  updateTargetComparison();
+}
+
+function handleCalcModeChange() {
+  const mode = document.getElementById('select-calc-mode')?.value;
+  const lbl = document.getElementById('lbl-sim-value');
+  const input = document.getElementById('input-buy-budget');
+
+  if (mode === 'shares') {
+    if (lbl) lbl.innerText = 'จำนวนหุ้นที่จะซื้อเพิ่ม (หุ้น)';
+    if (input) input.placeholder = 'เช่น 7,500';
+  } else {
+    if (lbl) lbl.innerText = 'จำนวนเงินที่จะซื้อเพิ่ม (บาท)';
+    if (input) input.placeholder = 'เช่น 7,500';
+  }
+
+  updateTargetComparison();
+}
+
+function toggleNavGroup(id) {
+  const g = document.getElementById(id);
+  if (g) g.classList.toggle('open');
+}
+
+// ==========================================
+// 3. ฟังก์ชันดึงประวัติจากพอร์ต (loadFromPortfolio)
+// ==========================================
+function refreshPortfolios() {
+  const selectAsset = document.getElementById('select-asset');
+  const selectPort = document.getElementById('select-port');
+  const statusBanner = document.getElementById('banner-port-status');
+  if (!selectAsset || !selectPort) return;
+
+  const ctx = getAverageUserContext();
+  const raw = localStorage.getItem(ctx.storageKey);
+  if (!raw) {
+    if (statusBanner) statusBanner.textContent = 'ไม่พบประวัติการซื้อขายในระบบ';
+    return;
+  }
+
+  try {
+    const db = JSON.parse(raw);
+    const portfolios = db.portfolios || [];
+    const trades = db.trades || [];
+
+    const currentPortVal = selectPort.value;
+    selectPort.innerHTML = '<option value="ALL">-- ทุกพอร์ตรวมกัน --</option>';
+
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name || p.id;
+      opt.textContent = p.name || p.id;
+      selectPort.appendChild(opt);
+    });
+
+    if (currentPortVal && Array.from(selectPort.options).some(o => o.value === currentPortVal)) {
+      selectPort.value = currentPortVal;
+    } else if (Array.from(selectPort.options).some(o => o.value === 'BLS')) {
+      selectPort.value = 'BLS';
+    } else {
+      selectPort.value = 'ALL';
+    }
+
+    const selectedPortVal = selectPort.value;
+    let targetPortId = selectedPortVal;
+    const foundPort = portfolios.find(p => p.id === selectedPortVal || p.name === selectedPortVal);
+    if (foundPort && foundPort.id) targetPortId = foundPort.id;
+
+    const assetMap = {};
+    trades.forEach(t => {
+      const rawSym = (t.symbol || t.ticker || t.stock || t.asset || '').trim().toUpperCase();
+      if (!rawSym) return;
+      const cleanSym = rawSym.replace(/\.BK$/, '').trim();
+
+      if (selectedPortVal !== 'ALL') {
+        const tPort = (t.portfolioId || t.portfolio || t.port || t.broker || '').toString();
+        if (tPort !== targetPortId && tPort !== selectedPortVal) return;
+      }
+      assetMap[cleanSym] = (assetMap[cleanSym] || 0) + 1;
+    });
+
+    selectAsset.innerHTML = '';
+    const sortedSymbols = Object.keys(assetMap).sort();
+
+    sortedSymbols.forEach(sym => {
+      const opt = document.createElement('option');
+      opt.value = sym;
+      opt.textContent = `${sym} (${assetMap[sym]} รายการ)`;
+      selectAsset.appendChild(opt);
+    });
+
+    if (statusBanner) {
+      statusBanner.textContent = `พบ ${sortedSymbols.length} สินทรัพย์ในพอร์ตนี้ เลือกแล้วกด “ดึงจากพอร์ต”`;
+    }
+
+    if (sortedSymbols.length > 0) {
+      loadFromPortfolio();
+    }
+  } catch (err) {
+    console.error('refreshPortfolios error:', err);
+  }
+}
+
 function loadFromPortfolio() {
-  const selectAsset = document.getElementById('select-asset') || document.getElementById('avgImportSymbol');
-  const selectPort = document.getElementById('select-port') || document.getElementById('avgImportPortfolio');
+  const selectAsset = document.getElementById('select-asset');
+  const selectPort = document.getElementById('select-port');
   if (!selectAsset || !selectAsset.value) return;
 
-  // ตัดวงเล็บและข้อความจำนวนรายการออก ให้เหลือเฉพาะชื่อย่อหุ้น เช่น "ALLY"
   let rawAssetValue = selectAsset.value.trim();
-  if (rawAssetValue.includes('(')) {
-    rawAssetValue = rawAssetValue.split('(')[0].trim();
-  }
+  if (rawAssetValue.includes('(')) rawAssetValue = rawAssetValue.split('(')[0].trim();
   const targetSymbol = normalizeSymbol(rawAssetValue);
 
-  // ดึงข้อมูลตาม Storage Key ของผู้ใช้ปัจจุบัน
   const ctx = getAverageUserContext();
-  const rawLog = localStorage.getItem(ctx.storageKey) || 
-                 (!ctx.isMember ? localStorage.getItem('wealthport:avg-cost-ledger:v1') : null);
+  const rawLog = localStorage.getItem(ctx.storageKey);
   if (!rawLog) return;
 
   try {
     const parsed = JSON.parse(rawLog);
-    const trades = parsed.trades || parsed.logs || parsed.items || (Array.isArray(parsed) ? parsed : []);
+    const trades = parsed.trades || parsed.logs || (Array.isArray(parsed) ? parsed : []);
     const portfolios = parsed.portfolios || [];
     const selectedPortVal = selectPort ? selectPort.value.trim() : 'ALL';
 
@@ -111,7 +235,6 @@ function loadFromPortfolio() {
     const matchedTrades = trades.filter(t => {
       const cleanSym = normalizeSymbol(t.symbol || t.ticker || t.stock || t.asset);
       if (cleanSym !== targetSymbol) return false;
-
       if (validPortKeys.size > 0) {
         const tPort = (t.portfolioId || t.portfolio || t.port || t.broker || '').toString();
         if (!validPortKeys.has(tPort)) return false;
@@ -119,10 +242,7 @@ function loadFromPortfolio() {
       return true;
     });
 
-    if (matchedTrades.length === 0) {
-      alert(`ไม่พบรายการซื้อขายของ ${targetSymbol}`);
-      return;
-    }
+    if (matchedTrades.length === 0) return;
 
     matchedTrades.sort((a, b) => new Date(a.date || a.timestamp || 0) - new Date(b.date || b.timestamp || 0));
 
@@ -155,13 +275,10 @@ function loadFromPortfolio() {
       try {
         const quotes = JSON.parse(rawQuote);
         const q = quotes[targetSymbol] || quotes[`${targetSymbol}.BK`];
-        if (q && (q.price || q.close)) {
-          marketPrice = parseNum(q.price || q.close);
-        }
+        if (q && (q.price || q.close)) marketPrice = parseNum(q.price || q.close);
       } catch (e) {}
     }
 
-    // บันทึกลงตัวแปร Global
     window.currentHolding = {
       shares: totalShares,
       avgCost: avgPrice,
@@ -171,22 +288,32 @@ function loadFromPortfolio() {
       symbol: targetSymbol
     };
 
-    // อัปเดตการ์ดสรุป 4 ใบด้านบน
-    const cardValues = document.querySelectorAll('.card-value, .stat-val, .summary-card-val');
-    const elShares = document.getElementById('disp-shares') || document.getElementById('avgCostShares') || cardValues[0];
-    const elAvg = document.getElementById('disp-avg') || document.getElementById('avgCostPrice') || cardValues[1];
-    const elTotal = document.getElementById('disp-total') || document.getElementById('avgCostTotal') || cardValues[2];
-    const elCount = document.getElementById('disp-count') || document.getElementById('avgCostCount') || cardValues[3];
+    // อัปเดตการ์ดสรุป 4 กล่องบนสุด
+    const elShares = document.getElementById('disp-shares');
+    const elAvg = document.getElementById('disp-avg');
+    const elTotal = document.getElementById('disp-total');
+    const elCount = document.getElementById('disp-count');
 
-    if (elShares) elShares.textContent = totalShares.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+    if (elShares) elShares.textContent = totalShares.toLocaleString();
     if (elAvg) elAvg.textContent = avgPrice.toFixed(2);
     if (elTotal) elTotal.textContent = totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (elCount) elCount.textContent = matchedTrades.length;
 
-    // อัปเดตป้ายราคาตลาด (Badge) ด้านขวาบน
+    // อัปเดตตารางสรุปด้านล่างตารางซื้อขาย
+    const tblShares = document.getElementById('tbl-total-shares');
+    const tblCost = document.getElementById('tbl-total-cost');
+    const tblRunShares = document.getElementById('tbl-running-shares');
+    const tblFinalAvg = document.getElementById('tbl-final-avg');
+    if (tblShares) tblShares.textContent = totalShares.toLocaleString();
+    if (tblCost) tblCost.textContent = totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (tblRunShares) tblRunShares.textContent = totalShares.toLocaleString();
+    if (tblFinalAvg) tblFinalAvg.textContent = avgPrice.toFixed(2);
+
+    // อัปเดต Badge ราคาตลาด
     const elCurrAvg = document.getElementById('lbl-curr-avg');
     const elMktPrice = document.getElementById('lbl-mkt-price');
     const elMktDiff = document.getElementById('lbl-mkt-diff');
+
     if (elCurrAvg) elCurrAvg.textContent = `${avgPrice.toFixed(2)} ฿`;
     if (elMktPrice) elMktPrice.textContent = `${marketPrice.toFixed(2)} ฿`;
     if (elMktDiff) {
@@ -195,34 +322,24 @@ function loadFromPortfolio() {
       elMktDiff.style.color = diffPct >= 0 ? '#10b981' : '#ef4444';
     }
 
-    // วาดแถวตารางบันทึกซื้อ/ขายด้านล่าง
     renderTradesTable(matchedTrades);
 
-    // แสดงข้อความในแบนเนอร์แจ้งเตือนสีเขียว
-    const banner = document.getElementById('banner-port-status') || 
-                   document.getElementById('avgImportNote') || 
-                   document.querySelector('.alert-success');
+    const banner = document.getElementById('banner-port-status');
     if (banner) {
-      banner.style.display = 'block';
       banner.textContent = `✓ ดึงรายการสำเร็จ ${matchedTrades.length} รายการ (${totalShares.toLocaleString()} หุ้น)`;
     }
 
-    // เรียกคำนวณเปรียบเทียบเป้าหมาย
     updateTargetComparison();
-
   } catch (err) {
-    console.error('Error in loadFromPortfolio:', err);
+    console.error('loadFromPortfolio error:', err);
   }
 }
 
 // ==========================================
-// 3. ฟังก์ชันวาดตารางบันทึกซื้อ/ขาย
+// 4. วาดตารางบันทึกการซื้อ/ขาย
 // ==========================================
 function renderTradesTable(tradesList) {
-  const tbody = document.getElementById('avgCostRows') || 
-                document.querySelector('#trades-table tbody') || 
-                document.querySelector('.avg-cost-table tbody') || 
-                document.querySelector('table tbody');
+  const tbody = document.getElementById('avgCostRows');
   if (!tbody) return;
 
   tbody.innerHTML = '';
@@ -255,13 +372,12 @@ function renderTradesTable(tradesList) {
     const isBuy = type === 'BUY';
     const bg = isBuy ? '#e6f4ea' : '#fee2e2';
     const col = isBuy ? '#137333' : '#b91c1c';
-    const txt = isBuy ? 'ซื้อ' : 'ขาย';
 
     tr.innerHTML = `
       <td style="padding: 10px; text-align: center; color: #64748b;">${idx + 1}</td>
-      <td style="padding: 8px 10px; text-align: center; vertical-align: middle;">
-        <span style="display: inline-block; min-width: 44px; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; line-height: 1.4; background-color: ${bg}; color: ${col}; text-align: center; box-shadow: none;">
-          ${txt}
+      <td style="padding: 8px 10px; text-align: center;">
+        <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; background-color: ${bg}; color: ${col};">
+          ${isBuy ? 'ซื้อ' : 'ขาย'}
         </span>
       </td>
       <td style="padding: 10px; text-align: center; color: #334155;">${dateStr}</td>
@@ -269,9 +385,9 @@ function renderTradesTable(tradesList) {
       <td style="padding: 10px; text-align: right;">${price.toFixed(2)}</td>
       <td style="padding: 10px; text-align: right; color: #137333; font-weight: 600;">${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
       <td style="padding: 10px; text-align: right; font-weight: 600;">${runningShares.toLocaleString()}</td>
-      <td style="padding: 10px; text-align: right; font-weight: 700;">${curAvg.toFixed(2)}</td>
+      <td style="padding: 10px; text-align: right; font-weight: 700; color: #0284c7;">${curAvg.toFixed(2)}</td>
       <td style="padding: 10px; text-align: center;">
-        <button type="button" style="color: #ef4444; background: none; border: none; cursor: pointer; font-weight: 700; font-size: 13px;" onclick="removeTradeItem(${idx})">ลบ</button>
+        <button type="button" style="color: #ef4444; background: none; border: none; cursor: pointer; font-weight: 700;" onclick="removeTradeItem(${idx})">✕</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -279,77 +395,99 @@ function renderTradesTable(tradesList) {
 }
 
 function removeTradeItem(index) {
-  const tbody = document.getElementById('avgCostRows') || document.querySelector('table tbody');
+  const tbody = document.getElementById('avgCostRows');
   if (tbody && tbody.children[index]) {
     tbody.removeChild(tbody.children[index]);
   }
 }
 
 // ==========================================
-// 4. ฟังก์ชันคำนวณเปรียบเทียบก่อน-หลัง
+// 5. ระบบคำนวณถัวเฉลี่ย (แยกโหมดชัดเจน + ปัดเศษ)
 // ==========================================
 function updateTargetComparison() {
-  const buyPriceInput = document.getElementById('input-buy-price');
-  const targetAvgInput = document.getElementById('input-target-avg');
-  const extraMoneyInput = document.getElementById('input-buy-budget');
+  const currentShares = window.currentHolding.shares || 0;
+  const currentAvg = window.currentHolding.avgCost || 0;
+  const currentTotalCost = window.currentHolding.totalCost || (currentShares * currentAvg);
 
-  const buyPrice = parseNum(buyPriceInput ? buyPriceInput.value : 0);
-  const targetAvg = parseNum(targetAvgInput ? targetAvgInput.value : 0);
-  const extraBudget = parseNum(extraMoneyInput ? extraMoneyInput.value : 0);
+  // ----------------------------------------
+  // ทำงานตามโหมดที่กำลังเลือก
+  // ----------------------------------------
+  if (window.activeCalcTab === 'goal') {
+    // โหมด 2: หาต้นทุนเป้าหมาย
+    const buyPrice = parseNum(document.getElementById('input-goal-buy-price')?.value);
+    const targetAvg = parseNum(document.getElementById('input-target-avg')?.value);
 
-  const currentShares = (window.currentHolding && window.currentHolding.shares !== undefined)
-    ? window.currentHolding.shares
-    : parseNum(document.getElementById('disp-shares')?.textContent || 0);
+    const elHeading = document.getElementById('goal-result-heading');
+    const elNeedShares = document.getElementById('res-target-shares');
+    const elNeedMoney = document.getElementById('res-target-money');
+    const elNote = document.getElementById('avgTargetNote');
 
-  const currentAvg = (window.currentHolding && window.currentHolding.avgCost !== undefined)
-    ? window.currentHolding.avgCost
-    : parseNum(document.getElementById('disp-avg')?.textContent || 0);
+    if (buyPrice > 0 && targetAvg > 0 && currentShares > 0) {
+      if (buyPrice === targetAvg) {
+        if (elNeedShares) elNeedShares.textContent = '-';
+        if (elNeedMoney) elNeedMoney.textContent = '-';
+        if (elNote) elNote.innerHTML = '⚠️ ราคาซื้อเพิ่มต้องไม่เท่ากับต้นทุนเฉลี่ยเป้าหมาย';
+        return;
+      }
 
-  const currentTotalCost = (window.currentHolding && window.currentHolding.totalCost !== undefined)
-    ? window.currentHolding.totalCost
-    : (currentShares * currentAvg);
+      // ตรวจสอบเงื่อนไขถัวลง: ราคาซื้อต้องต่ำกว่าเป้าหมาย
+      const isDown = targetAvg < currentAvg;
+      if (isDown && buyPrice >= targetAvg) {
+        if (elNeedShares) elNeedShares.textContent = '-';
+        if (elNeedMoney) elNeedMoney.textContent = '-';
+        if (elNote) elNote.innerHTML = '⚠️ หากต้องการถัวลดต้นทุนลง ราคาซื้อใหม่ต้องต่ำกว่าต้นทุนเป้าหมาย';
+        return;
+      }
 
-  let extraShares = 0;
-  let newAvgFromMoney = currentAvg;
-  let newTotalCostFromMoney = currentTotalCost;
-  let newTotalSharesFromMoney = currentShares;
+      const required = (currentShares * (currentAvg - targetAvg)) / (targetAvg - buyPrice);
+      if (required > 0) {
+        const needShares = Math.round(required); // ปัดเศษเป็นหุ้นจำนวนเต็ม
+        const needMoney = needShares * buyPrice;
 
-  if (buyPrice > 0 && extraBudget > 0) {
-    extraShares = extraBudget / buyPrice;
-    newTotalSharesFromMoney = currentShares + extraShares;
-    newTotalCostFromMoney = currentTotalCost + extraBudget;
-    newAvgFromMoney = newTotalSharesFromMoney > 0 ? (newTotalCostFromMoney / newTotalSharesFromMoney) : 0;
-  }
-
-  let needShares = 0;
-  let needMoney = 0;
-  if (buyPrice > 0 && targetAvg > 0 && targetAvg !== buyPrice) {
-    const required = (currentShares * (currentAvg - targetAvg)) / (targetAvg - buyPrice);
-    if (required > 0) {
-      needShares = Math.round(required);
-      needMoney = needShares * buyPrice;
+        if (elHeading) elHeading.innerText = `🎯 สรุปสิ่งที่ต้องทำเพื่อให้ได้ต้นทุนเฉลี่ย ${targetAvg.toFixed(2)} ฿:`;
+        if (elNeedShares) elNeedShares.textContent = needShares.toLocaleString();
+        if (elNeedMoney) elNeedMoney.textContent = needMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (elNote) {
+          elNote.innerHTML = `💡 ซื้อเพิ่ม <b>${needShares.toLocaleString()} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> จะทำให้มีหุ้นรวม <b>${(currentShares + needShares).toLocaleString()} หุ้น</b> และได้ต้นทุนเฉลี่ย <b>${targetAvg.toFixed(2)} ฿</b>`;
+        }
+      } else {
+        if (elNeedShares) elNeedShares.textContent = '-';
+        if (elNeedMoney) elNeedMoney.textContent = '-';
+        if (elNote) elNote.innerHTML = '⚠️ เงื่อนไขเป้าหมายไม่สอดคล้องกับราคาซื้อ';
+      }
+    } else {
+      if (elNeedShares) elNeedShares.textContent = '-';
+      if (elNeedMoney) elNeedMoney.textContent = '-';
+      if (elNote) elNote.innerHTML = 'กรุณาระบุราคาซื้อเพิ่ม และต้นทุนเฉลี่ยเป้าหมายที่ต้องการ';
     }
-  }
 
-  // 1. อัปเดตการ์ดย่อย 3 ใบ
-  const elNeedShares = document.getElementById('res-target-shares');
-  const elNeedMoney = document.getElementById('res-target-money');
-  const elNewAvg = document.getElementById('res-new-avg');
-  const elNewShares = document.getElementById('res-new-shares');
+  } else {
+    // โหมด 1: จำลองการซื้อ (มีงบ / มีจำนวนหุ้น)
+    const buyPrice = parseNum(document.getElementById('input-buy-price')?.value);
+    const mode = document.getElementById('select-calc-mode')?.value || 'money';
+    const inputVal = parseNum(document.getElementById('input-buy-budget')?.value);
 
-  if (elNeedShares) elNeedShares.textContent = needShares.toLocaleString();
-  if (elNeedMoney) elNeedMoney.textContent = needMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (elNewAvg) elNewAvg.textContent = newAvgFromMoney.toFixed(2);
-  if (elNewShares) elNewShares.textContent = `ซื้อได้ ${extraShares.toLocaleString(undefined, { maximumFractionDigits: 6 })} หุ้น`;
+    let addShares = 0;
+    let addMoney = 0;
 
-  // 2. อัปเดตกล่องสรุปเปรียบเทียบ ก่อน - หลัง
-  const comparePanel = document.getElementById('avgComparePanel');
-  if (comparePanel) {
-    comparePanel.style.display = 'block';
+    if (buyPrice > 0 && inputVal > 0) {
+      if (mode === 'shares') {
+        addShares = Math.floor(inputVal); // ซื้อตามหุ้น
+        addMoney = addShares * buyPrice;
+      } else {
+        addShares = Math.floor(inputVal / buyPrice); // ซื้อตามงบ ปัดเศษลงเป็นหุ้นเต็ม
+        addMoney = addShares * buyPrice;
+      }
+    }
 
-    const diffPct = currentAvg > 0 ? ((newAvgFromMoney - currentAvg) / currentAvg) * 100 : 0;
+    const newTotalShares = currentShares + addShares;
+    const newTotalCost = currentTotalCost + addMoney;
+    const newAvg = newTotalShares > 0 ? (newTotalCost / newTotalShares) : currentAvg;
+
+    const diffPct = currentAvg > 0 ? ((newAvg - currentAvg) / currentAvg) * 100 : 0;
     const isCostDown = diffPct <= 0;
 
+    // อัปเดตกล่องสถานะเดิม
     const elBeforeShares = document.getElementById('cmpBeforeShares');
     const elBeforeAvg = document.getElementById('cmpBeforeAvg');
     const elBeforeTotal = document.getElementById('cmpBeforeTotal');
@@ -357,116 +495,95 @@ function updateTargetComparison() {
     if (elBeforeAvg) elBeforeAvg.textContent = `${currentAvg.toFixed(2)} ฿`;
     if (elBeforeTotal) elBeforeTotal.textContent = `${currentTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
 
+    // อัปเดตกล่องสถานะใหม่
     const elAfterShares = document.getElementById('cmpAfterShares');
     const elAfterAvg = document.getElementById('cmpAfterAvg');
     const elAfterTotal = document.getElementById('cmpAfterTotal');
     const elBadge = document.getElementById('avgStrategyBadge');
-
-    const extraSharesFormatted = extraShares.toLocaleString(undefined, { 
-      minimumFractionDigits: 0, 
-      maximumFractionDigits: 2 
-    });
-    const totalSharesFormatted = newTotalSharesFromMoney.toLocaleString(undefined, { 
-      minimumFractionDigits: 0, 
-      maximumFractionDigits: 2 
-    });
-
-    if (elAfterShares) elAfterShares.textContent = `${totalSharesFormatted} หุ้น (+${extraSharesFormatted})`;
-    if (elAfterAvg) elAfterAvg.textContent = `${newAvgFromMoney.toFixed(2)} ฿ (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%)`;
-    if (elAfterTotal) elAfterTotal.textContent = `${newTotalCostFromMoney.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
-
-    if (elBadge) {
-      elBadge.textContent = isCostDown ? `ถัวลดต้นทุน ลง ${Math.abs(diffPct).toFixed(2)}%` : `ซื้อเฉลี่ยขาขึ้น +${diffPct.toFixed(2)}%`;
-      elBadge.style.color = isCostDown ? '#16a34a' : '#d97706';
-    }
     const elDynamicText = document.getElementById('avgSummaryDynamicText');
-    if (elDynamicText) {
-      elDynamicText.innerHTML = `💡 หากซื้อเพิ่ม <b>${extraSharesFormatted} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> (ใช้เงิน <b>${extraBudget.toLocaleString(undefined, {minimumFractionDigits: 2})} ฿</b>) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>${currentAvg.toFixed(2)} ฿</b> เป็น <b>${newAvgFromMoney.toFixed(2)} ฿</b>`;
-    }
 
-    if (elNewShares) {
-      elNewShares.textContent = `ซื้อได้ ${extraSharesFormatted} หุ้น`;
-    }
-  }
+    if (addShares > 0) {
+      if (elAfterShares) elAfterShares.textContent = `${newTotalShares.toLocaleString()} หุ้น (+${addShares.toLocaleString()})`;
+      if (elAfterAvg) elAfterAvg.textContent = `${newAvg.toFixed(2)} ฿ (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%)`;
+      if (elAfterTotal) elAfterTotal.textContent = `${newTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
 
-  // 3. อัปเดตแถบสรุปกรณีถัวลง
-  const elNote = document.getElementById('avgTargetNote');
-  if (elNote && needShares > 0 && buyPrice < currentAvg) {
-    elNote.innerHTML = `กรณีถัวลง: ถ้าซื้อที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> ต้องซื้อเพิ่มประมาณ <b>${needShares.toLocaleString()} หุ้น</b> เพื่อให้เฉลี่ยใหม่เป็น <b>${targetAvg.toFixed(2)} ฿</b>`;
+      if (elBadge) {
+        elBadge.textContent = isCostDown ? `📉 ถัวลดต้นทุน ลง ${Math.abs(diffPct).toFixed(2)}%` : `📈 ซื้อเฉลี่ยขาขึ้น +${diffPct.toFixed(2)}%`;
+        elBadge.style.color = isCostDown ? '#16a34a' : '#d97706';
+      }
+
+      const remainder = (mode === 'money' && inputVal > addMoney) ? ` (เหลืองบ ${(inputVal - addMoney).toFixed(2)} ฿)` : '';
+      if (elDynamicText) {
+        elDynamicText.innerHTML = `💡 หากซื้อเพิ่ม <b>${addShares.toLocaleString()} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> (ใช้เงิน <b>${addMoney.toLocaleString(undefined, {minimumFractionDigits: 2})} ฿</b>${remainder}) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>${currentAvg.toFixed(2)} ฿</b> เป็น <b>${newAvg.toFixed(2)} ฿</b>`;
+      }
+    } else {
+      if (elAfterShares) elAfterShares.textContent = `${currentShares.toLocaleString()} หุ้น`;
+      if (elAfterAvg) elAfterAvg.textContent = `${currentAvg.toFixed(2)} ฿`;
+      if (elAfterTotal) elAfterTotal.textContent = `${currentTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
+      if (elDynamicText) elDynamicText.innerHTML = '💡 กรอกราคาและจำนวนเงิน/หุ้น เพื่อเริ่มจำลองการถัวเฉลี่ย';
+    }
   }
 }
 
-// ==========================================
-// 5. เชื่อมต่อ Global และผูก Event
-// ==========================================
+function clearSim() {
+  if (confirm('คุณต้องการล้างข้อมูลจำลองการคำนวณทั้งหมดหรือไม่?')) {
+    window.currentHolding = { shares: 0, avgCost: 0, totalCost: 0, txCount: 0, marketPrice: 0, symbol: '' };
+    loadFromPortfolio();
+  }
+}
+
+function exportData() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.currentHolding, null, 2));
+  const a = document.createElement('a');
+  a.href = dataStr;
+  a.download = "average_cost_backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      window.currentHolding = JSON.parse(evt.target.result);
+      updateTargetComparison();
+      alert('นำเข้าข้อมูลสำเร็จ');
+    } catch(err) {
+      alert('รูปแบบไฟล์ไม่ถูกต้อง');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ผูกฟังก์ชันเข้า Window
 window.loadFromPortfolio = loadFromPortfolio;
+window.refreshPortfolios = refreshPortfolios;
 window.updateTargetComparison = updateTargetComparison;
+window.switchCalcTab = switchCalcTab;
+window.handleCalcModeChange = handleCalcModeChange;
+window.clearSim = clearSim;
+window.exportData = exportData;
+window.importData = importData;
 window.removeTradeItem = removeTradeItem;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const btnImport = document.getElementById('avgImportButton') || 
-                    document.getElementById('btn-import-port') || 
-                    document.querySelector('.btn-primary') ||
-                    document.querySelector('button[onclick*="loadFromPortfolio"]');
-  if (btnImport) {
-    btnImport.addEventListener('click', loadFromPortfolio);
-  }
+  const selectPort = document.getElementById('select-port');
+  if (selectPort) selectPort.addEventListener('change', refreshPortfolios);
 
-  const inputSelectors = [
-    '#avgTargetBuyPrice', '#avgTargetPrice', '#avgTargetExtra',
-    '#input-buy-price', '#input-target-avg', '#input-extra-money',
-    'input[placeholder*="6.50"]', 'input[placeholder*="7.00"]', 'input[placeholder*="20,000"]'
-  ];
+  const selectAsset = document.getElementById('select-asset');
+  if (selectAsset) selectAsset.addEventListener('change', loadFromPortfolio);
 
-  inputSelectors.forEach(sel => {
-    const el = document.querySelector(sel);
+  // ผูกการตรวจจับพิมพ์ค่าคำนวณทันที
+  const inputs = ['input-buy-price', 'input-buy-budget', 'input-goal-buy-price', 'input-target-avg'];
+  inputs.forEach(id => {
+    const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateTargetComparison);
   });
 
-  // รันดึงข้อมูลและคำนวณอัตโนมัติตอนเปิดหน้าเว็บ
   setTimeout(() => {
-    const ctx = getAverageUserContext();
-    const selectPort = document.getElementById('select-port') || document.getElementById('avgImportPortfolio');
-    const selectAsset = document.getElementById('select-asset') || document.getElementById('avgImportSymbol');
-
-    if (!ctx.isMember) {
-      // ถ้าเป็น Admin (พ่อบี) ให้เลือก BLS และ ALLY ตามเดิม
-      if (selectPort && !selectPort.value) selectPort.value = 'BLS';
-      if (selectAsset) {
-        for (let opt of selectAsset.options) {
-          if (opt.value.includes('ALLY') || opt.text.includes('ALLY')) {
-            selectAsset.value = opt.value;
-            break;
-          }
-        }
-      }
-    } else {
-      // ถ้าเป็น Member (น้องพลอย) ให้เลือกสินทรัพย์ตัวแรกที่มีใน Dropdown ของตนเอง
-      if (selectAsset && selectAsset.options.length > 0) {
-        // ข้าม option แรกที่เป็นหัวข้อถ้ามี หรือเลือกตัวแรกที่มีรายการ
-        for (let opt of selectAsset.options) {
-          if (opt.value && opt.value !== 'ALL') {
-            selectAsset.value = opt.value;
-            break;
-          }
-        }
-      }
-    }
-
-    if (typeof loadFromPortfolio === 'function') {
-      loadFromPortfolio();
-    }
-
-    const inBuy = document.getElementById('avgTargetBuyPrice') || document.querySelector('input[placeholder*="6.50"]');
-    const inTarget = document.getElementById('avgTargetPrice') || document.querySelector('input[placeholder*="7.00"]');
-    const inExtra = document.getElementById('avgTargetExtra') || document.querySelector('input[placeholder*="20,000"]');
-
-    if (inBuy) inBuy.value = '';
-    if (inTarget) inTarget.value = '';
-    if (inExtra) inExtra.value = '';
-
-    if (typeof updateTargetComparison === 'function') {
-      updateTargetComparison();
-    }
-  }, 250);
+    refreshPortfolios();
+  }, 200);
 });
