@@ -214,6 +214,7 @@ async function handleSignOut() {
     window.location.href = 'index.html';
   }
 }
+
 // ==========================================
 // Cloud Data Sync Engine (PC ↔ iPad / Mobile)
 // ==========================================
@@ -237,6 +238,49 @@ const CloudSync = {
     'wealthport:dividend-plan-pillars:v3',
     'wealthport:dividend-plan-target:v3'
   ],
+
+  // กล่องแจ้งเตือนสถานะมุมขวาล่าง
+  showSyncToast(message, isSuccess = true) {
+    let toast = document.getElementById('cloudSyncToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'cloudSyncToast';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 99999;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+      `;
+      document.body.appendChild(toast);
+    }
+
+    if (isSuccess) {
+      toast.style.background = '#10B981'; // สีเขียว
+      toast.style.color = '#FFFFFF';
+      toast.innerText = `☁️ ${message}`;
+    } else {
+      toast.style.background = '#EF4444'; // สีแดง
+      toast.style.color = '#FFFFFF';
+      toast.innerText = `⚠️ ${message}`;
+    }
+
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+    }, 2500);
+  },
 
   // 1. ดึงข้อมูลจาก Cloud ลงมาใส่ LocalStorage (อัตโนมัติเมื่อเปิดเว็บ)
   async pullFromCloud() {
@@ -301,8 +345,11 @@ const CloudSync = {
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
+      
+      this.showSyncToast('บันทึกขึ้น Cloud แล้ว', true);
       console.log('[CloudSync] Synced to cloud successfully');
     } catch (err) {
+      this.showSyncToast('บันทึกขึ้น Cloud ไม่สำเร็จ', false);
       console.error('[CloudSync] Push error:', err);
     }
   }
@@ -312,3 +359,22 @@ const CloudSync = {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => CloudSync.pullFromCloud(), 300);
 });
+
+// ดักจับการเซฟข้อมูลเพื่อ Push ขึ้น Cloud อัตโนมัติ (หน่วงเวลา 1.5 วินาทีเพื่อป้องกันการยิงถี่เกินไป)
+let syncTimeout = null;
+window.addEventListener('storage', (e) => {
+  if (CloudSync.STORAGE_KEYS.includes(e.key)) {
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+      CloudSync.pushToCloud();
+    }, 1500);
+  }
+});
+
+// สร้างฟังก์ชัน Global ให้โมดูลอื่นเรียกสั่งซิงค์ได้ทันที
+window.triggerCloudSync = () => {
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => {
+    CloudSync.pushToCloud();
+  }, 500);
+};
