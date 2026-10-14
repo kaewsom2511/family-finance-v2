@@ -214,3 +214,101 @@ async function handleSignOut() {
     window.location.href = 'index.html';
   }
 }
+// ==========================================
+// Cloud Data Sync Engine (PC ↔ iPad / Mobile)
+// ==========================================
+
+const CloudSync = {
+  STORAGE_KEYS: [
+    'family-finance:cashflow:v2',
+    'family-finance:cashflow:member:ploy',
+    'family-finance:cashflow:member:ploy1',
+    'family-finance:categories:v1',
+    'family-finance:credit-cards:v1',
+    'family-finance:debts-contracts:v1',
+    'family-finance:settings',
+    'family-finance:tax-planner:DAD:2025',
+    'family-finance:tax-planner:DAD:2026',
+    'family-finance:tax-planner:DAD:active-year',
+    'family-finance:tax-planner:DAD:years',
+    'stock-trading-log:v3',
+    'stock-trading-log:member:ploy',
+    'wealthport:dividend-plan-models:v3',
+    'wealthport:dividend-plan-pillars:v3',
+    'wealthport:dividend-plan-target:v3'
+  ],
+
+  // 1. ดึงข้อมูลจาก Cloud ลงมาใส่ LocalStorage (อัตโนมัติเมื่อเปิดเว็บ)
+  async pullFromCloud() {
+    if (!supabaseClient) return;
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabaseClient
+        .from('user_storage')
+        .select('data, updated_at')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data && data.data) {
+        let hasNewData = false;
+        Object.entries(data.data).forEach(([key, val]) => {
+          if (val !== null && val !== undefined) {
+            localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
+            hasNewData = true;
+          }
+        });
+
+        // ถ้าเครื่องปลายทางยังไม่มีข้อมูล แล้วเพิ่งดึงมาจาก Cloud ให้รีโหลด 1 ครั้งเพื่อแสดงผล
+        const isCurrentEmpty = !localStorage.getItem('stock-trading-log:v3') && !localStorage.getItem('family-finance:cashflow:v2');
+        if (hasNewData && isCurrentEmpty) {
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      console.warn('[CloudSync] Pull error:', err);
+    }
+  },
+
+  // 2. ส่งข้อมูลทั้งหมดจากเครื่องนี้ขึ้นไปเก็บไว้บน Cloud
+  async pushToCloud() {
+    if (!supabaseClient) return;
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) return;
+
+      const bundle = {};
+      this.STORAGE_KEYS.forEach(key => {
+        const raw = localStorage.getItem(key);
+        if (raw !== null) {
+          try {
+            bundle[key] = JSON.parse(raw);
+          } catch (e) {
+            bundle[key] = raw;
+          }
+        }
+      });
+
+      const { error } = await supabaseClient
+        .from('user_storage')
+        .upsert({
+          user_id: session.user.id,
+          data: bundle,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      console.log('[CloudSync] Synced to cloud successfully');
+    } catch (err) {
+      console.error('[CloudSync] Push error:', err);
+    }
+  }
+};
+
+// สั่งโหลดข้อมูลจาก Cloud ทันทีเมื่อเปิดหน้าเว็บ
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => CloudSync.pullFromCloud(), 300);
+});
