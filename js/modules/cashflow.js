@@ -295,6 +295,7 @@ var CashFlowModule = {
     try {
       const ctx = this.getUserContext();
       localStorage.setItem(ctx.storageKey, JSON.stringify(state));
+      if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync(); // <-- เพิ่มบรรทัดนี้
     } catch (e) {
       console.error('saveState error:', e);
     }
