@@ -501,11 +501,57 @@ window.DebtModule = {
       const totalAvailAll = Math.max(0, totalLimitAllCards - totalDebtAllCards);
       const totalUtilPct = totalLimitAllCards > 0 ? ((totalDebtAllCards / totalLimitAllCards) * 100).toFixed(1) : '0.0';
 
-      let activeTxs = allTx.filter(t => isTxMatchCard(t, curCard) && t.date >= startCycleDate && t.date <= endCycleDate);
+      // 1. ดึงรายการรูดใช้จ่ายปกติ (ไม่รวมยอดหนี้สินก้อนใหญ่)
+      let activeTxs = allTx.filter(t => isTxMatchCard(t, curCard) && t.type !== 'หนี้สิน' && t.date >= startCycleDate && t.date <= endCycleDate);
 
-      const cardUsageTotal = activeTxs
-        .filter(t => t.type === 'รายจ่าย' || t.type === 'บิล' || t.type === 'หนี้สิน')
+      // 2. ดึงค่างวดจากสัญญาผ่อนชำระ (Debts) ที่ตรงกับบัตรใบนี้และอยู่ในช่วงรอบบิล
+      const allDebts = this.getDebts();
+      const currentCycleYm = `${selYear}-${String(selMonth).padStart(2, '0')}`;
+      
+      const installmentRows = [];
+      let totalInstallmentAmt = 0;
+
+      allDebts.forEach(d => {
+        // ตรวจสอบว่าสัญญานี้ผูกกับบัตรใบนี้หรือไม่
+        const isDebtMatchCard = isTxMatchCard({ account: d.accountName, accountName: d.accountName }, curCard);
+        if (!isDebtMatchCard) return;
+
+        // ตรวจสอบช่วงเวลาผ่อนชำระ (startDate ถึง endDate)
+        const startYm = (d.startDate || '').slice(0, 7);
+        const endYm = (d.endDate || '').slice(0, 7);
+
+        if (currentCycleYm >= startYm && currentCycleYm <= endYm) {
+          // คำนวณลำดับงวดปัจจุบัน (เช่น งวดที่ 1/6)
+          const startParts = startYm.split('-');
+          const startYear = parseInt(startParts[0], 10) || selYear;
+          const startMonth = parseInt(startParts[1], 10) || selMonth;
+          const currentTermIndex = (selYear - startYear) * 12 + (selMonth - startMonth) + 1;
+          const safeTerm = Math.min(Math.max(1, currentTermIndex), d.totalMonths || 6);
+
+          totalInstallmentAmt += Number(d.monthlyPayment || 0);
+
+          installmentRows.push({
+            id: 'inst-' + d.id + '-' + currentCycleYm,
+            date: endCycleDate, // แสดง ณ วันสรุปยอดรอบบิล
+            type: 'ผ่อนชำระ',
+            category: 'แบ่งจ่ายรายเดือน',
+            amount: Number(d.monthlyPayment || 0),
+            accountName: curCard.name,
+            desc: `${d.name} (ผ่อนชำระงวดที่ ${String(safeTerm).padStart(2, '0')}/${String(d.totalMonths || 6).padStart(2, '0')})`,
+            isInstallmentRow: true
+          });
+        }
+      });
+
+      // รวมรายการรูดปกติ + รายการค่างวดผ่อนประจำเดือน
+      activeTxs = [...installmentRows, ...activeTxs];
+
+      // คำนวณยอดใช้บัตร (รูดปกติ + ค่างวดผ่อน)
+      const regularUsage = activeTxs
+        .filter(t => !t.isInstallmentRow && (t.type === 'รายจ่าย' || t.type === 'บิล'))
         .reduce((s, t) => s + Number(t.amount || 0), 0);
+
+      const cardUsageTotal = regularUsage + totalInstallmentAmt;
 
       const creditRefundTotal = activeTxs
         .filter(t => t.type === 'รายรับ' || t.type === 'เงินคืน')
@@ -581,12 +627,16 @@ window.DebtModule = {
         const isExpense = t.type === 'รายจ่าย' || t.type === 'หนี้สิน';
         const isBill = t.type === 'บิล';
         const isIncome = t.type === 'รายรับ' || t.type === 'เงินคืน';
+        const isInstallment = t.type === 'ผ่อนชำระ';
 
         let badgeBg = '#fef2f2';
         let badgeColor = '#dc2626';
         let typeLabel = t.type || 'รายจ่าย';
 
-        if (isIncome) {
+        if (isInstallment) {
+          badgeBg = '#fff7ed';
+          badgeColor = '#ea580c';
+        } else if (isIncome) {
           badgeBg = '#ecfdf5';
           badgeColor = '#059669';
         } else if (isBill) {

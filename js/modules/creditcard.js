@@ -64,7 +64,7 @@ const CreditCardModule = {
     {
       id: 'account-65346f87-2bf4-460d-8d52-a41300340b97',
       name: 'KTC Platinum Visa',
-      accountMatchNames: ['บัตรเครดิต KTC', 'KTC Platinum Visa', 'KTC'],
+      accountMatchNames: ['บัตรเครดิตกรุงไทย', 'บัตรเครดิต KTC', 'KTC Platinum Visa', 'KTC'],
       bank: 'KTC CREDIT CARD',
       cardNo: '4589',
       theme: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
@@ -77,7 +77,7 @@ const CreditCardModule = {
     {
       id: 'account-03d9294c-a001-47f8-bdda-c7a485e90431',
       name: 'ttb so smart',
-      accountMatchNames: ['บัตรเครดิต ttb', 'ttb so smart', 'ttb'],
+      accountMatchNames: ['บัตรเครดิตทีทีบี', 'ทีทีบี', 'บัตรเครดิต ttb', 'ttb so smart', 'ttb', 'TTB'],
       bank: 'TTB CREDIT CARD',
       cardNo: '8821',
       theme: 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)',

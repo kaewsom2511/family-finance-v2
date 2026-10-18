@@ -452,12 +452,19 @@ var CashFlowModule = {
       if (e.target && e.target.id === 'modal-tx-type') {
         const selectedType = e.target.value;
         const isTransfer = selectedType === 'โอนระหว่างบัญชี' || selectedType === 'โอนเงิน';
+        const isDebt = selectedType === 'หนี้สิน';
 
         const singleBox = document.getElementById('box-single-account');
         const transferBox = document.getElementById('box-transfer-account');
         if (singleBox && transferBox) {
           singleBox.style.display = isTransfer ? 'none' : 'block';
           transferBox.style.display = isTransfer ? 'flex' : 'none';
+        }
+
+        // แสดง/ซ่อน กล่องตั้งค่างวดผ่อน
+        const debtTermsBox = document.getElementById('box-debt-terms');
+        if (debtTermsBox) {
+          debtTermsBox.style.display = isDebt ? 'flex' : 'none';
         }
 
         const catSelect = document.getElementById('modal-tx-category');
@@ -614,6 +621,16 @@ var CashFlowModule = {
               <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">รายละเอียด</label>
               <input type="text" id="modal-tx-desc" value="${this.getItemDetail(tx)}" placeholder="รายละเอียดเพิ่มเติม..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
             </div>
+            <div id="box-debt-terms" style="display: ${currentTypeKey === 'หนี้สิน' ? 'flex' : 'none'}; gap: 10px; background: #fff7ed; padding: 10px 12px; border-radius: 8px; border: 1px solid #fed7aa; align-items: center; margin-top: 10px;">
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">จำนวนงวดผ่อน (เดือน)</label>
+                <input type="number" id="modal-debt-terms-input" value="6" min="1" max="60" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 13px; font-weight: 800; color: #9a3412; outline: none; background: #fff;">
+              </div>
+              <div style="flex: 1.2;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">ผ่อนเฉลี่ยต่องวด</label>
+                <div id="modal-debt-monthly-preview" style="font-size: 14px; font-weight: 900; color: #c2410c; padding-top: 4px;">฿0.00 / เดือน</div>
+              </div>
+            </div>
 
             <div id="box-single-account" style="display: ${isTransfer ? 'none' : 'block'};">
               <div>
@@ -657,6 +674,18 @@ var CashFlowModule = {
     const closeModal = () => document.getElementById('modal-add-transaction')?.remove();
     document.getElementById('btn-close-tx-modal').onclick = closeModal;
     document.getElementById('btn-cancel-modal-tx').onclick = closeModal;
+    const updateMonthlyPreview = () => {
+      const amt = parseFloat(document.getElementById('modal-tx-amount')?.value) || 0;
+      const terms = parseInt(document.getElementById('modal-debt-terms-input')?.value, 10) || 6;
+      const previewEl = document.getElementById('modal-debt-monthly-preview');
+      if (previewEl) {
+        const monthly = terms > 0 ? (amt / terms) : 0;
+        previewEl.textContent = '฿' + monthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / เดือน';
+      }
+    };
+    document.getElementById('modal-tx-amount')?.addEventListener('input', updateMonthlyPreview);
+    document.getElementById('modal-debt-terms-input')?.addEventListener('input', updateMonthlyPreview);
+    updateMonthlyPreview();
 
     document.getElementById('btn-save-modal-tx').onclick = () => {
       const type = document.getElementById('modal-tx-type').value;
@@ -703,6 +732,70 @@ var CashFlowModule = {
           id: 'tx-' + Date.now(),
           ...txPayload
         });
+      }
+
+      // บันทึกลงสัญญาผ่อนชำระอัตโนมัติ เมื่อเลือกประเภท "หนี้สิน"
+      if (type === 'หนี้สิน') {
+        const termsInput = document.getElementById('modal-debt-terms-input');
+        const totalTerms = termsInput ? (parseInt(termsInput.value, 10) || 6) : 6;
+        const monthlyAmt = Math.round((amount / totalTerms) * 100) / 100;
+
+        // คำนวณวันที่เริ่มต้นและวันที่ครบกำหนด (DD/MM/YYYY)
+        const formatThDate = (dObj) => {
+          const dd = String(dObj.getDate()).padStart(2, '0');
+          const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+          const yyyy = dObj.getFullYear();
+          return `${dd}/${mm}/${yyyy}`;
+        };
+
+        const startDateObj = date ? new Date(date) : new Date();
+        const endDateObj = new Date(startDateObj);
+        endDateObj.setMonth(endDateObj.getMonth() + totalTerms);
+
+        const startDateStr = formatThDate(startDateObj);
+        const endDateStr = formatThDate(endDateObj);
+
+        // ดึงรายการสัญญาเดิมใน LocalStorage
+        const debtStorageKey = 'family-finance:debts-contracts:v1';
+        let contracts = [];
+        try {
+          contracts = JSON.parse(localStorage.getItem(debtStorageKey)) || [];
+        } catch (e) {}
+
+        const contractId = 'debt_' + (txId || Date.now());
+        const contractName = detail || category || 'สัญญาผ่อนชำระ';
+
+        // เช็คว่าเคยมีสัญญานี้อยู่เดิมหรือไม่ (กรณีแก้ไขรายการเดิม)
+        const existIdx = contracts.findIndex(c => c.id === contractId || c.name === contractName);
+        const newContract = {
+          id: existIdx >= 0 ? contracts[existIdx].id : contractId,
+          name: contractName,
+          totalDebt: amount,
+          monthly: monthlyAmt,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          paid: 0.00,
+          remaining: amount,
+          isClosed: false,
+          closedDate: null
+        };
+
+        if (existIdx >= 0) {
+          contracts[existIdx] = newContract;
+        } else {
+          contracts.unshift(newContract);
+        }
+
+        localStorage.setItem(debtStorageKey, JSON.stringify(contracts));
+
+        this.saveState(state);
+        closeModal();
+
+        // นำทางไปที่หน้าภาระหนี้สินอัตโนมัติทันที
+        window.location.hash = '#debts';
+        this.currentView = 'debts';
+        this.render();
+        return;
       }
 
       this.saveState(state);
@@ -1114,6 +1207,10 @@ var CashFlowModule = {
         const matchName = (raw) => {
           const s = String(raw || '').trim().toLowerCase();
           if (!s) return '';
+
+          // 1. ถ้าเป็นบัตรเครดิต ไม่ใช่บัญชีเงินฝาก ให้ข้ามทันที
+          if (s.includes('บัตรเครดิต') || s.includes('credit')) return '';
+
           if (s.includes('เงินสด') || s.includes('cash')) return 'เงินสด';
           if (s.includes('กรุงเทพ') || s.includes('bbl')) return 'กรุงเทพ';
           if (s.includes('กรุงไทย') || s.includes('ktb')) return 'กรุงไทย';
