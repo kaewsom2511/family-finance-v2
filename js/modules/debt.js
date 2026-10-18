@@ -660,7 +660,7 @@ window.DebtModule = {
               ${amtSign}
             </td>
             <td style="padding: 12px 14px; font-size: 13px; color: #475569; white-space: nowrap;">${t.account || t.accountName || curCard.name}</td>
-            <td style="padding: 12px 14px; font-size: 13px; color: #64748b;">${t.desc || t.note || '-'}</td>
+            <td style="padding: 12px 14px; font-size: 13px; color: #64748b;">${t.detail || t.desc || t.note || t.memo || t.description || '-'}</td>
             <td style="padding: 12px 14px; font-size: 13px; color: #94a3b8; text-align: center;">-</td>
           </tr>
         `;
