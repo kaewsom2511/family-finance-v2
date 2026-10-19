@@ -66,6 +66,14 @@ const stockPricePresetMap = {
   "ASML": { priceRange: "700.00 – 720.00", yield: 1.0, sector: "Semiconductor Equipment" }
 };
 
+function normalizeCleanSymbol(str) {
+  if (!str) return '';
+  return String(str)
+    .toUpperCase()
+    .replace(/\.BK$/i, '')
+    .replace(/[^A-Z0-9]/g, '');
+}
+
 function getPortfolioUserContext() {
   try {
     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -2651,21 +2659,21 @@ this.openAssetModal(holding.symbol);
           const isDiv = (cat === 'เงินปันผล' || cat.includes('ปันผล'));
 
           if (isIncome && isDiv) {
-            const detailStr = String(tx.detail || tx.note || tx.description || '').trim().toUpperCase();
-            const cleanSym = detailStr.replace(/\.BK$/i, '').replace(/[^A-Z0-9-]/g, '').trim();
+            const detailStr = String(tx.detail || tx.note || tx.description || '').trim();
+            const cleanSym = detailStr.replace(/\.BK$/i, '').trim();
 
             if (cleanSym) {
               const netAmount = parseFloat(tx.amount || 0);
               if (netAmount > 0) {
-                // ค้นหาว่าหุ้นตัวนี้อยู่ในพอร์ตใด
-                const matchTrade = trades.find(tr => (tr.symbol || '').toUpperCase().replace(/\.BK$/i, '') === cleanSym);
+                // ค้นหาโดยใช้ normalizeCleanSymbol
+                const matchTrade = trades.find(tr => normalizeCleanSymbol(tr.symbol) === normalizeCleanSymbol(cleanSym));
                 const assignedPortId = matchTrade ? matchTrade.portfolioId : 'ALL';
-                const assignedPortName = portMap[assignedPortId] || (tx.account || 'พอร์ตหุ้นไทย');
+                const assignedPortName = portMap[assignedPortId] || (tx.account || 'พอร์ตทั่วไป');
 
                 combinedDividends.push({
                   id: tx.id || 'cf-div-' + Math.random(),
                   date: tx.date || '',
-                  symbol: cleanSym,
+                  symbol: cleanSym, // คงชื่อเดิมไว้แสดงผล
                   portfolioId: assignedPortId,
                   portName: assignedPortName,
                   amount: netAmount,
@@ -2761,9 +2769,8 @@ this.openAssetModal(holding.symbol);
 
     // 1. ผูกข้อมูล Cost Yield เข้ากับแต่ละรายการ
     const enrichedAssets = topDivAssets.map(item => {
-      const cleanUpper = item.symbol.toUpperCase().replace(/\.BK$/i, '');
       const matchedHolding = (summary.activeHoldings || []).find(
-        h => (h.symbol || '').toUpperCase().replace(/\.BK$/i, '') === cleanUpper
+        h => normalizeCleanSymbol(h.symbol) === normalizeCleanSymbol(item.symbol)
       );
       const costBasis = matchedHolding ? matchedHolding.totalCost : 0;
       const grossDiv = item.totalAmount / 0.9;
@@ -2771,7 +2778,7 @@ this.openAssetModal(holding.symbol);
 
       return {
         ...item,
-        cleanSymbol: cleanUpper,
+        cleanSymbol: item.symbol.replace(/\.BK$/i, ''),
         costBasis,
         costYieldVal
       };
