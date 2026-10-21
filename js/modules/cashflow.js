@@ -261,15 +261,27 @@ var CashFlowModule = {
   },
 
   highlightActiveSidebar() {
-    const isAnnual = this.currentView === 'annual' || (window.location.hash || '').includes('annual');
-    const isDaily = !isAnnual && (this.currentView === 'daily' || (window.location.hash || '').includes('daily'));
-    const isBanking = this.currentView === 'banking' || (window.location.hash || '').includes('banking');
-    const isDividend = this.currentView === 'dividend' || (window.location.hash || '').includes('dividend');
+    const rawHash = (window.location.hash || '').toLowerCase();
+    
+    // กำหนด View ปัจจุบันให้ชัดเจนเพียงสถานะเดียว
+    let activeKey = 'daily';
+    if (this.currentView === 'banking' || rawHash.includes('banking')) {
+      activeKey = 'banking';
+    } else if (this.currentView === 'annual' || rawHash.includes('annual')) {
+      activeKey = 'annual';
+    } else if (this.currentView === 'dividend' || rawHash.includes('dividend')) {
+      activeKey = 'dividend';
+    } else if (this.currentView === 'credit-cards' || rawHash.includes('credit-card')) {
+      activeKey = 'credit-cards';
+    } else if (this.currentView === 'debts' || rawHash.includes('debt')) {
+      activeKey = 'debts';
+    }
 
     document.querySelectorAll('.sidebar-link, .sidebar a').forEach(el => {
       const txt = (el.textContent || '').trim();
       const id = el.id || '';
       
+      // ล้างแถบสีออกทั้งหมดก่อน
       el.style.background = 'transparent';
       el.style.color = '#334155';
       el.style.fontWeight = '600';
@@ -280,13 +292,14 @@ var CashFlowModule = {
         el.style.fontWeight = '700';
       };
 
-      if (isAnnual && (id === 'nav-annual' || txt.includes('สรุปรายเดือน') || txt.includes('รายปี'))) {
+      // เลือกใส่สีเฉพาะเมนูที่ตรงกับ activeKey เพียงอันเดียว
+      if (activeKey === 'banking' && (id === 'nav-banking' || txt.includes('บัญชีเงินฝาก'))) {
         activate();
-      } else if (isDaily && (id === 'nav-daily' || id === 'menu-daily' || txt.includes('รายรับรายจ่าย'))) {
+      } else if (activeKey === 'annual' && (id === 'nav-annual' || txt.includes('สรุปรายเดือน') || txt.includes('รายปี'))) {
         activate();
-      } else if (isBanking && (id === 'nav-banking' || txt.includes('บัญชีเงินฝาก'))) {
+      } else if (activeKey === 'daily' && (id === 'nav-daily' || id === 'menu-daily' || txt.includes('รายรับรายจ่าย'))) {
         activate();
-      } else if (isDividend && (txt.includes('Dashboard') || txt.includes('ปันผล'))) {
+      } else if (activeKey === 'dividend' && (txt.includes('Dashboard') || txt.includes('ปันผล'))) {
         activate();
       }
     });
@@ -1212,10 +1225,10 @@ var CashFlowModule = {
 
   async renderBankingView(targetContainer = null) {
     const container = targetContainer 
+                   || document.querySelector('.subview-content')
                    || document.getElementById('content-area')
                    || document.getElementById('cashflow-subview')
                    || document.getElementById('expense-content')
-                   || document.querySelector('.subview-content')
                    || document.querySelector('.content-area')
                    || document.getElementById('main-content');
     if (!container) return;
@@ -1630,22 +1643,17 @@ var CashFlowModule = {
       return;
     }
 
-    if (this.currentView === 'annual') {
-      this.renderAnnualSummary(container);
-      return;
-    }
-
-    if (this.currentView === 'banking') {
+    if (this.currentView === 'banking' || currentHash.includes('banking')) {
       this.renderBankingView(container);
       return;
     }
 
-    if (this.currentView === 'credit-cards') {
+    if (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) {
       this.renderCreditCardsView(container);
       return;
     }
 
-    if (this.currentView === 'debts') {
+    if (this.currentView === 'debts' || currentHash.includes('debt')) {
       this.renderDebtsView(container);
       return;
     }
