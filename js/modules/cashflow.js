@@ -10,18 +10,34 @@
  */
 
 var CashFlowModule = {
+  // พจนานุกรมแปลงชื่อเก่า -> ชื่อพอร์ตมาตรฐาน 14 พอร์ต
+  portfolioNameMap: {
+    'หุ้นไทย BLS': 'BLS',
+    'หุ้นไทย': 'BLS',
+    'INOVESTX ROBO': 'INVX FUND',
+    'INOVESTX FUND': 'INVX FUND',
+    'INOVESTX RMF': 'INVX RMF',
+    'Finnomina': 'Finnomena'
+  },
+
+  normalizeCategoryName(category) {
+    if (!category) return category;
+    return this.portfolioNameMap[category] || category;
+  },
+
   storageKey: 'family-finance:cashflow:v2',
   fallbackKey: 'family-finance:cashflow:v1',
-  currentView: 'daily', // 'daily', 'dividend', 'annual', 'banking'
-  currentPeriodType: 'monthly', // 'monthly' หรือ 'payroll'
-  selectedMonth: '2026-10', // null = ดูทั้งหมด
-  selectedYear: 2026,
+  currentView: 'daily',
+  currentPeriodType: 'monthly',
+  selectedMonth: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+  selectedYear: new Date().getFullYear(),
   filterType: 'ทั้งหมด',
   searchQuery: '',
   dateFrom: '',
   dateTo: '',
-  sortOrder: 'desc', // 'desc' = ล่าสุดขึ้นก่อน (ค่าเริ่มต้น), 'asc' = เก่าสุดขึ้นก่อน
-  // หมวดหมู่สำรอง กรณีใน Settings ยังไม่ได้ตั้งค่า
+  sortOrder: 'desc',
+  _eventsBound: false,
+
   fallbackCategories: {
     'รายรับ': [
       'เงินเดือน', 'โบนัส', 'ค่าคอมมิชชั่น', 'เงินปันผล', 
@@ -44,14 +60,26 @@ var CashFlowModule = {
       'ผ่อนเช็คระยะรถ', 'ประกันชีวิต', 'เช็คระยะรถ'
     ],
     'เงินออมและลงทุน': [
-      'ออมทรัพย์ สอท', 'INOVESTX RMF', 'INOVESTX ROBO', 'K+', 
-      'กองทุนสำรองเลี้ยงชีพ', 'Finnomina', 'ทุนเรือนหุ้น สอท', 
-      'SCB Click', 'DIME PLOY', 'DIME DAD', 'หุ้นไทย BLS', 'BLS'
+      'BLS',
+      'DIME DAD',
+      'DIME PLOY',
+      'FINANSIA',
+      'Finnomena',
+      'INVX หุ้นต่างประเทศ',
+      'INVX FUND',
+      'INVX RMF',
+      'K+',
+      'Krungsri',
+      'SCB Click',
+      'ทุนเรือนหุ้น สอท',
+      'ออมทรัพย์ สอท',
+      'กองทุนสำรองเลี้ยงชีพ'
     ],
     'โอนระหว่างบัญชี': [
       'โอนเงิน', 'โอนย้ายสภาพคล่อง', 'เติมเงินเป๋าตัง', 'จ่ายบัตรเครดิต'
     ]
   },
+
   getUserContext() {
     try {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -90,23 +118,29 @@ var CashFlowModule = {
       fallbackKey: this.fallbackKey
     };
   },
+
   init() {
+    const now = new Date();
+    this.selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    this.dateFrom = '';
+    this.dateTo = '';
+    this.searchQuery = '';
+
     this.bindEvents();
     this.bindSidebarNav();
     this.checkRouteFromHash();
 
-    window.addEventListener('hashchange', () => {
-      this.checkRouteFromHash();
-      this.render();
-    });
-
-    this.render();
+    if (!this._hashBound) {
+      window.addEventListener('hashchange', () => {
+        this.checkRouteFromHash();
+      });
+      this._hashBound = true;
+    }
   },
 
   checkRouteFromHash() {
     const hash = (window.location.hash || '').toLowerCase();
 
-    // ถ้าคลิก Dashboard ให้ส่งกลับไป index.html ทันที
     if (hash.includes('dashboard')) {
       window.location.href = 'index.html';
       return;
@@ -129,14 +163,13 @@ var CashFlowModule = {
     this.render();
   },
 
-  // 1. คำนวณวันเงินเดือนออก (วันที่ 26 ถ้าตรงเสาร์/อาทิตย์ เลื่อนขึ้นมาวันศุกร์)
   getPayDate(year, month) {
     const d = new Date(year, month - 1, 26);
-    const day = d.getDay(); // 0 = อาทิตย์, 6 = เสาร์
+    const day = d.getDay();
     if (day === 6) {
-      d.setDate(25); // เสาร์ -> เลื่อนเป็นศุกร์ที่ 25
+      d.setDate(25);
     } else if (day === 0) {
-      d.setDate(24); // อาทิตย์ -> เลื่อนเป็นศุกร์ที่ 24
+      d.setDate(24);
     }
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -144,20 +177,17 @@ var CashFlowModule = {
     return `${yyyy}-${mm}-${dd}`;
   },
 
-  // 2. คำนวณช่วงวันที่ของรอบเงินเดือน (เริ่มจากวันเงินเดือนออกของเดือนก่อน ถึง ก่อนวันเงินเดือนออกเดือนนี้ 1 วัน)
   getPayrollRange(yearMonthStr) {
-    const ym = yearMonthStr || this.selectedMonth || '2026-10';
+    const ym = yearMonthStr || this.selectedMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
     const parts = ym.split('-');
     const year = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10);
 
-    // เดือนก่อนหน้า
     const prevYear = month === 1 ? year - 1 : year;
     const prevMonth = month === 1 ? 12 : month - 1;
 
     const startDate = this.getPayDate(prevYear, prevMonth);
 
-    // จบก่อนวันเงินเดือนออกของเดือนปัจจุบัน 1 วัน
     const curPayDateStr = this.getPayDate(year, month);
     const curD = new Date(curPayDateStr);
     curD.setDate(curD.getDate() - 1);
@@ -176,10 +206,16 @@ var CashFlowModule = {
 
   onMonthChange(val) {
     this.selectedMonth = val;
+    this.dateFrom = '';
+    this.dateTo = '';
+    this.searchQuery = '';
     this.render();
   },
 
   bindSidebarNav() {
+    if (this._sidebarBound) return;
+    this._sidebarBound = true;
+
     document.addEventListener('click', (e) => {
       const link = e.target.closest('#nav-dashboard, #nav-daily, #nav-annual, #nav-banking, .sidebar-link, .sidebar a');
       if (!link) return;
@@ -190,20 +226,19 @@ var CashFlowModule = {
       if (id === 'nav-dashboard' || id === 'menu-dashboard' || txt.toLowerCase().includes('dashboard')) {
         e.preventDefault();
         window.location.href = 'index.html';
-        return;
       } else if (id === 'nav-daily' || id === 'menu-daily' || txt.includes('รายรับรายจ่าย')) {
         e.preventDefault();
-        window.location.hash = '#cashflow/daily';
+        window.location.hash = '#daily';
         this.currentView = 'daily';
         this.render();
       } else if (id === 'nav-annual' || txt.includes('สรุปรายเดือน')) {
         e.preventDefault();
-        window.location.hash = '#cashflow/annual';
+        window.location.hash = '#annual';
         this.currentView = 'annual';
         this.render();
       } else if (id === 'nav-banking' || txt.includes('บัญชีเงินฝาก')) {
         e.preventDefault();
-        window.location.hash = '#cashflow/banking';
+        window.location.hash = '#banking';
         this.currentView = 'banking';
         this.render();
       } else if (id.includes('credit-card') || txt.includes('รอบบิลบัตรเครดิต')) {
@@ -249,24 +284,20 @@ var CashFlowModule = {
 
   getState() {
     try {
-      // 1. ตรวจสอบสิทธิ์จาก Session ใน LocalStorage โดยตรง
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
       const userEmail = (sbData?.user?.email || '').toLowerCase();
 
-      // ดึงข้อความแสดงสถานะบนหน้าจอ
       const pageText = document.body ? document.body.innerText : '';
       const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
       const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
 
-      // ตรวจสอบชื่อผู้ใช้
       const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
       let currentName = (nameEl ? nameEl.textContent : '').trim();
       if (!currentName && userEmail) {
         currentName = userEmail.split('@')[0];
       }
 
-      // หากเป็น Member (ตรวจเจอคำว่า MEMBER หรือชื่อมีคำว่า พลอย / ploy)
       const isPloyOrMember = isExplicitMember || 
                              currentName.includes('พลอย') || 
                              currentName.toLowerCase().includes('ploy') ||
@@ -278,14 +309,31 @@ var CashFlowModule = {
         const rawMember = localStorage.getItem(memberKey);
         if (rawMember) return JSON.parse(rawMember);
 
-        // Member เริ่มต้นเป็น 0 รายการเสมอ
         return { transactions: [], accounts: [] };
       }
 
-      // 2. ถ้าเป็น Admin (พ่อบี) ดึงชุดข้อมูลหลักเดิม
       const ctx = this.getUserContext();
       const raw = localStorage.getItem(ctx.storageKey) || (!ctx.isMember && ctx.fallbackKey ? localStorage.getItem(ctx.fallbackKey) : null);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsedState = JSON.parse(raw);
+
+        // Auto-Migration
+        if (parsedState && Array.isArray(parsedState.transactions)) {
+          let hasChanges = false;
+          parsedState.transactions.forEach(t => {
+            if (t.category && CashFlowModule.portfolioNameMap && CashFlowModule.portfolioNameMap[t.category]) {
+              t.category = CashFlowModule.portfolioNameMap[t.category];
+              hasChanges = true;
+            }
+          });
+
+          if (hasChanges) {
+            localStorage.setItem(ctx.storageKey, JSON.stringify(parsedState));
+          }
+        }
+
+        return parsedState;
+      }
     } catch (e) {}
 
     return { transactions: [], accounts: [] };
@@ -295,24 +343,27 @@ var CashFlowModule = {
     try {
       const ctx = this.getUserContext();
       localStorage.setItem(ctx.storageKey, JSON.stringify(state));
-      if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync(); // <-- เพิ่มบรรทัดนี้
+      if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync();
     } catch (e) {
       console.error('saveState error:', e);
     }
   },
 
-    getSystemCategories() {
-    if (typeof SettingsModule !== 'undefined' && typeof SettingsModule.getCategories === 'function') {
-      return SettingsModule.getCategories();
-    }
+  getSystemCategories() {
     try {
-      const ctx = this.getUserContext();
-      const catKey = ctx.isMember 
-        ? ctx.storageKey.replace('cashflow', 'categories') 
-        : 'family-finance:categories:v1';
-      const raw = localStorage.getItem(catKey);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
+      const rawAdmin = localStorage.getItem('family-finance:categories:v1');
+      if (rawAdmin) {
+        const parsed = JSON.parse(rawAdmin);
+        if (parsed && parsed['เงินออมและลงทุน'] && parsed['เงินออมและลงทุน'].length > 0) {
+          if (!parsed['เงินออมและลงทุน'].includes('test')) {
+            return parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading categories in cashflow:', e);
+    }
+
     return this.fallbackCategories;
   },
 
@@ -338,6 +389,9 @@ var CashFlowModule = {
   },
 
   bindEvents() {
+    if (window._cashflowEventsBound) return;
+    window._cashflowEventsBound = true;
+
     document.addEventListener('click', (e) => {
       const viewSwitchBtn = e.target.closest('.btn-switch-cashflow-view');
       if (viewSwitchBtn) {
@@ -348,7 +402,7 @@ var CashFlowModule = {
       const sortDateBtn = e.target.closest('#th-sort-date');
       if (sortDateBtn) {
         this.sortOrder = (this.sortOrder === 'asc') ? 'desc' : 'asc';
-        this.render();
+        this.renderTableOnly();
         return;
       }
 
@@ -362,7 +416,13 @@ var CashFlowModule = {
       const tabBtn = e.target.closest('.tx-type-tab');
       if (tabBtn) {
         this.filterType = tabBtn.dataset.type;
-        this.render();
+        document.querySelectorAll('.tx-type-tab').forEach(b => {
+          const isAct = b.dataset.type === this.filterType;
+          b.style.background = isAct ? '#fff' : 'transparent';
+          b.style.color = isAct ? '#0284c7' : '#64748b';
+          b.style.boxShadow = isAct ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
+        });
+        this.renderTableOnly();
         return;
       }
 
@@ -370,6 +430,7 @@ var CashFlowModule = {
       if (thisMonthBtn) {
         const now = new Date();
         this.selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        this.filterType = 'ทั้งหมด';
         this.dateFrom = '';
         this.dateTo = '';
         this.searchQuery = '';
@@ -380,6 +441,7 @@ var CashFlowModule = {
       const allTimeBtn = e.target.closest('#btn-filter-all-time');
       if (allTimeBtn) {
         this.selectedMonth = null;
+        this.filterType = 'ทั้งหมด';
         this.dateFrom = '';
         this.dateTo = '';
         this.searchQuery = '';
@@ -438,7 +500,7 @@ var CashFlowModule = {
     });
 
     document.addEventListener('change', (e) => {
-      if (e.target && e.target.id === 'tx-month-picker') {
+      if (e.target && e.target.id === 'cashflow-month-picker') {
         this.selectedMonth = e.target.value || null;
         this.render();
       } else if (e.target && e.target.id === 'tx-date-from') {
@@ -461,7 +523,6 @@ var CashFlowModule = {
           transferBox.style.display = isTransfer ? 'flex' : 'none';
         }
 
-        // แสดง/ซ่อน กล่องตั้งค่างวดผ่อน
         const debtTermsBox = document.getElementById('box-debt-terms');
         if (debtTermsBox) {
           debtTermsBox.style.display = isDebt ? 'flex' : 'none';
@@ -493,6 +554,19 @@ var CashFlowModule = {
   getFilteredTransactions(allTx) {
     let list = allTx || [];
 
+    const normalizeDate = (dStr) => {
+      if (!dStr) return '';
+      const s = String(dStr).trim();
+      if (s.includes('/')) {
+        const p = s.split('/');
+        if (p.length === 3) {
+          if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+          if (p[0].length === 4) return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+        }
+      }
+      return s;
+    };
+
     if (!this.dateFrom && !this.dateTo && this.selectedMonth) {
       const parts = this.selectedMonth.split('-');
       const y = parseInt(parts[0], 10);
@@ -500,15 +574,18 @@ var CashFlowModule = {
 
       if (this.currentPeriodType === 'monthly') {
         const prefix = `${y}-${String(m).padStart(2, '0')}`;
-        list = list.filter(t => (t.date || '').startsWith(prefix));
+        list = list.filter(t => normalizeDate(t.date).startsWith(prefix));
       } else {
         const range = this.getPayrollRange(this.selectedMonth);
-        list = list.filter(t => (t.date || '') >= range.startDate && (t.date || '') <= range.endDate);
+        list = list.filter(t => {
+          const nd = normalizeDate(t.date);
+          return nd >= range.startDate && nd <= range.endDate;
+        });
       }
     }
 
-    if (this.dateFrom) list = list.filter(t => (t.date || '') >= this.dateFrom);
-    if (this.dateTo) list = list.filter(t => (t.date || '') <= this.dateTo);
+    if (this.dateFrom) list = list.filter(t => normalizeDate(t.date) >= this.dateFrom);
+    if (this.dateTo) list = list.filter(t => normalizeDate(t.date) <= this.dateTo);
 
     if (this.filterType && this.filterType !== 'ทั้งหมด') {
       list = list.filter(t => {
@@ -593,7 +670,7 @@ var CashFlowModule = {
               </div>
               <div style="flex: 1;">
                 <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ประเภท</label>
-                <select id="modal-tx-type" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <select id="modal-tx-type" onchange="CashFlowModule.updateModalCategories(this.value)" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
                   <option value="รายรับ" ${currentTypeKey === 'รายรับ' ? 'selected' : ''}>🟢 รายรับ</option>
                   <option value="รายจ่าย" ${currentTypeKey === 'รายจ่าย' ? 'selected' : ''}>🔴 รายจ่าย</option>
                   <option value="บิล" ${currentTypeKey === 'บิล' ? 'selected' : ''}>🧾 บิล</option>
@@ -734,13 +811,11 @@ var CashFlowModule = {
         });
       }
 
-      // บันทึกลงสัญญาผ่อนชำระอัตโนมัติ เมื่อเลือกประเภท "หนี้สิน"
       if (type === 'หนี้สิน') {
         const termsInput = document.getElementById('modal-debt-terms-input');
         const totalTerms = termsInput ? (parseInt(termsInput.value, 10) || 6) : 6;
         const monthlyAmt = Math.round((amount / totalTerms) * 100) / 100;
 
-        // คำนวณวันที่เริ่มต้นและวันที่ครบกำหนด (DD/MM/YYYY)
         const formatThDate = (dObj) => {
           const dd = String(dObj.getDate()).padStart(2, '0');
           const mm = String(dObj.getMonth() + 1).padStart(2, '0');
@@ -755,7 +830,6 @@ var CashFlowModule = {
         const startDateStr = formatThDate(startDateObj);
         const endDateStr = formatThDate(endDateObj);
 
-        // ดึงรายการสัญญาเดิมใน LocalStorage
         const debtStorageKey = 'family-finance:debts-contracts:v1';
         let contracts = [];
         try {
@@ -765,7 +839,6 @@ var CashFlowModule = {
         const contractId = 'debt_' + (txId || Date.now());
         const contractName = detail || category || 'สัญญาผ่อนชำระ';
 
-        // เช็คว่าเคยมีสัญญานี้อยู่เดิมหรือไม่ (กรณีแก้ไขรายการเดิม)
         const existIdx = contracts.findIndex(c => c.id === contractId || c.name === contractName);
         const newContract = {
           id: existIdx >= 0 ? contracts[existIdx].id : contractId,
@@ -791,7 +864,6 @@ var CashFlowModule = {
         this.saveState(state);
         closeModal();
 
-        // นำทางไปที่หน้าภาระหนี้สินอัตโนมัติทันที
         window.location.hash = '#debts';
         this.currentView = 'debts';
         this.render();
@@ -802,6 +874,29 @@ var CashFlowModule = {
       closeModal();
       this.render();
     };
+  },
+  updateModalCategories(selectedType) {
+    const isTransfer = selectedType === 'โอนระหว่างบัญชี' || selectedType === 'โอนเงิน';
+    const isDebt = selectedType === 'หนี้สิน';
+
+    const singleBox = document.getElementById('box-single-account');
+    const transferBox = document.getElementById('box-transfer-account');
+    if (singleBox && transferBox) {
+      singleBox.style.display = isTransfer ? 'none' : 'block';
+      transferBox.style.display = isTransfer ? 'flex' : 'none';
+    }
+
+    const debtTermsBox = document.getElementById('box-debt-terms');
+    if (debtTermsBox) {
+      debtTermsBox.style.display = isDebt ? 'flex' : 'none';
+    }
+
+    const catSelect = document.getElementById('modal-tx-category');
+    if (catSelect) {
+      const allCats = this.getSystemCategories();
+      const opts = allCats[selectedType] || allCats['รายจ่าย'] || [];
+      catSelect.innerHTML = opts.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
   },
 
   openEditBankBalanceModal(accName) {
@@ -901,7 +996,8 @@ var CashFlowModule = {
   renderTableOnly() {
     const state = this.getState();
     const allTx = state.transactions || [];
-    const filtered = this.getFilteredTransactions(allTx);
+    let filtered = this.getFilteredTransactions(allTx);
+
     filtered.sort((a, b) => {
       const dateA = new Date(a.date).getTime() || 0;
       const dateB = new Date(b.date).getTime() || 0;
@@ -910,6 +1006,7 @@ var CashFlowModule = {
       }
       return dateB - dateA;
     });
+
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const tbody = document.getElementById('tx-table-body');
@@ -1109,7 +1206,6 @@ var CashFlowModule = {
                    || document.getElementById('main-content');
     if (!container) return;
 
-    // ตรวจสอบสิทธิ์ผู้ใช้ปัจจุบันผ่าน Supabase
     let currentRole = 'admin';
     let currentUserName = 'ณัฐพร แก้วสม';
 
@@ -1134,7 +1230,6 @@ var CashFlowModule = {
 
     const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    // โทนสีพื้นหลัง Badge ของแต่ละธนาคาร
     const bankColorMap = {
       'CASH': '#059669',
       'BBL': '#1e3a8a',
@@ -1170,7 +1265,6 @@ var CashFlowModule = {
       'ออมทรัพย์ สอท': 202191.42
     };
 
-    // บัญชี 11 บัญชีหลักของครอบครัว พร้อมกำหนดเจ้าของบัญชี
     const rawMainAccounts = [
       { id: 'acc-1', name: 'เงินสด', bank: 'CASH', accNo: 'CASH-ON-HAND', interestRate: 0.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', owner: 'admin' },
       { id: 'acc-2', name: 'กรุงเทพ', bank: 'BBL', accNo: '006-7-05636-6', interestRate: 0.25, purpose: 'สะสมทรัพย์', owner: 'admin' },
@@ -1185,13 +1279,10 @@ var CashFlowModule = {
       { id: 'acc-11', name: 'ออมทรัพย์ สอท', bank: 'COOP', accNo: 'COOP-SAVING', interestRate: 2.50, purpose: 'สหกรณ์ออมทรัพย์ สอท.', owner: 'admin' }
     ];
 
-    // กรณีเป็น Member ให้กรองแสดงเฉพาะบัญชีของตนเอง
-    // กรณีเป็น Member จะไม่มีบัญชีเดิมของ Admin ติดไปเด็ดขาด (เริ่มต้นเป็น 0 บัญชี)
     const filteredRawAccounts = currentRole === 'admin'
       ? rawMainAccounts
       : (state.memberAccounts || []);
 
-    // คำนวณยอดเงินเข้า-ออก
     const mainAccounts = filteredRawAccounts.map(acc => {
       let inAmt = 0;
       let outAmt = 0;
@@ -1207,10 +1298,7 @@ var CashFlowModule = {
         const matchName = (raw) => {
           const s = String(raw || '').trim().toLowerCase();
           if (!s) return '';
-
-          // 1. ถ้าเป็นบัตรเครดิต ไม่ใช่บัญชีเงินฝาก ให้ข้ามทันที
           if (s.includes('บัตรเครดิต') || s.includes('credit')) return '';
-
           if (s.includes('เงินสด') || s.includes('cash')) return 'เงินสด';
           if (s.includes('กรุงเทพ') || s.includes('bbl')) return 'กรุงเทพ';
           if (s.includes('กรุงไทย') || s.includes('ktb')) return 'กรุงไทย';
@@ -1264,7 +1352,6 @@ var CashFlowModule = {
       return { ...acc, inAmt, outAmt, adjustAmt, balance, estInt };
     });
 
-    // 2. กลุ่ม 7 บัญชี ดิจิทัล (แสดงเฉพาะ Admin)
     const digitalAccounts = currentRole === 'admin' ? [
       { id: 'acc-d1', name: 'กรุงไทย (ประจำ)', bank: 'KTB', accNo: '066-2-03523-2', interestRate: 1.20, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'เงินฝากประจำ' },
       { id: 'acc-d2', name: 'ทหารไทย (ออมทรัพย์)', bank: 'TTB', accNo: '236-2-16357-4', interestRate: 0.25, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'ออมทรัพย์' },
@@ -1275,7 +1362,6 @@ var CashFlowModule = {
       { id: 'acc-d7', name: 'กรุงไทย (Next Saving)', bank: 'KTB', accNo: '066-0-14649-5', interestRate: 1.50, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'Krungthai Next Saving' }
     ] : [];
 
-    // 3. กลุ่ม 3 บัตรเครดิต (แสดงเฉพาะ Admin)
     const creditCards = currentRole === 'admin' ? [
       { id: 'card-1', name: 'บัตรเครดิตกรุงศรี', bank: 'BAY', cutOff: 'ตัดรอบทุกวันที่ 10', balance: 11723.28, status: 'รอชำระรอบนี้', statusColor: '#f97316', statusBg: '#fff7ed', chargeAmt: 162267.71, paidAmt: 171339.13, condition: 'บัตรเครดิต กรุงศรี (ตัดรอบวันที่ 10)' },
       { id: 'card-2', name: 'บัตรเครดิตกรุงไทย', bank: 'KTC', cutOff: 'ตัดรอบทุกวันที่ 7', balance: 0.00, status: 'เคลียร์บิลแล้ว', statusColor: '#059669', statusBg: '#ecfdf5', chargeAmt: 1530.00, paidAmt: 1544.67, condition: 'บัตรเครดิต KTC (ตัดรอบวันที่ 15)' },
@@ -1391,7 +1477,6 @@ var CashFlowModule = {
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
         
-        <!-- Header Toolbar -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🏦</div>
@@ -1413,7 +1498,6 @@ var CashFlowModule = {
           </div>
         </div>
 
-        <!-- กล่องสรุปสถิติ -->
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 24px;">
           
           <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1458,7 +1542,6 @@ var CashFlowModule = {
 
         </div>
 
-        <!-- 1. สมุดบัญชีเงินฝากหลัก -->
         <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 14px 0;">
           🏦 สมุดบัญชีเงินฝากและเงินสด (${mainAccounts.length} บัญชี)
         </h3>
@@ -1475,7 +1558,6 @@ var CashFlowModule = {
         `}
 
         ${currentRole === 'admin' && digitalAccounts.length > 0 ? `
-        <!-- 2. บัญชีเงินฝาก Internet & ดิจิทัลดอกเบี้ยสูง -->
         <div style="margin-bottom: 14px;">
           <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
             🌐 บัญชีเงินฝาก Internet & ดิจิทัลดอกเบี้ยสูง (${digitalAccounts.length} บัญชี)
@@ -1488,7 +1570,6 @@ var CashFlowModule = {
         ` : ''}
 
         ${currentRole === 'admin' && creditCards.length > 0 ? `
-        <!-- 3. บัตรเครดิตและวงเงินรอชำระรอบนี้ -->
         <div style="margin-bottom: 14px;">
           <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
             💳 บัตรเครดิตและวงเงินรอชำระรอบนี้ (${creditCards.length} บัญชี)
@@ -1552,6 +1633,7 @@ var CashFlowModule = {
     const state = this.getState();
     const allTx = state.transactions || [];
     const filteredTx = this.getFilteredTransactions(allTx);
+
     filteredTx.sort((a, b) => {
       const dateA = new Date(a.date).getTime() || 0;
       const dateB = new Date(b.date).getTime() || 0;
@@ -1561,15 +1643,36 @@ var CashFlowModule = {
       return dateB - dateA;
     });
 
-    const totalIncome = filteredTx.filter(t => t.type === 'รายรับ').reduce((sum, t) => sum + t.amount, 0);
-    const totalExpense = filteredTx.filter(t => t.type === 'รายจ่าย' || t.type === 'บิล' || t.type === 'หนี้สิน').reduce((sum, t) => sum + t.amount, 0);
-    const totalInvest = filteredTx.filter(t => t.type === 'ลงทุน' || t.type === 'เงินออมและลงทุน' || t.type === 'เงินออม').reduce((sum, t) => sum + t.amount, 0);
+    const isIncomeTx = (t) => {
+      const type = String(t.type || '').trim().toLowerCase();
+      return type === 'รายรับ' || type === 'income' || type.includes('รายได้');
+    };
+
+    const isExpenseTx = (t) => {
+      const type = String(t.type || '').trim().toLowerCase();
+      return type === 'รายจ่าย' || type === 'บิล' || type === 'หนี้สิน' || type === 'expense' || type === 'bill' || type === 'debt';
+    };
+
+    const isInvestTx = (t) => {
+      const type = String(t.type || '').trim().toLowerCase();
+      return type === 'ลงทุน' || type === 'เงินออมและลงทุน' || type === 'เงินออม' || type === 'invest';
+    };
+
+    const getAmount = (t) => {
+      const val = parseFloat(String(t.amount || 0).replace(/,/g, ''));
+      return isNaN(val) ? 0 : Math.abs(val);
+    };
+
+    const totalIncome = filteredTx.filter(isIncomeTx).reduce((sum, t) => sum + getAmount(t), 0);
+    const totalExpense = filteredTx.filter(isExpenseTx).reduce((sum, t) => sum + getAmount(t), 0);
+    const totalInvest = filteredTx.filter(isInvestTx).reduce((sum, t) => sum + getAmount(t), 0);
     const netSavings = totalIncome - totalExpense;
     const savingRate = totalIncome > 0 ? ((totalInvest / totalIncome) * 100).toFixed(1) : '0.0';
 
     const catMap = {};
-    filteredTx.filter(t => t.type === 'รายจ่าย' || t.type === 'บิล' || t.type === 'หนี้สิน').forEach(t => {
-      catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+    filteredTx.filter(isExpenseTx).forEach(t => {
+      const cat = t.category || 'อื่นๆ';
+      catMap[cat] = (catMap[cat] || 0) + getAmount(t);
     });
 
     const categoryBreakdownHtml = Object.keys(catMap).sort((a, b) => catMap[b] - catMap[a]).map(cat => {
@@ -1587,6 +1690,59 @@ var CashFlowModule = {
         </div>
       `;
     }).join('');
+
+    const tableRowsHtml = filteredTx.map(t => {
+      const isIncome = t.type === 'รายรับ';
+      const isInvest = t.type === 'ลงทุน' || t.type === 'เงินออมและลงทุน' || t.type === 'เงินออม';
+      const isDebt = t.type === 'หนี้สิน';
+      const isTransfer = t.type === 'โอนระหว่างบัญชี' || t.type === 'โอนเงิน';
+
+      let badgeBg = '#fef2f2';
+      let badgeColor = '#dc2626';
+
+      if (isIncome) {
+        badgeBg = '#ecfdf5';
+        badgeColor = '#16a34a';
+      } else if (isInvest) {
+        badgeBg = '#eff6ff';
+        badgeColor = '#0284c7';
+      } else if (isDebt) {
+        badgeBg = '#fef2f2';
+        badgeColor = '#ea580c';
+      } else if (isTransfer) {
+        badgeBg = '#f1f5f9';
+        badgeColor = '#475569';
+      }
+
+      const sign = isIncome ? '+' : (isTransfer ? '↔' : '-');
+      const detailText = this.getItemDetail(t) || '-';
+      const accountText = this.getItemAccount(t) || '-';
+
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 14px; color: #64748b; font-size: 12.5px; white-space: nowrap;">${t.date}</td>
+          <td style="padding: 12px 14px; white-space: nowrap;">
+            <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px;">
+              ${t.type}
+            </span>
+          </td>
+          <td style="padding: 12px 14px; font-size: 13px; color: #334155; font-weight: 600; white-space: nowrap;">${t.category}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 900; font-size: 14px; color: ${badgeColor}; font-variant-numeric: tabular-nums; white-space: nowrap;">
+            ${sign}฿${formatBaht(t.amount)}
+          </td>
+          <td style="padding: 12px 14px; font-size: 12.5px; color: #475569; white-space: nowrap;">
+            ${accountText}
+          </td>
+          <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: #0f172a;">
+            ${detailText}
+          </td>
+          <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
+            <button class="btn-edit-tx" data-id="${t.id}" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
+            <button class="btn-delete-tx" data-id="${t.id}" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
 
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
@@ -1640,7 +1796,7 @@ var CashFlowModule = {
               </div>
             </div>
 
-            <button id="btn-open-add-tx" style="background: #0284c7; color: #fff; border: none; font-weight: 700; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <button id="btn-open-add-tx" type="button" onclick="CashFlowModule.openTransactionModal()" style="background: #0284c7; color: #fff; border: none; font-weight: 700; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
               <span>➕</span> บันทึกธุรกรรม
             </button>
           </div>
@@ -1683,7 +1839,7 @@ var CashFlowModule = {
 
               <div style="display: flex; background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px; border-radius: 6px;">
                 ${['ทั้งหมด', 'รายจ่าย', 'รายรับ', 'ลงทุน', 'หนี้สิน', 'โอนระหว่างบัญชี'].map(type => `
-                  <button class="tx-type-tab" data-type="${type}" style="border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; background: ${this.filterType === type ? '#fff' : 'transparent'}; color: ${this.filterType === type ? '#0284c7' : '#64748b'}; box-shadow: ${this.filterType === type ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'};">
+                  <button type="button" class="tx-type-tab" data-type="${type}" onclick="CashFlowModule.filterType='${type}'; CashFlowModule.renderTableOnly();" style="border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; background: ${this.filterType === type ? '#fff' : 'transparent'}; color: ${this.filterType === type ? '#0284c7' : '#64748b'}; box-shadow: ${this.filterType === type ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'};">
                     ${type}
                   </button>
                 `).join('')}
@@ -1691,20 +1847,20 @@ var CashFlowModule = {
             </div>
 
             <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
-              <input type="text" id="tx-search-input" value="${this.searchQuery}" placeholder="🔍 ค้นหา: เช่น กองทุน, คอนโด..." style="flex: 1; min-width: 160px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+              <input type="text" id="tx-search-input" value="${this.searchQuery}" oninput="CashFlowModule.searchQuery = this.value.trim().toLowerCase(); CashFlowModule.renderTableOnly();" placeholder="🔍 ค้นหา: เช่น กองทุน, คอนโด..." style="flex: 1; min-width: 160px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
 
               <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;">
                 <span>วันที่:</span>
-                <input type="date" id="tx-date-from" value="${this.dateFrom}" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                <input type="date" id="tx-date-from" value="${this.dateFrom}" onchange="CashFlowModule.dateFrom = this.value; CashFlowModule.renderTableOnly();" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
                 <span>ถึง</span>
-                <input type="date" id="tx-date-to" value="${this.dateTo}" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                <input type="date" id="tx-date-to" value="${this.dateTo}" onchange="CashFlowModule.dateTo = this.value; CashFlowModule.renderTableOnly();" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
               </div>
 
-              <button id="btn-filter-this-month" style="background: ${this.selectedMonth ? '#0284c7' : '#f1f5f9'}; color: ${this.selectedMonth ? '#fff' : '#475569'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              <button type="button" id="btn-filter-this-month" onclick="const n = new Date(); CashFlowModule.selectedMonth = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0'); CashFlowModule.filterType = 'ทั้งหมด'; CashFlowModule.dateFrom = ''; CashFlowModule.dateTo = ''; CashFlowModule.searchQuery = ''; CashFlowModule.render();" style="background: ${this.selectedMonth ? '#0284c7' : '#f1f5f9'}; color: ${this.selectedMonth ? '#fff' : '#475569'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
                 📅 เดือนนี้
               </button>
 
-              <button id="btn-filter-all-time" style="background: ${!this.selectedMonth ? '#0f172a' : '#f1f5f9'}; color: ${!this.selectedMonth ? '#fff' : '#475569'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              <button type="button" id="btn-filter-all-time" onclick="CashFlowModule.selectedMonth = null; CashFlowModule.filterType = 'ทั้งหมด'; CashFlowModule.dateFrom = ''; CashFlowModule.dateTo = ''; CashFlowModule.searchQuery = ''; CashFlowModule.render();" style="background: ${!this.selectedMonth ? '#0f172a' : '#f1f5f9'}; color: ${!this.selectedMonth ? '#fff' : '#475569'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
                 🌐 ดูทั้งหมด
               </button>
             </div>
@@ -1725,6 +1881,7 @@ var CashFlowModule = {
                   </tr>
                 </thead>
                 <tbody id="tx-table-body">
+                  ${tableRowsHtml}
                 </tbody>
               </table>
             </div>
@@ -1744,8 +1901,6 @@ var CashFlowModule = {
 
       </div>
     `;
-
-    this.renderTableOnly();
   },
 
   // ==========================================
@@ -2017,9 +2172,6 @@ var CashFlowModule = {
     self.renderCreditCardsView();
   },
 
-  // ==========================================
-  // VIEW: หนี้สิน
-  // ==========================================
   renderDebtsView: function(targetContainer) {
     var container = targetContainer || document.getElementById('content-area');
     if (!container) return;
@@ -2134,7 +2286,7 @@ var CashFlowModule = {
       + '</div>'
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;">'
       + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569;">'
+      + '    <div style="display: flex; align-items: gap: 8px; font-size: 12px; font-weight: 700; color: #475569;">'
       + '      <span style="color: #dc2626;">🔴</span> หนี้สินคงค้างทั้งหมด (Remaining Debt)'
       + '    </div>'
       + '    <div style="font-size: 28px; font-weight: 900; color: #dc2626; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">฿' + formatNum(totalRemaining) + '</div>'
@@ -2369,7 +2521,7 @@ var CashFlowModule = {
         try {
           const parsed = JSON.parse(event.target.result);
           
-            if (parsed.data) {
+          if (parsed.data) {
             const ctx = CashFlowModule.getUserContext();
             const targetCashflowKey = ctx.isMember ? ctx.storageKey : 'family-finance:cashflow:v2';
 
@@ -2528,10 +2680,5 @@ var CashFlowModule = {
   }
 };
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => CashFlowModule.init());
-} else {
-  setTimeout(() => CashFlowModule.init(), 50);
-}
 window.CashFlowModule = CashFlowModule;
 window.CashflowModule = CashFlowModule;

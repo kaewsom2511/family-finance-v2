@@ -3,7 +3,11 @@
     "appName": "FamilyFinance",
     "type": "FULL_BACKUP",
     "version": "1.1",
+<<<<<<<< HEAD:FamilyFinance_FullBackup_DAD_2026-10-19.json
     "exportedAt": "2026-10-19T04:45:23.815Z",
+========
+    "exportedAt": "2026-10-21T03:27:39.231Z",
+>>>>>>>> f06dbb6 (Fix cashflow month selection, summary calculations, and filter state resets):FamilyFinance_FullBackup_DAD_2026-10-21.json
     "ownerRole": "ADMIN",
     "ownerName": "พ่อ"
   },
@@ -332,6 +336,165 @@
     },
     "transactions": [
       {
+<<<<<<<< HEAD:FamilyFinance_FullBackup_DAD_2026-10-19.json
+========
+        "id": "tx-1792547189914",
+        "date": "2026-10-21",
+        "desc": "น้ำมัน",
+        "type": "รายจ่าย",
+        "amount": 1520,
+        "detail": "น้ำมัน",
+        "category": "ค่าน้ำมัน",
+        "accountId": "บัตรเครดิตกรุงศรี",
+        "accountName": "บัตรเครดิตกรุงศรี"
+      },
+      {
+        "id": "tx-1792539972637",
+        "date": "2026-10-18",
+        "desc": "Gemini",
+        "type": "บิล",
+        "amount": 189,
+        "detail": "Gemini",
+        "category": "สมัครสมาชิก",
+        "accountId": "Truemoney",
+        "accountName": "Truemoney"
+      },
+      {
+        "id": "tx-1792539834023",
+        "date": "2026-10-20",
+        "desc": "ข้าวเช้า",
+        "type": "รายจ่าย",
+        "amount": 50,
+        "detail": "ข้าวเช้า",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792539821598",
+        "date": "2026-10-20",
+        "desc": "bellinee",
+        "type": "รายจ่าย",
+        "amount": 179,
+        "detail": "bellinee",
+        "category": "ค่าอาหาร",
+        "accountId": "Truemoney",
+        "accountName": "Truemoney"
+      },
+      {
+        "id": "tx-1792539791486",
+        "date": "2026-10-20",
+        "desc": "",
+        "type": "โอนระหว่างบัญชี",
+        "amount": 500,
+        "detail": "",
+        "category": "รายจ่ายอื่นๆ",
+        "accountId": "กรุงไทย",
+        "toAccount": "Truemoney",
+        "accountName": "กรุงไทย",
+        "fromAccount": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792504308077",
+        "date": "2026-10-20",
+        "desc": "หวยN3",
+        "type": "รายจ่าย",
+        "amount": 100,
+        "detail": "หวยN3",
+        "category": "รายจ่ายอื่นๆ",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792504284721",
+        "date": "2026-10-20",
+        "desc": "หวย N6",
+        "type": "รายจ่าย",
+        "amount": 240,
+        "detail": "หวย N6",
+        "category": "รายจ่ายอื่นๆ",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792504226506",
+        "date": "2026-10-20",
+        "desc": "กายภาพ",
+        "type": "รายจ่าย",
+        "amount": 600,
+        "detail": "กายภาพ",
+        "category": "ค่ารักษาพยาบาล",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792473692882",
+        "date": "2026-10-20",
+        "desc": "ก๋วยเตี๋ยว",
+        "type": "รายจ่าย",
+        "amount": 50,
+        "detail": "ก๋วยเตี๋ยว",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792473660171",
+        "date": "2026-10-20",
+        "desc": "ขายที่ดิน ควนลัง พี่พร",
+        "type": "รายรับ",
+        "amount": 800000,
+        "detail": "ขายที่ดิน ควนลัง พี่พร",
+        "category": "รายได้อื่นๆ",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792453126420",
+        "date": "2026-10-19",
+        "desc": "ข้าวเช้า",
+        "type": "รายจ่าย",
+        "amount": 55,
+        "detail": "ข้าวเช้า",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792388003045",
+        "date": "2026-10-19",
+        "desc": "ข้าวต้มมัด",
+        "type": "รายจ่าย",
+        "amount": 30,
+        "detail": "ข้าวต้มมัด",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792385425172",
+        "date": "2026-09-14",
+        "desc": "K-USXNDQ-A(D)",
+        "type": "รายรับ",
+        "amount": 337.8,
+        "detail": "K-USXNDQ-A(D)",
+        "category": "เงินปันผล",
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
+      },
+      {
+        "id": "tx-1792385326354",
+        "date": "2026-10-04",
+        "desc": "ลงทุน K+",
+        "type": "เงินออมและลงทุน",
+        "amount": 5000,
+        "detail": "ลงทุน K+",
+        "category": "K+",
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
+      },
+      {
+>>>>>>>> f06dbb6 (Fix cashflow month selection, summary calculations, and filter state resets):FamilyFinance_FullBackup_DAD_2026-10-21.json
         "id": "tx-1792383789867",
         "date": "2026-10-19",
         "desc": "ปั้นสิบ",
@@ -2677,12 +2840,14 @@
       {
         "id": "tx-1791179536994-150",
         "date": "2026-01-22",
+        "desc": "VAYU1",
         "type": "รายรับ",
         "amount": 4143.6,
-        "detail": "ปันผล VAYU1",
+        "detail": "VAYU1",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536994-151",
@@ -3637,12 +3802,14 @@
       {
         "id": "tx-1791179536994-246",
         "date": "2026-02-07",
+        "desc": "สอท",
         "type": "รายรับ",
         "amount": 72579.7,
-        "detail": "ปันผล สอท",
+        "detail": "สอท",
         "account": "กรุงไทย",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
       },
       {
         "id": "tx-1791179536994-247",
@@ -5091,12 +5258,14 @@
       {
         "id": "tx-1791179536996-391",
         "date": "2026-02-27",
+        "desc": "IRC",
         "type": "รายรับ",
         "amount": 665.55,
-        "detail": "ปันผล IRC",
+        "detail": "IRC",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-392",
@@ -5651,12 +5820,14 @@
       {
         "id": "tx-1791179536996-447",
         "date": "2026-03-10",
+        "desc": "WHABT",
         "type": "รายรับ",
         "amount": 337.5,
-        "detail": "ปันผล WHABT",
+        "detail": "WHABT",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-448",
@@ -6031,12 +6202,14 @@
       {
         "id": "tx-1791179536996-485",
         "date": "2026-03-16",
+        "desc": "K-USXNDQ-A(D)",
         "type": "รายรับ",
         "amount": 253.35,
-        "detail": "ปันผล K-usa",
+        "detail": "K-USXNDQ-A(D)",
         "account": "กสิกรไทย",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
       },
       {
         "id": "tx-1791179536996-486",
@@ -6231,12 +6404,14 @@
       {
         "id": "tx-1791179536996-505",
         "date": "2026-03-20",
+        "desc": "KSL",
         "type": "รายรับ",
         "amount": 360,
-        "detail": "ปันผล KSL",
+        "detail": "KSL",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-506",
@@ -6601,12 +6776,14 @@
       {
         "id": "tx-1791179536996-542",
         "date": "2026-03-25",
+        "desc": "ALLY",
         "type": "รายรับ",
         "amount": 299.7,
-        "detail": "ปันผล ALLY",
+        "detail": "ALLY",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-543",
@@ -7261,12 +7438,14 @@
       {
         "id": "tx-1791179536996-608",
         "date": "2026-04-07",
+        "desc": "ลงทุน K+",
         "type": "เงินออมและลงทุน",
         "amount": 5000,
-        "detail": "ลงทุุน",
+        "detail": "ลงทุน K+",
         "account": "กสิกรไทย",
         "category": "K+",
-        "toAccount": ""
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
       },
       {
         "id": "tx-1791179536996-609",
@@ -7661,12 +7840,14 @@
       {
         "id": "tx-1791179536996-648",
         "date": "2026-04-18",
+        "desc": "Q-CON",
         "type": "รายรับ",
         "amount": 720,
-        "detail": "ปันผล Q-CON",
+        "detail": "Q-CON",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-649",
@@ -7891,12 +8072,14 @@
       {
         "id": "tx-1791179536996-671",
         "date": "2026-04-24",
+        "desc": "TU",
         "type": "รายรับ",
         "amount": 630,
-        "detail": "ปันผล TU",
+        "detail": "TU",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-672",
@@ -8235,32 +8418,38 @@
       {
         "id": "tx-1791179536996-705",
         "date": "2026-04-30",
+        "desc": "TCAP",
         "type": "รายรับ",
         "amount": 990,
-        "detail": "ปันผล TCAP",
+        "detail": "TCAP",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-706",
         "date": "2026-04-30",
+        "desc": "KTB",
         "type": "รายรับ",
         "amount": 1612.8,
-        "detail": "ปันผล KTB",
+        "detail": "KTB",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-707",
         "date": "2026-04-30",
+        "desc": "KTC",
         "type": "รายรับ",
         "amount": 1593,
-        "detail": "ปันผล KTC",
+        "detail": "KTC",
         "account": "กรุงเทพ",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
       },
       {
         "id": "tx-1791179536996-708",
@@ -10699,12 +10888,14 @@
       {
         "id": "tx-1791179536997-951",
         "date": "2026-06-15",
+        "desc": "K-USXNDQ-A(D)",
         "type": "รายรับ",
         "amount": 422.25,
-        "detail": "usa",
+        "detail": "K-USXNDQ-A(D)",
         "account": "กสิกรไทย",
         "category": "เงินปันผล",
-        "toAccount": ""
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
       },
       {
         "id": "tx-1791179536997-952",
@@ -13479,12 +13670,14 @@
       {
         "id": "tx-1791179536998-1228",
         "date": "2026-08-04",
+        "desc": "ลงทุน K+",
         "type": "เงินออมและลงทุน",
         "amount": 5000,
-        "detail": "ลงทุน",
+        "detail": "ลงทุน K+",
         "account": "กสิกรไทย",
         "category": "K+",
-        "toAccount": ""
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
       },
       {
         "id": "tx-1791179536998-1229",
@@ -15241,12 +15434,14 @@
       {
         "id": "tx-1791179536998-1404",
         "date": "2026-09-04",
+        "desc": "ลงทุน K+",
         "type": "เงินออมและลงทุน",
         "amount": 5000,
-        "detail": "ลงทุน",
+        "detail": "ลงทุน K+",
         "account": "กสิกรไทย",
         "category": "K+",
-        "toAccount": ""
+        "accountId": "กสิกรไทย",
+        "accountName": "กสิกรไทย"
       },
       {
         "id": "tx-1791179536998-1405",
