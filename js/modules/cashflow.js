@@ -152,6 +152,8 @@ var CashFlowModule = {
       this.currentView = 'debts';
     } else if (hash.includes('banking')) {
       this.currentView = 'banking';
+    } else if (hash.includes('wealth') || hash.includes('pvd')) {
+      this.currentView = 'wealth';
     } else if (hash.includes('annual')) {
       this.currentView = 'annual';
     } else if (hash.includes('dividend')) {
@@ -246,6 +248,11 @@ var CashFlowModule = {
         window.location.hash = '#banking';
         this.currentView = 'banking';
         this.render();
+      } else if (id === 'nav-wealth' || txt.includes('ภาพรวมการออม')) {
+        e.preventDefault();
+        window.location.hash = '#wealth';
+        this.currentView = 'wealth';
+        this.render();
       } else if (id.includes('credit-card') || txt.includes('รอบบิลบัตรเครดิต')) {
         e.preventDefault();
         window.location.hash = '#credit-cards';
@@ -263,10 +270,11 @@ var CashFlowModule = {
   highlightActiveSidebar() {
     const rawHash = (window.location.hash || '').toLowerCase();
     
-    // กำหนด View ปัจจุบันให้ชัดเจนเพียงสถานะเดียว
     let activeKey = 'daily';
     if (this.currentView === 'banking' || rawHash.includes('banking')) {
       activeKey = 'banking';
+    } else if (this.currentView === 'wealth' || rawHash.includes('wealth') || rawHash.includes('pvd')) {
+      activeKey = 'wealth';
     } else if (this.currentView === 'annual' || rawHash.includes('annual')) {
       activeKey = 'annual';
     } else if (this.currentView === 'dividend' || rawHash.includes('dividend')) {
@@ -281,7 +289,6 @@ var CashFlowModule = {
       const txt = (el.textContent || '').trim();
       const id = el.id || '';
       
-      // ล้างแถบสีออกทั้งหมดก่อน
       el.style.background = 'transparent';
       el.style.color = '#334155';
       el.style.fontWeight = '600';
@@ -292,8 +299,9 @@ var CashFlowModule = {
         el.style.fontWeight = '700';
       };
 
-      // เลือกใส่สีเฉพาะเมนูที่ตรงกับ activeKey เพียงอันเดียว
-      if (activeKey === 'banking' && (id === 'nav-banking' || txt.includes('บัญชีเงินฝาก'))) {
+      if (activeKey === 'wealth' && (id === 'nav-wealth' || txt.includes('ภาพรวมการออม'))) {
+        activate();
+      } else if (activeKey === 'banking' && (id === 'nav-banking' || txt.includes('บัญชีเงินฝาก'))) {
         activate();
       } else if (activeKey === 'annual' && (id === 'nav-annual' || txt.includes('สรุปรายเดือน') || txt.includes('รายปี'))) {
         activate();
@@ -1223,6 +1231,9 @@ var CashFlowModule = {
     `;
   },
 
+  // ==========================================
+  // VIEW: บัญชีเงินฝาก (Banking View)
+  // ==========================================
   async renderBankingView(targetContainer = null) {
     const container = targetContainer 
                    || document.querySelector('.subview-content')
@@ -1250,366 +1261,486 @@ var CashFlowModule = {
             currentUserName = profile.full_name || session.user.email;
           }
         }
-      } catch (e) {
-        console.warn('Banking RBAC check error:', e);
-      }
+      } catch (e) {}
     }
 
-    const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    
-    const bankColorMap = {
-      'CASH': '#059669',
-      'BBL': '#1e3a8a',
-      'KTB': '#00a3e0',
-      'TTB': '#002d62',
-      'SCB': '#4c1d95',
-      'BAAC': '#064e3b',
-      'KBANK': '#15803d',
-      'GSB': '#e11d48',
-      'PAOTANG': '#0284c7',
-      'TMN': '#ea580c',
-      'COOP': '#065f46',
-      'LHBANK': '#4c1d95',
-      'KKP': '#7c3aed',
-      'BAY': '#f59e0b',
-      'KTC': '#0284c7'
-    };
+    const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const accountsMaster = [
+      { id: 'acc_cash', name: 'เงินสด', bank: 'เงินสด', color: '#16a34a', initial: 2870.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', interestRate: 0.00 },
+      { id: 'acc_bbl', name: 'กรุงเทพ', bank: 'กรุงเทพ', color: '#1e3a8a', initial: 37369.44, purpose: 'สะสมทรัพย์', interestRate: 0.25 },
+      { id: 'acc_ktb', name: 'กรุงไทย', bank: 'กรุงไทย', color: '#0284c7', initial: 867023.58, purpose: 'ออมทรัพย์หลัก', interestRate: 0.25 },
+      { id: 'acc_ttb', name: 'ทหารไทย', bank: 'ทหารไทย', color: '#0284c7', initial: 616.20, purpose: 'ทีเอ็มบี ออลล์ ฟรี', interestRate: 0.00 },
+      { id: 'acc_scb', name: 'ไทยพาณิชย์', bank: 'ไทยพาณิชย์', color: '#7e22ce', initial: 26227.73, purpose: 'ออมทรัพย์', interestRate: 0.25 },
+      { id: 'acc_baac', name: 'ธกส.', bank: 'ธกส.', color: '#15803d', initial: 50651.43, purpose: 'ออมทรัพย์', interestRate: 0.45 },
+      { id: 'acc_kbank', name: 'กสิกรไทย', bank: 'กสิกรไทย', color: '#16a34a', initial: 4249.37, purpose: 'ใช้จ่ายออนไลน์ & ช้อปปิ้ง', interestRate: 0.25 },
+      { id: 'acc_gsb', name: 'ออมสิน', bank: 'ออมสิน', color: '#ec4899', initial: 975.58, purpose: 'เผื่อเรียก', interestRate: 0.35 },
+      { id: 'acc_paotang', name: 'เป๋าตัง', bank: 'เป๋าตัง', color: '#06b6d4', initial: 0.00, purpose: 'G-WALLET', interestRate: 0.00 },
+      { id: 'acc_truemoney', name: 'Truemoney', bank: 'Truemoney', color: '#f97316', initial: 146.89, purpose: 'ใช้จ่ายสะดวก / เซเว่น', interestRate: 0.00 },
+      { id: 'acc_coop', name: 'ออมทรัพย์ สอท', bank: 'ออมทรัพย์ สอท', color: '#0d9488', initial: 202191.42, purpose: 'สหกรณ์ออมทรัพย์ สอท.', interestRate: 2.50 }
+    ];
+
+    let storedInitials = {};
+    try {
+      storedInitials = JSON.parse(localStorage.getItem('family-finance:initial-balances:v1')) || {};
+    } catch (e) {}
 
     const state = this.getState();
     const allTxs = state.transactions || [];
 
-    const initialBalances = {
-      'เงินสด': 1445.00,
-      'กรุงเทพ': 8461.30,
-      'กรุงไทย': 6761.61,
-      'ทหารไทย': 1146.20,
-      'ไทยพาณิชย์': 40865.84,
-      'ธกส.': 50651.43,
-      'กสิกรไทย': 3207.86,
-      'ออมสิน': 772.79,
-      'เป๋าตัง': 56.40,
-      'Truemoney': 146.89,
-      'ออมทรัพย์ สอท': 202191.42
-    };
+    let totalBankBalance = 0;
+    let totalEstAnnualInterest = 0;
 
-    const rawMainAccounts = [
-      { id: 'acc-1', name: 'เงินสด', bank: 'CASH', accNo: 'CASH-ON-HAND', interestRate: 0.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', owner: 'admin' },
-      { id: 'acc-2', name: 'กรุงเทพ', bank: 'BBL', accNo: '006-7-05636-6', interestRate: 0.25, purpose: 'สะสมทรัพย์', owner: 'admin' },
-      { id: 'acc-3', name: 'กรุงไทย', bank: 'KTB', accNo: '066-1-13437-7', interestRate: 0.25, purpose: 'ออมทรัพย์หลัก', owner: 'admin' },
-      { id: 'acc-4', name: 'ทหารไทย', bank: 'TTB', accNo: '236-2-16356-6', interestRate: 0.00, purpose: 'ทีเอ็มบี ออลล์ ฟรี', owner: 'admin' },
-      { id: 'acc-5', name: 'ไทยพาณิชย์', bank: 'SCB', accNo: '198-2-09134-3', interestRate: 0.25, purpose: 'ออมทรัพย์', owner: 'admin' },
-      { id: 'acc-6', name: 'ธกส.', bank: 'BAAC', accNo: '020028174851', interestRate: 0.45, purpose: 'ออมทรัพย์', owner: 'admin' },
-      { id: 'acc-7', name: 'กสิกรไทย', bank: 'KBANK', accNo: '069-1-09614-9', interestRate: 0.25, purpose: 'ออมทรัพย์', owner: 'admin' },
-      { id: 'acc-8', name: 'ออมสิน', bank: 'GSB', accNo: '020255468702', interestRate: 0.35, purpose: 'เผื่อเรียก (สลาก)', owner: 'admin' },
-      { id: 'acc-9', name: 'เป๋าตัง', bank: 'PAOTANG', accNo: 'G-WALLET', interestRate: 0.00, purpose: 'G-Wallet สแกนจ่ายโครงการรัฐ', owner: 'admin' },
-      { id: 'acc-10', name: 'Truemoney', bank: 'TMN', accNo: 'WALLET', interestRate: 0.00, purpose: 'วอลเล็ตซื้อของ 7-11 / บริการออนไลน์', owner: 'admin' },
-      { id: 'acc-11', name: 'ออมทรัพย์ สอท', bank: 'COOP', accNo: 'COOP-SAVING', interestRate: 2.50, purpose: 'สหกรณ์ออมทรัพย์ สอท.', owner: 'admin' }
-    ];
+    const computedAccounts = accountsMaster.map(acc => {
+      let currentBal = storedInitials[acc.name] !== undefined ? storedInitials[acc.name] : acc.initial;
 
-    const filteredRawAccounts = currentRole === 'admin'
-      ? rawMainAccounts
-      : (state.memberAccounts || []);
+      const estInterest = currentBal > 0 ? (currentBal * (acc.interestRate / 100)) : 0;
+      totalBankBalance += currentBal;
+      totalEstAnnualInterest += estInterest;
 
-    const mainAccounts = filteredRawAccounts.map(acc => {
-      let inAmt = 0;
-      let outAmt = 0;
-
-      allTxs.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (amt <= 0) return;
-
-        const type = String(t.type || '').trim();
-        const cat = String(t.category || '').trim();
-        const detail = String(t.detail || t.desc || t.note || '').trim();
-
-        const matchName = (raw) => {
-          const s = String(raw || '').trim().toLowerCase();
-          if (!s) return '';
-          if (s.includes('บัตรเครดิต') || s.includes('credit')) return '';
-          if (s.includes('เงินสด') || s.includes('cash')) return 'เงินสด';
-          if (s.includes('กรุงเทพ') || s.includes('bbl')) return 'กรุงเทพ';
-          if (s.includes('กรุงไทย') || s.includes('ktb')) return 'กรุงไทย';
-          if (s.includes('ทหารไทย') || s.includes('ttb') || s.includes('tmb')) return 'ทหารไทย';
-          if (s.includes('ไทยพาณิชย์') || s.includes('scb')) return 'ไทยพาณิชย์';
-          if (s.includes('ธกส') || s.includes('baac')) return 'ธกส.';
-          if (s.includes('กสิกร') || s.includes('kbank')) return 'กสิกรไทย';
-          if (s.includes('ออมสิน') || s.includes('gsb')) return 'ออมสิน';
-          if (s.includes('เป๋าตัง') || s.includes('paotang') || s.includes('g-wallet')) return 'เป๋าตัง';
-          if (s.includes('truemoney') || s.includes('true money') || s.includes('tmn')) return 'Truemoney';
-          if (s.includes('สอท') || s.includes('สหกรณ์') || s.includes('coop')) return 'ออมทรัพย์ สอท';
-          return '';
-        };
-
-        const accFromField = matchName(t.fromAccount);
-        const accToField = matchName(t.toAccount);
-        const accMainField = matchName(t.accountName || t.accountId || t.account || t.bank);
-
-        if (type === 'โอนระหว่างบัญชี' || type === 'โอนเงิน' || accFromField || accToField) {
-          let src = accFromField || accMainField;
-          let dst = accToField;
-          if (!dst && (cat.includes('เป๋าตัง') || detail.includes('เป๋าตัง'))) dst = 'เป๋าตัง';
-          if (!dst && (cat.includes('สอท') || detail.includes('สอท'))) dst = 'ออมทรัพย์ สอท';
-
-          if (src === acc.name) outAmt += amt;
-          if (dst === acc.name) inAmt += amt;
-          return;
-        }
-
-        let matchedTarget = accMainField;
-        if (!matchedTarget) {
-          if (cat.includes('เป๋าตัง') || detail.includes('เป๋าตัง')) matchedTarget = 'เป๋าตัง';
-          else if (cat.includes('SCB') || detail.includes('SCB')) matchedTarget = 'ไทยพาณิชย์';
-          else if (cat.includes('สอท') || detail.includes('สอท')) matchedTarget = 'ออมทรัพย์ สอท';
-        }
-
-        if (matchedTarget === acc.name) {
-          if (type === 'รายรับ' || type === 'income') {
-            inAmt += amt;
-          } else {
-            outAmt += amt;
-          }
-        }
-      });
-
-      const initBal = initialBalances[acc.name] || 0;
-      const adjustAmt = inAmt - outAmt;
-      const balance = initBal + adjustAmt;
-      const estInt = (balance > 0 ? balance : 0) * (acc.interestRate / 100);
-
-      return { ...acc, inAmt, outAmt, adjustAmt, balance, estInt };
+      return {
+        ...acc,
+        balance: currentBal,
+        estInterest: estInterest
+      };
     });
 
-    const digitalAccounts = currentRole === 'admin' ? [
-      { id: 'acc-d1', name: 'กรุงไทย (ประจำ)', bank: 'KTB', accNo: '066-2-03523-2', interestRate: 1.20, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'เงินฝากประจำ' },
-      { id: 'acc-d2', name: 'ทหารไทย (ออมทรัพย์)', bank: 'TTB', accNo: '236-2-16357-4', interestRate: 0.25, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'ออมทรัพย์' },
-      { id: 'acc-d3', name: 'ออมสิน (ประจำ 6 เดือน)', bank: 'GSB', accNo: '320250353358', interestRate: 1.05, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'ประจำ 6 เดือน' },
-      { id: 'acc-d4', name: 'LH (B-You Max)', bank: 'LHBANK', accNo: '800-2-46280-8', interestRate: 6.00, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'Internet Banking / B-You Max' },
-      { id: 'acc-d5', name: 'เกียรตินาคินภัทร (Dime)', bank: 'KKP', accNo: '201-2-14799-7', interestRate: 3.00, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'Dime! Save ดอกเบี้ยสูง' },
-      { id: 'acc-d6', name: 'ทหารไทย (TTB ME Save)', bank: 'TTB', accNo: '236-2-19496-7', interestRate: 2.20, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'ME Save ดอกเบี้ยสูง' },
-      { id: 'acc-d7', name: 'กรุงไทย (Next Saving)', bank: 'KTB', accNo: '066-0-14649-5', interestRate: 1.50, balance: 0.00, inAmt: 0.00, outAmt: 0.00, adjustAmt: 0.00, estInt: 0.00, purpose: 'Krungthai Next Saving' }
-    ] : [];
+    const bankColorMap = {
+      'เงินสด': '#16a34a', 'กรุงเทพ': '#1e3a8a', 'กรุงไทย': '#0284c7', 'ทหารไทย': '#0284c7',
+      'ไทยพาณิชย์': '#7e22ce', 'ธกส.': '#15803d', 'กสิกรไทย': '#16a34a', 'ออมสิน': '#ec4899',
+      'เป๋าตัง': '#06b6d4', 'Truemoney': '#f97316', 'ออมทรัพย์ สอท': '#0d9488'
+    };
 
-    const creditCards = currentRole === 'admin' ? [
-      { id: 'card-1', name: 'บัตรเครดิตกรุงศรี', bank: 'BAY', cutOff: 'ตัดรอบทุกวันที่ 10', balance: 11723.28, status: 'รอชำระรอบนี้', statusColor: '#f97316', statusBg: '#fff7ed', chargeAmt: 162267.71, paidAmt: 171339.13, condition: 'บัตรเครดิต กรุงศรี (ตัดรอบวันที่ 10)' },
-      { id: 'card-2', name: 'บัตรเครดิตกรุงไทย', bank: 'KTC', cutOff: 'ตัดรอบทุกวันที่ 7', balance: 0.00, status: 'เคลียร์บิลแล้ว', statusColor: '#059669', statusBg: '#ecfdf5', chargeAmt: 1530.00, paidAmt: 1544.67, condition: 'บัตรเครดิต KTC (ตัดรอบวันที่ 15)' },
-      { id: 'card-3', name: 'บัตรเครดิตทีทีบี', bank: 'TTB', cutOff: 'ตัดรอบทุกวันที่ 2', balance: 0.00, status: 'เคลียร์บิลแล้ว', statusColor: '#059669', statusBg: '#ecfdf5', chargeAmt: 0.00, paidAmt: 2086.16, condition: 'บัตรเครดิต ttb' }
-    ] : [];
-
-    const totalAccountsCount = mainAccounts.length + digitalAccounts.length + creditCards.length;
-    const totalCashBalance = mainAccounts.reduce((s, a) => s + (a.balance || 0), 0) + digitalAccounts.reduce((s, a) => s + (a.balance || 0), 0);
-    const totalEstInterest = mainAccounts.reduce((s, a) => s + (a.estInt || 0), 0) + digitalAccounts.reduce((s, a) => s + (a.estInt || 0), 0);
-
-    const renderAccountCard = (a) => {
-      const bankBg = bankColorMap[a.bank] || '#0f172a';
+    const cardsHtml = computedAccounts.map(a => {
+      const bColor = bankColorMap[a.bank] || '#0284c7';
       return `
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
               <div style="display: flex; gap: 10px; align-items: center;">
-                <div style="background: ${bankBg}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 5px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; min-width: 44px; text-align: center;">
-                  ${a.bank}
-                </div>
+                <div style="background: ${bColor}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 5px 8px; border-radius: 6px;">${a.bank}</div>
                 <div>
                   <div style="font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2;">${a.name}</div>
-                  <div style="font-size: 11px; color: #94a3b8; font-variant-numeric: tabular-nums;">${a.accNo || '-'}</div>
+                  <div style="font-size: 11px; color: #64748b; font-weight: 700;">ดอกเบี้ย: ${a.interestRate.toFixed(2)}% ต่อปี</div>
                 </div>
               </div>
-              <span style="background: #ecfdf5; color: #059669; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
-                ดอกเบี้ย ${Number(a.interestRate).toFixed(2)}%
-              </span>
             </div>
 
-            <div style="font-size: 11px; color: #64748b; font-weight: 600;">ยอดเงินคงเหลือ</div>
-            <div style="font-size: 26px; font-weight: 900; color: #0f172a; margin: 2px 0 12px 0; letter-spacing: -0.6px; font-variant-numeric: tabular-nums;">
-              ${formatBaht(a.balance)}
+            <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">ยอดเงินคงเหลือปัจจุบัน</div>
+            <div style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
+              ฿${formatBaht(a.balance)}
             </div>
 
-            <div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 11.5px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color: #64748b;">เข้า: <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">+${formatBaht(a.inAmt || 0)}</strong></span>
-                <span style="color: #64748b;">ออก: <strong style="color: #dc2626; font-variant-numeric: tabular-nums;">-${formatBaht(a.outAmt || 0)}</strong></span>
+            <div style="font-size: 11.5px; border-top: 1px dashed #f1f5f9; padding-top: 8px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                <span style="color: #64748b;">ดอกเบี้ยคาดการณ์/ปี:</span>
+                <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">+฿${formatBaht(a.estInterest)}</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color: #64748b;">ปรับปรุงยอด (+/-):</span>
-                <strong style="color: ${(a.adjustAmt || 0) >= 0 ? '#16a34a' : '#dc2626'}; font-variant-numeric: tabular-nums;">
-                  ${(a.adjustAmt || 0) >= 0 ? '+' : ''}${formatBaht(a.adjustAmt || 0)}
-                </strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color: #64748b;">ดอกเบี้ยประมาณการ/ปี:</span>
-                <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">+${formatBaht(a.estInt || 0)}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 5px;">
+              <div style="display: flex; justify-content: space-between;">
                 <span style="color: #64748b;">วัตถุประสงค์:</span>
-                <strong style="color: #334155; text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.purpose || 'ทั่วไป'}</strong>
+                <strong style="color: #334155; text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.purpose}</strong>
               </div>
             </div>
           </div>
 
-          <button class="btn-edit-bank-balance" data-id="${a.id}" data-name="${a.name}" data-balance="${a.balance}" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button class="btn-edit-bank-balance" data-id="${a.id}" data-name="${a.name}" data-balance="${a.balance}" style="width: 100%; margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>✏️</span> แก้ไขยอด
           </button>
         </div>
       `;
-    };
-
-    const renderCardItem = (c) => {
-      const bankBg = bankColorMap[c.bank] || '#f59e0b';
-      return `
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <div style="background: ${bankBg}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 5px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; min-width: 44px; text-align: center;">
-                  ${c.bank}
-                </div>
-                <div>
-                  <div style="font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2;">${c.name}</div>
-                  <div style="font-size: 11px; color: #dc2626; font-weight: 700;">${c.cutOff}</div>
-                </div>
-              </div>
-              <span style="background: ${c.statusBg}; color: ${c.statusColor}; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
-                ${c.status === 'เคลียร์บิลแล้ว' ? '✓ ' : ''}${c.status}
-              </span>
-            </div>
-
-            <div style="font-size: 11px; color: #64748b; font-weight: 600;">ยอดรอตัดจ่ายรอบบิลนี้</div>
-            <div style="font-size: 26px; font-weight: 900; color: ${c.balance > 0 ? '#ea580c' : '#059669'}; margin: 2px 0 12px 0; letter-spacing: -0.6px; font-variant-numeric: tabular-nums;">
-              ${formatBaht(c.balance)}
-            </div>
-
-            <div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 11.5px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color: #64748b;">ยอดรูดสะสม:</span>
-                <strong style="color: #dc2626; font-variant-numeric: tabular-nums;">${formatBaht(c.chargeAmt)}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color: #64748b;">ชำระแล้ว:</span>
-                <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">${formatBaht(c.paidAmt)}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 5px;">
-                <span style="color: #64748b;">เงื่อนไขบัตร:</span>
-                <strong style="color: #334155; text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.condition}</strong>
-              </div>
-            </div>
-          </div>
-
-          <button class="btn-edit-bank-balance" data-id="${c.id}" data-name="${c.name}" data-balance="${c.balance}" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <span>✏️</span> แก้ไขวันตัดยอด
-          </button>
-        </div>
-      `;
-    };
+    }).join('');
 
     container.innerHTML = `
-      <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
+      <div class="portfolio-container" style="width: 100% !important; max-width: 1200px; margin: 0 auto; text-align: left; padding-bottom: 40px; font-family: 'Sarabun', sans-serif;">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🏦</div>
-            <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CASH & EMERGENCY FUND</div>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">
-                  สมุดบัญชีเงินฝาก ${currentRole === 'admin' ? currentUserName : `(${currentUserName})`}
-                </h1>
-                <span style="color: #64748b; font-size: 12px; font-weight: 600;">รวม ${totalAccountsCount} บัญชี</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🏦</div>
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">BANKING & DEPOSIT ACCOUNTS</div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สมุดบัญชีเงินฝาก & สภาพคล่อง</h1>
+                <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">11 บัญชี</span>
               </div>
             </div>
           </div>
-
-          <div style="display: flex; gap: 8px;">
-            <button id="btn-export-banking-json" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-              <span>📤</span> ส่งออก JSON
-            </button>
-          </div>
         </div>
 
-        <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 24px;">
-          
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="font-size: 11.5px; color: #64748b; font-weight: 700; margin-bottom: 6px;">📊 สภาพคล่องสุทธิ (เงินฝากคงเหลือ)</div>
-            <div style="font-size: 24px; font-weight: 900; color: #059669; letter-spacing: -0.5px;">${formatBaht(totalCashBalance)}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">${currentRole === 'admin' ? 'เงินฝาก: ฿421,257.31 • <span style="color: #dc2626;">บิลบัตร: ฿11,723.28</span>' : 'ยอดเงินสดพร้อมใช้ส่วนตัว'}</div>
-          </div>
-
-          ${currentRole === 'admin' ? `
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-size: 11.5px; color: #64748b; font-weight: 700;">🛡️ เงินสำรองฉุกเฉิน (Emergency Buffer)</span>
-              <span style="background: #ecfdf5; color: #059669; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 28px;">
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+              <span>💵</span> ยอดเงินฝากรวมทั้งหมด (Total Cash & Deposits)
             </div>
-            <div style="display: flex; align-items: baseline; gap: 8px;">
-              <span style="font-size: 22px; font-weight: 900; color: #0284c7;">5.5</span>
-              <span style="font-size: 12px; color: #64748b; font-weight: 700;">/ 12 เดือน</span>
-              <span style="margin-left: auto; font-size: 13px; font-weight: 800; color: #0284c7;">45.5%</span>
+            <div style="font-size: 28px; font-weight: 900; color: #059669; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
+              ฿${formatBaht(totalBankBalance)}
             </div>
-            <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin: 8px 0;">
-              <div style="width: 45.5%; height: 100%; background: #0284c7; border-radius: 3px;"></div>
+            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
+              รวมเงินสด 10 สถาบันการเงิน และสหกรณ์ สอท.
             </div>
-            <div style="font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between;">
-              <span>สอท. ฿218,486.15</span>
-              <span>เป้าหมาย ฿480,000.00</span>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+              <span>📈</span> ดอกเบี้ยคาดการณ์รวมต่อปี (Est. Annual Interest)
             </div>
-            <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">⚡ 33 เดือนเต็มเป้า (ทันก่อนเกษียณ 3 เดือน)</div>
+            <div style="font-size: 28px; font-weight: 900; color: #0284c7; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
+              +฿${formatBaht(totalEstAnnualInterest)}
+            </div>
+            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #0284c7; font-weight: 600;">
+              คำนวณจากอัตราดอกเบี้ยเฉลี่ยตามประเภทบัญชี
+            </div>
           </div>
-          ` : ''}
-
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="font-size: 11.5px; color: #64748b; font-weight: 700; margin-bottom: 6px;">🎁 ดอกเบี้ยรับสะสม/ปี (Est. Interest)</div>
-            <div style="font-size: 24px; font-weight: 900; color: #16a34a; letter-spacing: -0.5px;">+${formatBaht(totalEstInterest)}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ +${formatBaht(totalEstInterest / 12)}</div>
-          </div>
-
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="font-size: 11.5px; color: #64748b; font-weight: 700; margin-bottom: 6px;">🗂️ บัญชีในระบบ</div>
-            <div style="font-size: 24px; font-weight: 900; color: #0f172a;">${totalAccountsCount} บัญชี</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">${currentRole === 'admin' ? 'เงินฝาก & ดิจิทัล 18 บัญชี • บัตรเครดิต 3 ใบ' : 'บัญชีเงินฝากเฉพาะบุคคล'}</div>
-          </div>
-
         </div>
 
-        <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 14px 0;">
-          🏦 สมุดบัญชีเงินฝากและเงินสด (${mainAccounts.length} บัญชี)
-        </h3>
-        ${mainAccounts.length > 0 ? `
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
-            ${mainAccounts.map(renderAccountCard).join('')}
-          </div>
-        ` : `
-          <div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 40px 20px; text-align: center; margin-bottom: 30px;">
-            <div style="font-size: 32px; margin-bottom: 10px;">💳</div>
-            <div style="font-size: 15px; font-weight: 700; color: #334155; margin-bottom: 4px;">ยังไม่มีรายการบัญชีเงินฝากที่บันทึกไว้</div>
-            <div style="font-size: 12.5px; color: #64748b;">คุณสามารถให้ผู้ดูแลระบบ (Admin) เพิ่มบัญชีเงินฝากให้ในหน้าตั้งค่า หรือเริ่มต้นบันทึกรายรับรายจ่ายได้ทันที</div>
-          </div>
-        `}
-
-        ${currentRole === 'admin' && digitalAccounts.length > 0 ? `
-        <div style="margin-bottom: 14px;">
-          <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
-            🌐 บัญชีเงินฝาก Internet & ดิจิทัลดอกเบี้ยสูง (${digitalAccounts.length} บัญชี)
-          </h3>
-          <div style="font-size: 12px; color: #64748b;">Dime, ME Save, Next Saving, B-You Max และบัญชีประจำ</div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
-          ${digitalAccounts.map(renderAccountCard).join('')}
-        </div>
-        ` : ''}
-
-        ${currentRole === 'admin' && creditCards.length > 0 ? `
-        <div style="margin-bottom: 14px;">
-          <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
-            💳 บัตรเครดิตและวงเงินรอชำระรอบนี้ (${creditCards.length} บัญชี)
-          </h3>
-          <div style="font-size: 12px; color: #64748b;">ติดตามยอดรูดและวันตัดรอบบิล</div>
-        </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-          ${creditCards.map(renderCardItem).join('')}
+          ${cardsHtml}
         </div>
-        ` : ''}
 
       </div>
     `;
+  },
+
+  renderWealthView(targetContainer = null) {
+    const container = targetContainer 
+                   || document.querySelector('.subview-content')
+                   || document.getElementById('content-area')
+                   || document.getElementById('cashflow-subview')
+                   || document.getElementById('expense-content')
+                   || document.querySelector('.content-area')
+                   || document.getElementById('main-content');
+    if (!container) return;
+
+    const formatBaht = (n) => '฿' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // 1. ดึงยอดคงเหลือจริง 10 บัญชีธนาคาร (ไม่รวม สอท.)
+    const actualBalances = {
+      'เงินสด': 2870.00, 'กรุงเทพ': 37369.44, 'กรุงไทย': 867023.58, 'ทหารไทย': 616.20,
+      'ไทยพาณิชย์': 26227.73, 'ธกส.': 50651.43, 'กสิกรไทย': 4249.37, 'ออมสิน': 975.58,
+      'เป๋าตัง': 0.00, 'Truemoney': 146.89, 'ออมทรัพย์ สอท': 202191.42
+    };
+    let storedInitials = {};
+    try { storedInitials = JSON.parse(localStorage.getItem('family-finance:initial-balances:v1')) || {}; } catch (e) {}
+
+    let totalBankCash = 0;
+    let coopSavingBal = storedInitials['ออมทรัพย์ สอท'] !== undefined ? storedInitials['ออมทรัพย์ สอท'] : actualBalances['ออมทรัพย์ สอท'];
+
+    Object.keys(actualBalances).forEach(accName => {
+      const bal = storedInitials[accName] !== undefined ? storedInitials[accName] : actualBalances[accName];
+      if (accName === 'ออมทรัพย์ สอท') {
+        coopSavingBal = bal;
+      } else {
+        totalBankCash += bal;
+      }
+    });
+
+    // 2. ดึงข้อมูลสินทรัพย์ PVD, RMF, และ ทุนเรือนหุ้น สอท.
+    let wealthExtras = {
+      memberAccum: 2043963.45,
+      employerMatch: 2099909.75,
+      earnings: 1063753.44,
+      totalPvd: 5207626.64,
+      rmfVal: 1183061.27,      // ยอด INVX RMF ตามไฟล์สำรองข้อมูล
+      coopShareVal: 1272400.00, // ทุนเรือนหุ้น สอท. ตามไฟล์สำรองข้อมูล
+      updatedDate: '2026-10-21'
+    };
+    try {
+      const savedExtras = JSON.parse(localStorage.getItem('family-finance:wealth-extras:v1') || localStorage.getItem('family-finance:pvd:v1'));
+      if (savedExtras) {
+        wealthExtras = Object.assign(wealthExtras, savedExtras);
+        wealthExtras.totalPvd = (parseFloat(wealthExtras.memberAccum) || 0) + 
+                                (parseFloat(wealthExtras.employerMatch) || 0) + 
+                                (parseFloat(wealthExtras.earnings) || 0);
+      }
+    } catch(e) {}
+
+    // กลุ่มที่ 2: สหกรณ์ สอท. (ออมทรัพย์ + หุ้น)
+    const totalCoop = coopSavingBal + (parseFloat(wealthExtras.coopShareVal) || 0);
+
+    // กลุ่มที่ 3: เกษียณระยะยาว (PVD + RMF)
+    const totalRetirement = wealthExtras.totalPvd + (parseFloat(wealthExtras.rmfVal) || 0);
+
+    // กลุ่มที่ 4: พอร์ตตลาดหุ้น & ETFs (ดึงจาก portfolio.html หรือ LocalStorage)
+    let totalStockValue = 4140768.31;
+    try {
+      const savedPort = JSON.parse(localStorage.getItem('family-finance:portfolio:v1'));
+      if (savedPort && savedPort.totalValue) {
+        totalStockValue = parseFloat(savedPort.totalValue) || 4140768.31;
+      }
+    } catch(e) {}
+
+    // ยอดรวมความมั่งคั่งสุทธิทั้ง 4 เสาหลัก
+    const totalNetWorth = totalBankCash + totalCoop + totalRetirement + totalStockValue;
+
+    // คำนวณร้อยละ Asset Allocation
+    const p1Pct = totalNetWorth > 0 ? ((totalBankCash / totalNetWorth) * 100).toFixed(1) : 0;
+    const p2Pct = totalNetWorth > 0 ? ((totalCoop / totalNetWorth) * 100).toFixed(1) : 0;
+    const p3Pct = totalNetWorth > 0 ? ((totalRetirement / totalNetWorth) * 100).toFixed(1) : 0;
+    const p4Pct = totalNetWorth > 0 ? (100 - parseFloat(p1Pct) - parseFloat(p2Pct) - parseFloat(p3Pct)).toFixed(1) : 0;
+
+    container.innerHTML = `
+      <div class="portfolio-container" style="width: 100% !important; max-width: 1200px; margin: 0 auto; text-align: left; padding-bottom: 40px; font-family: 'Sarabun', sans-serif;">
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="background: #e0f2fe; color: #0284c7; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">💎</div>
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH & RETIREMENT ALLOCATION</div>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ภาพรวมการออม การลงทุน & สินทรัพย์สุทธิ</h1>
+            </div>
+          </div>
+          <button type="button" onclick="CashFlowModule.openEditPvdModal()" style="background: #0284c7; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
+            <span>✏️</span> ปรับปรุงยอดสินทรัพย์ (PVD / สอท. / RMF)
+          </button>
+        </div>
+
+        <!-- Banner ความมั่งคั่งสุทธิรวม -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 22px 26px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.18); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div style="font-size: 12px; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">👑 ความมั่งคั่งสุทธิรวมทั้งหมด (Net Worth)</div>
+            <div style="font-size: 32px; font-weight: 900; color: #38bdf8; margin: 4px 0 2px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalNetWorth)}</div>
+            <div style="font-size: 12px; color: #cbd5e1;">สินทรัพย์ 4 เสาหลัก: เงินสดธนาคาร + สหกรณ์ สอท. + เกษียณระยะยาว + พอร์ตตลาดทุน</div>
+          </div>
+          <div style="text-align: right; background: rgba(255,255,255,0.06); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">อัปเดตข้อมูลล่าสุด</div>
+            <div style="font-size: 14px; font-weight: 800; color: #f8fafc; margin-top: 2px;">${wealthExtras.updatedDate || '-'}</div>
+          </div>
+        </div>
+
+        <!-- 4 กล่องสินทรัพย์หลัก -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 26px;">
+          
+          <!-- เสาหลัก 1 -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; color: #64748b; font-weight: 700;">💵 เงินฝาก & สภาพคล่อง</span>
+              <span style="background: #ecfdf5; color: #059669; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p1Pct}%</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #059669; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalBankCash)}</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">เงินสด + เงินฝากธนาคาร 10 บัญชี</div>
+          </div>
+
+          <!-- เสาหลัก 2 -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; color: #64748b; font-weight: 700;">🏛️ สหกรณ์ออมทรัพย์ (สอท.)</span>
+              <span style="background: #f0fdf4; color: #16a34a; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p2Pct}%</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalCoop)}</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+              ออมทรัพย์ ฿${Number(coopSavingBal).toLocaleString('en-US', {maximumFractionDigits: 0})} • ทุนเรือนหุ้น ฿${Number(wealthExtras.coopShareVal || 0).toLocaleString('en-US', {maximumFractionDigits: 0})}
+            </div>
+          </div>
+
+          <!-- เสาหลัก 3 -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; color: #64748b; font-weight: 700;">🛡️ เกษียณระยะยาว (PVD & RMF)</span>
+              <span style="background: #e0e7ff; color: #4338ca; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p3Pct}%</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #4338ca; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalRetirement)}</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+              PVD ฿${Number(wealthExtras.totalPvd).toLocaleString('en-US', {maximumFractionDigits: 0})} • RMF ฿${Number(wealthExtras.rmfVal || 0).toLocaleString('en-US', {maximumFractionDigits: 0})}
+            </div>
+          </div>
+
+          <!-- เสาหลัก 4 -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; color: #64748b; font-weight: 700;">📈 ตลาดหุ้น & ETFs ตลาดโลก</span>
+              <span style="background: #e0f2fe; color: #0284c7; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p4Pct}%</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #0284c7; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalStockValue)}</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม</div>
+          </div>
+
+        </div>
+
+        <!-- รายละเอียดกองทุนสำรองเลี้ยงชีพ PVD -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+              <span>🏢</span> รายละเอียดกองทุนสำรองเลี้ยงชีพ (Provident Fund)
+            </h3>
+            <span style="font-size: 11.5px; color: #4338ca; font-weight: 700; background: #e0e7ff; padding: 3px 10px; border-radius: 6px;">
+              ผลตอบแทนสะสม +฿${Number(wealthExtras.earnings).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div>
+              <div style="font-size: 12px; color: #64748b; font-weight: 700;">1. เงินสะสมของสมาชิก (เงินเรา)</div>
+              <div style="font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.memberAccum)}</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">สะสมเข้ากองทุน</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #64748b; font-weight: 700;">2. เงินสมทบจากนายจ้าง (บริษัทให้)</div>
+              <div style="font-size: 20px; font-weight: 900; color: #16a34a; margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.employerMatch)}</div>
+              <div style="font-size: 11px; color: #16a34a; margin-top: 2px;">บริษัทช่วยสมทบเพิ่ม</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #64748b; font-weight: 700;">3. ผลประโยชน์สะสมทั้งหมด</div>
+              <div style="font-size: 20px; font-weight: 900; color: #0284c7; margin-top: 4px; font-variant-numeric: tabular-nums;">+${formatBaht(wealthExtras.earnings)}</div>
+              <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">ผลตอบแทนจากการลงทุน</div>
+            </div>
+            <div style="border-left: 2px solid #e2e8f0; padding-left: 16px;">
+              <div style="font-size: 12px; color: #4338ca; font-weight: 700;">มูลค่าสุทธิปัจจุบัน (NAV)</div>
+              <div style="font-size: 22px; font-weight: 900; color: #4338ca; margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.totalPvd)}</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">ยอดเงินก้อน ณ ปัจจุบัน</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- แถบสัดส่วน Asset Allocation Breakdown -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">📊 สัดส่วนพอร์ตสินทรัพย์ 4 เสาหลัก (Asset Allocation)</h3>
+            <span style="font-size: 12px; color: #64748b; font-weight: 700;">100% ครบทุกบัญชี</span>
+          </div>
+
+          <div style="height: 14px; background: #f1f5f9; border-radius: 7px; overflow: hidden; display: flex; margin-bottom: 16px;">
+            <div style="width: ${p1Pct}%; background: #059669;" title="เงินฝากธนาคาร ${p1Pct}%"></div>
+            <div style="width: ${p2Pct}%; background: #15803d;" title="สหกรณ์ สอท. ${p2Pct}%"></div>
+            <div style="width: ${p3Pct}%; background: #4338ca;" title="เกษียณระยะยาว ${p3Pct}%"></div>
+            <div style="width: ${p4Pct}%; background: #0284c7;" title="ตลาดหุ้น & ETFs ${p4Pct}%"></div>
+          </div>
+
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 12px; height: 12px; background: #059669; border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">เงินฝากธนาคาร (${p1Pct}%)</span>
+              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalBankCash)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 12px; height: 12px; background: #15803d; border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">สหกรณ์ สอท. (${p2Pct}%)</span>
+              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalCoop)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 12px; height: 12px; background: #4338ca; border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">เกษียณ PVD & RMF (${p3Pct}%)</span>
+              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalRetirement)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 12px; height: 12px; background: #0284c7; border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">ตลาดหุ้น & ETFs (${p4Pct}%)</span>
+              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalStockValue)}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+  },
+
+  openEditPvdModal() {
+    let oldModal = document.getElementById('modal-edit-pvd');
+    if (oldModal) oldModal.remove();
+
+    let extras = {
+      memberAccum: 2043963.45,
+      employerMatch: 2099909.75,
+      earnings: 1063753.44,
+      rmfVal: 1183061.27,
+      coopShareVal: 1272400.00,
+      updatedDate: new Date().toISOString().slice(0, 10)
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem('family-finance:wealth-extras:v1') || localStorage.getItem('family-finance:pvd:v1'));
+      if (saved) extras = Object.assign(extras, saved);
+    } catch(e) {}
+
+    const modalHtml = `
+      <div id="modal-edit-pvd" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 99999; font-family: 'Sarabun', sans-serif;">
+        <div style="background: #fff; border-radius: 16px; width: 480px; max-width: 95vw; padding: 24px; text-align: left; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="background: #e0e7ff; color: #4338ca; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">💎</div>
+              <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">ปรับปรุงยอดสินทรัพย์ (PVD, สอท., RMF)</h3>
+            </div>
+            <button type="button" onclick="document.getElementById('modal-edit-pvd').remove()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">✕</button>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px;">
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 800; color: #4338ca; margin-bottom: 10px;">🏢 ข้อมูลกองทุนสำรองเลี้ยงชีพ (PVD)</div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 3px;">1. เงินสะสมของพนักงาน (บาท)</label>
+                  <input type="number" step="0.01" id="pvd-member-accum" value="${extras.memberAccum}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 3px;">2. เงินสมทบนายจ้าง (บาท)</label>
+                  <input type="number" step="0.01" id="pvd-employer-match" value="${extras.employerMatch}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 3px;">3. ผลประโยชน์สะสมทั้งหมด (บาท)</label>
+                  <input type="number" step="0.01" id="pvd-earnings" value="${extras.earnings}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                </div>
+              </div>
+            </div>
+
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 800; color: #15803d; margin-bottom: 8px;">🏛️ สหกรณ์ออมทรัพย์ (สอท.)</div>
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #166534; margin-bottom: 3px;">ทุนเรือนหุ้น สอท. (บาท)</label>
+                <input type="number" step="0.01" id="coop-share-val" value="${extras.coopShareVal || 0}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #86efac; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                <div style="font-size: 10.5px; color: #15803d; margin-top: 3px;">* ส่วนเงินฝากออมทรัพย์ สอท. ระบบเชื่อมโยงให้ตรงกับบัญชีอัตโนมัติ</div>
+              </div>
+            </div>
+
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 800; color: #1d4ed8; margin-bottom: 8px;">🛡️ กองทุนรวมเพื่อการเกษียณ (RMF)</div>
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #1e40af; margin-bottom: 3px;">มูลค่ากองทุน INVX RMF ปัจจุบัน (บาท)</label>
+                <input type="number" step="0.01" id="rmf-val" value="${extras.rmfVal || 0}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #93c5fd; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่อัปเดตข้อมูลตาม Statement</label>
+              <input type="date" id="wealth-update-date" value="${extras.updatedDate || new Date().toISOString().slice(0, 10)}" style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none;">
+            </div>
+
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" onclick="document.getElementById('modal-edit-pvd').remove()" style="background: #fff; border: 1.5px solid #cbd5e1; padding: 8px 18px; border-radius: 8px; font-weight: 700; color: #475569; cursor: pointer;">ยกเลิก</button>
+            <button type="button" id="btn-save-wealth-extras" style="background: #0284c7; color: #fff; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 4px rgba(2,132,199,0.3);">💾 บันทึกยอดทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    document.getElementById('btn-save-wealth-extras').onclick = () => {
+      const memberAccum = parseFloat(document.getElementById('pvd-member-accum').value) || 0;
+      const employerMatch = parseFloat(document.getElementById('pvd-employer-match').value) || 0;
+      const earnings = parseFloat(document.getElementById('pvd-earnings').value) || 0;
+      const coopShareVal = parseFloat(document.getElementById('coop-share-val').value) || 0;
+      const rmfVal = parseFloat(document.getElementById('rmf-val').value) || 0;
+      const updatedDate = document.getElementById('wealth-update-date').value;
+      const totalPvd = memberAccum + employerMatch + earnings;
+
+      const payload = {
+        memberAccum,
+        employerMatch,
+        earnings,
+        totalPvd,
+        totalVal: totalPvd,
+        coopShareVal,
+        rmfVal,
+        updatedDate
+      };
+
+      localStorage.setItem('family-finance:wealth-extras:v1', JSON.stringify(payload));
+      localStorage.setItem('family-finance:pvd:v1', JSON.stringify(payload));
+      document.getElementById('modal-edit-pvd').remove();
+      this.render();
+    };
   },
 
   render(targetContainer = null) {
@@ -1645,6 +1776,11 @@ var CashFlowModule = {
 
     if (this.currentView === 'banking' || currentHash.includes('banking')) {
       this.renderBankingView(container);
+      return;
+    }
+
+    if (this.currentView === 'wealth' || currentHash.includes('wealth') || currentHash.includes('pvd')) {
+      this.renderWealthView(container);
       return;
     }
 
