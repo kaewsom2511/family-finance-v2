@@ -212,6 +212,11 @@ var CashFlowModule = {
     this.render();
   },
 
+  changeYear(delta) {
+    this.selectedYear = (parseInt(this.selectedYear, 10) || new Date().getFullYear()) + delta;
+    this.render();
+  },
+
   bindSidebarNav() {
     if (this._sidebarBound) return;
     this._sidebarBound = true;
@@ -256,28 +261,33 @@ var CashFlowModule = {
   },
 
   highlightActiveSidebar() {
+    const isAnnual = this.currentView === 'annual' || (window.location.hash || '').includes('annual');
+    const isDaily = !isAnnual && (this.currentView === 'daily' || (window.location.hash || '').includes('daily'));
+    const isBanking = this.currentView === 'banking' || (window.location.hash || '').includes('banking');
+    const isDividend = this.currentView === 'dividend' || (window.location.hash || '').includes('dividend');
+
     document.querySelectorAll('.sidebar-link, .sidebar a').forEach(el => {
       const txt = (el.textContent || '').trim();
+      const id = el.id || '';
+      
       el.style.background = 'transparent';
       el.style.color = '#334155';
       el.style.fontWeight = '600';
 
-      if (this.currentView === 'dividend' && txt.includes('Dashboard')) {
+      const activate = () => {
         el.style.background = '#e0f2fe';
         el.style.color = '#0284c7';
         el.style.fontWeight = '700';
-      } else if (this.currentView === 'daily' && txt.includes('รายรับรายจ่าย')) {
-        el.style.background = '#e0f2fe';
-        el.style.color = '#0284c7';
-        el.style.fontWeight = '700';
-      } else if (this.currentView === 'annual' && txt.includes('สรุปรายเดือน รายปี')) {
-        el.style.background = '#e0f2fe';
-        el.style.color = '#0284c7';
-        el.style.fontWeight = '700';
-      } else if (this.currentView === 'banking' && txt.includes('บัญชีเงินฝาก')) {
-        el.style.background = '#e0f2fe';
-        el.style.color = '#0284c7';
-        el.style.fontWeight = '700';
+      };
+
+      if (isAnnual && (id === 'nav-annual' || txt.includes('สรุปรายเดือน') || txt.includes('รายปี'))) {
+        activate();
+      } else if (isDaily && (id === 'nav-daily' || id === 'menu-daily' || txt.includes('รายรับรายจ่าย'))) {
+        activate();
+      } else if (isBanking && (id === 'nav-banking' || txt.includes('บัญชีเงินฝาก'))) {
+        activate();
+      } else if (isDividend && (txt.includes('Dashboard') || txt.includes('ปันผล'))) {
+        activate();
       }
     });
   },
@@ -1071,6 +1081,7 @@ var CashFlowModule = {
 
   renderAnnualSummary(targetContainer = null) {
     const container = targetContainer 
+                   || document.querySelector('.subview-content')
                    || document.getElementById('content-area')
                    || document.getElementById('cashflow-subview')
                    || document.getElementById('expense-content')
@@ -1143,9 +1154,9 @@ var CashFlowModule = {
               </button>
             </div>
 
-            <button id="btn-prev-year" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">◀ ปีก่อนหน้า</button>
+            <button id="btn-prev-year" type="button" onclick="CashFlowModule.changeYear(-1)" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">◀ ปีก่อนหน้า</button>
             <span style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 0 8px;">ปี ${year} (พ.ศ. ${year + 543})</span>
-            <button id="btn-next-year" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">ปีถัดไป ▶</button>
+            <button id="btn-next-year" type="button" onclick="CashFlowModule.changeYear(1)" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">ปีถัดไป ▶</button>
           </div>
         </div>
 
@@ -1202,6 +1213,9 @@ var CashFlowModule = {
   async renderBankingView(targetContainer = null) {
     const container = targetContainer 
                    || document.getElementById('content-area')
+                   || document.getElementById('cashflow-subview')
+                   || document.getElementById('expense-content')
+                   || document.querySelector('.subview-content')
                    || document.querySelector('.content-area')
                    || document.getElementById('main-content');
     if (!container) return;
@@ -1587,25 +1601,32 @@ var CashFlowModule = {
 
   render(targetContainer = null) {
     const container = targetContainer 
+                   || document.querySelector('.subview-content')
                    || document.getElementById('content-area')
                    || document.getElementById('cashflow-subview')
                    || document.getElementById('expense-content')
-                   || document.querySelector('.subview-content')
                    || document.querySelector('.content-area')
                    || document.getElementById('main-content');
 
     if (!container) return;
 
+    const currentHash = (window.location.hash || '').toLowerCase();
+
     if (typeof this.highlightActiveSidebar === 'function') {
       this.highlightActiveSidebar();
     }
 
-    if (this.currentView === 'dividend') {
+    if (this.currentView === 'dividend' || currentHash.includes('dividend')) {
       if (typeof PortfolioModule !== 'undefined' && typeof PortfolioModule.renderDividendTracker === 'function') {
         PortfolioModule.renderDividendTracker(container);
       } else {
         container.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b; font-weight: 700;">กำลังเรียกข้อมูลรายงานเงินปันผล...</div>';
       }
+      return;
+    }
+
+    if (this.currentView === 'annual' || currentHash.includes('annual')) {
+      this.renderAnnualSummary(container);
       return;
     }
 
@@ -1634,6 +1655,29 @@ var CashFlowModule = {
     const allTx = state.transactions || [];
     const filteredTx = this.getFilteredTransactions(allTx);
 
+    // ชุดข้อมูลสำหรับ 4 การ์ดสรุปและกราฟหมวดหมู่ (กรองตามรอบเดือน แต่ไม่ตัดตามแท็บประเภท)
+    const summaryTx = allTx.filter(t => {
+      if (!this.selectedMonth) return true;
+      const normalizeDate = (dStr) => {
+        if (!dStr) return '';
+        const s = String(dStr).trim();
+        if (s.includes('/')) {
+          const p = s.split('/');
+          if (p.length === 3) {
+            if (p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+            if (p[0].length === 4) return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+          }
+        }
+        return s;
+      };
+      const nd = normalizeDate(t.date);
+      if (this.currentPeriodType === 'monthly') {
+        return nd.startsWith(this.selectedMonth);
+      } else {
+        const range = this.getPayrollRange(this.selectedMonth);
+        return nd >= range.startDate && nd <= range.endDate;
+      }
+    });
     filteredTx.sort((a, b) => {
       const dateA = new Date(a.date).getTime() || 0;
       const dateB = new Date(b.date).getTime() || 0;
@@ -1663,14 +1707,14 @@ var CashFlowModule = {
       return isNaN(val) ? 0 : Math.abs(val);
     };
 
-    const totalIncome = filteredTx.filter(isIncomeTx).reduce((sum, t) => sum + getAmount(t), 0);
-    const totalExpense = filteredTx.filter(isExpenseTx).reduce((sum, t) => sum + getAmount(t), 0);
-    const totalInvest = filteredTx.filter(isInvestTx).reduce((sum, t) => sum + getAmount(t), 0);
+    const totalIncome = summaryTx.filter(isIncomeTx).reduce((sum, t) => sum + getAmount(t), 0);
+    const totalExpense = summaryTx.filter(isExpenseTx).reduce((sum, t) => sum + getAmount(t), 0);
+    const totalInvest = summaryTx.filter(isInvestTx).reduce((sum, t) => sum + getAmount(t), 0);
     const netSavings = totalIncome - totalExpense;
     const savingRate = totalIncome > 0 ? ((totalInvest / totalIncome) * 100).toFixed(1) : '0.0';
 
     const catMap = {};
-    filteredTx.filter(isExpenseTx).forEach(t => {
+    summaryTx.filter(isExpenseTx).forEach(t => {
       const cat = t.category || 'อื่นๆ';
       catMap[cat] = (catMap[cat] || 0) + getAmount(t);
     });
