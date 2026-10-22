@@ -488,18 +488,23 @@ var CashFlowModule = {
 
       const editBtn = e.target.closest('.btn-edit-tx');
       if (editBtn) {
-        this.openTransactionModal(editBtn.dataset.id);
+        e.preventDefault();
+        const txId = editBtn.dataset.id;
+        if (txId && typeof CashFlowModule.openTransactionModal === 'function') {
+          CashFlowModule.openTransactionModal(txId);
+        }
         return;
       }
 
       const delBtn = e.target.closest('.btn-delete-tx');
       if (delBtn) {
+        e.preventDefault();
         const id = delBtn.dataset.id;
-        if (confirm('ยืนยันลบรายการธุรกรรมนี้?')) {
-          const state = this.getState();
-          state.transactions = (state.transactions || []).filter(t => t.id !== id);
-          this.saveState(state);
-          this.render();
+        if (id && confirm('ยืนยันลบรายการธุรกรรมนี้?')) {
+          const state = CashFlowModule.getState();
+          state.transactions = (state.transactions || []).filter(t => String(t.id) !== String(id));
+          CashFlowModule.saveState(state);
+          CashFlowModule.render();
         }
         return;
       }
@@ -1092,8 +1097,8 @@ var CashFlowModule = {
             ${detailText}
           </td>
           <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
-            <button class="btn-edit-tx" data-id="${t.id}" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
-            <button class="btn-delete-tx" data-id="${t.id}" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
+            <button type="button" class="btn-edit-tx" data-id="${t.id}" onclick="CashFlowModule.openTransactionModal('${t.id}')" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
+            <button type="button" class="btn-delete-tx" data-id="${t.id}" onclick="if(confirm('ยืนยันลบรายการธุรกรรมนี้?')){ const s = CashFlowModule.getState(); s.transactions = (s.transactions || []).filter(x => String(x.id) !== String('${t.id}')); CashFlowModule.saveState(s); CashFlowModule.render(); }" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
           </td>
         </tr>
       `;
@@ -1248,19 +1253,54 @@ var CashFlowModule = {
     if (!container) return;
 
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const state = this.getState();
+    const allTxs = state.transactions || [];
 
+    const dynamicBalances = {};
+    allTxs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (amt === 0) return;
+      const type = (t.type || '').trim();
+
+      // รองรับทั้ง schema เก่า (account) และ schema ใหม่ (accountId / accountName)
+      const acc = (t.accountName || t.accountId || t.account || '').trim();
+      const fromAcc = (t.fromAccount || (type === 'โอนระหว่างบัญชี' || type === 'โอนเงิน' ? t.account : '') || '').trim();
+      const toAcc = (t.toAccount || '').trim();
+
+      // 1. รายการโอนระหว่างบัญชี
+      if (type === 'โอนระหว่างบัญชี' || type === 'โอนเงิน') {
+        if (fromAcc) {
+          dynamicBalances[fromAcc] = (dynamicBalances[fromAcc] || 0) - amt;
+        }
+        if (toAcc) {
+          dynamicBalances[toAcc] = (dynamicBalances[toAcc] || 0) + amt;
+        }
+      } 
+      // 2. รายรับ
+      else if (type === 'รายรับ' || type.includes('รายได้')) {
+        if (acc) {
+          dynamicBalances[acc] = (dynamicBalances[acc] || 0) + amt;
+        }
+      } 
+      // 3. รายจ่าย, บิล, หนี้สิน, ลงทุน
+      else if (['รายจ่าย', 'บิล', 'หนี้สิน', 'ลงทุน', 'เงินออมและลงทุน', 'เงินออม'].includes(type)) {
+        if (acc) {
+          dynamicBalances[acc] = (dynamicBalances[acc] || 0) - amt;
+        }
+      }
+    });
     // 1. กลุ่ม 11 บัญชีเงินฝากและเงินสดหลัก
     const accountsMaster = [
-      { id: 'acc_cash', name: 'เงินสด', bank: 'เงินสด', code: 'CASH', color: '#16a34a', initial: 2870.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', interestRate: 0.00, sub: 'CASH-ON-HAND' },
-      { id: 'acc_bbl', name: 'กรุงเทพ', bank: 'กรุงเทพ', code: 'BBL', color: '#1e3a8a', initial: 37369.44, purpose: 'สะสมทรัพย์', interestRate: 0.25, sub: '006-7-05636-6' },
-      { id: 'acc_ktb', name: 'กรุงไทย', bank: 'กรุงไทย', code: 'KTB', color: '#0284c7', initial: 866643.58, purpose: 'ออมทรัพย์หลัก', interestRate: 0.25, sub: '066-1-13437-7' },
-      { id: 'acc_ttb', name: 'ทหารไทย', bank: 'ทหารไทย', code: 'TTB', color: '#0284c7', initial: 616.20, purpose: 'ทีเอ็มบี ออลล์ ฟรี', interestRate: 0.00, sub: '236-2-16356-6' },
-      { id: 'acc_scb', name: 'ไทยพาณิชย์', bank: 'ไทยพาณิชย์', code: 'SCB', color: '#7e22ce', initial: 26227.73, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '198-2-09134-3' },
+      { id: 'acc_cash', name: 'เงินสด', bank: 'เงินสด', code: 'CASH', color: '#16a34a', initial: 1445.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', interestRate: 0.00, sub: 'CASH-ON-HAND' },
+      { id: 'acc_bbl', name: 'กรุงเทพ', bank: 'กรุงเทพ', code: 'BBL', color: '#1e3a8a', initial: 8461.30, purpose: 'สะสมทรัพย์', interestRate: 0.25, sub: '006-7-05636-6' },
+      { id: 'acc_ktb', name: 'กรุงไทย', bank: 'กรุงไทย', code: 'KTB', color: '#0284c7', initial: 6761.61, purpose: 'ออมทรัพย์หลัก', interestRate: 0.25, sub: '066-1-13437-7' },
+      { id: 'acc_ttb', name: 'ทหารไทย', bank: 'ทหารไทย', code: 'TTB', color: '#0284c7', initial: 1146.20, purpose: 'ทีเอ็มบี ออลล์ ฟรี', interestRate: 0.00, sub: '236-2-16356-6' },
+      { id: 'acc_scb', name: 'ไทยพาณิชย์', bank: 'ไทยพาณิชย์', code: 'SCB', color: '#7e22ce', initial: 40865.84, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '198-2-09134-3' },
       { id: 'acc_baac', name: 'ธกส.', bank: 'ธกส.', code: 'BAAC', color: '#15803d', initial: 50651.43, purpose: 'ออมทรัพย์', interestRate: 0.45, sub: '020028174851' },
-      { id: 'acc_kbank', name: 'กสิกรไทย', bank: 'กสิกรไทย', code: 'KBANK', color: '#16a34a', initial: 4249.37, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '069-1-09614-9' },
-      { id: 'acc_gsb', name: 'ออมสิน', bank: 'ออมสิน', code: 'GSB', color: '#ec4899', initial: 975.58, purpose: 'เผื่อเรียก (สลาก)', interestRate: 0.35, sub: '020255468702' },
-      { id: 'acc_paotang', name: 'เป๋าตัง', bank: 'เป๋าตัง', code: 'PAOTANG', color: '#06b6d4', initial: 0.00, purpose: 'G-Wallet สแกนจ่ายโครงการรัฐ', interestRate: 0.00, sub: 'G-WALLET' },
-      { id: 'acc_truemoney', name: 'Truemoney', bank: 'Truemoney', code: 'TMN', color: '#f97316', initial: 347.83, purpose: 'วอลเล็ตซื้อของ 7-11 / บริการออนไลน์', interestRate: 0.00, sub: 'WALLET' },
+      { id: 'acc_kbank', name: 'กสิกรไทย', bank: 'กสิกรไทย', code: 'KBANK', color: '#16a34a', initial: 3207.86, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '069-1-09614-9' },
+      { id: 'acc_gsb', name: 'ออมสิน', bank: 'ออมสิน', code: 'GSB', color: '#ec4899', initial: 772.79, purpose: 'เผื่อเรียก (สลาก)', interestRate: 0.35, sub: '020255468702' },
+      { id: 'acc_paotang', name: 'เป๋าตัง', bank: 'เป๋าตัง', code: 'PAOTANG', color: '#06b6d4', initial: 56.40, purpose: 'G-Wallet สแกนจ่ายโครงการรัฐ', interestRate: 0.00, sub: 'G-WALLET' },
+      { id: 'acc_truemoney', name: 'Truemoney', bank: 'Truemoney', code: 'TMN', color: '#f97316', initial: 146.89, purpose: 'วอลเล็ตซื้อของ 7-11 / บริการออนไลน์', interestRate: 0.00, sub: 'WALLET' },
       { id: 'acc_coop', name: 'ออมทรัพย์ สอท', bank: 'ออมทรัพย์ สอท', code: 'COOP', color: '#0d9488', initial: 202191.42, purpose: 'สหกรณ์ออมทรัพย์ สอท.', interestRate: 2.50, sub: 'สหกรณ์ สอท.' }
     ];
 
@@ -1291,7 +1331,9 @@ var CashFlowModule = {
     let totalEstAnnualInterest = 0;
 
     const renderCard = (a) => {
-      let currentBal = storedInitials[a.name] !== undefined ? storedInitials[a.name] : a.initial;
+      let baseInitial = storedInitials[a.name] !== undefined ? storedInitials[a.name] : a.initial;
+      let netTxChange = dynamicBalances[a.name] || 0;
+      let currentBal = baseInitial + netTxChange;
       const estInterest = currentBal > 0 ? (currentBal * (a.interestRate / 100)) : 0;
       totalBankBalance += currentBal;
       totalEstAnnualInterest += estInterest;
@@ -2022,8 +2064,8 @@ var CashFlowModule = {
             ${detailText}
           </td>
           <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
-            <button class="btn-edit-tx" data-id="${t.id}" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
-            <button class="btn-delete-tx" data-id="${t.id}" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
+            <button type="button" class="btn-edit-tx" data-id="${t.id}" onclick="CashFlowModule.openTransactionModal('${t.id}')" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
+            <button type="button" class="btn-delete-tx" data-id="${t.id}" onclick="if(confirm('ยืนยันลบรายการธุรกรรมนี้?')){ const s = CashFlowModule.getState(); s.transactions = (s.transactions || []).filter(x => String(x.id) !== String('${t.id}')); CashFlowModule.saveState(s); CashFlowModule.render(); }" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
           </td>
         </tr>
       `;

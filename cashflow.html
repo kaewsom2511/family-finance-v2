@@ -265,7 +265,12 @@
     }
 
     window.addEventListener('hashchange', handleRoute);
-    window.addEventListener('DOMContentLoaded', handleRoute);
+    window.addEventListener('DOMContentLoaded', () => {
+  if (window.CashFlowModule && typeof window.CashFlowModule.init === 'function') {
+    window.CashFlowModule.init();
+  }
+  handleRoute();
+});
   </script>
 </body>
 </html>
