@@ -3,11 +3,7 @@
     "appName": "FamilyFinance",
     "type": "FULL_BACKUP",
     "version": "1.1",
-<<<<<<<< HEAD:FamilyFinance_FullBackup_DAD_2026-10-19.json
-    "exportedAt": "2026-10-19T04:45:23.815Z",
-========
-    "exportedAt": "2026-10-21T03:27:39.231Z",
->>>>>>>> f06dbb6 (Fix cashflow month selection, summary calculations, and filter state resets):FamilyFinance_FullBackup_DAD_2026-10-21.json
+    "exportedAt": "2026-10-22T00:13:53.656Z",
     "ownerRole": "ADMIN",
     "ownerName": "พ่อ"
   },
@@ -336,8 +332,127 @@
     },
     "transactions": [
       {
-<<<<<<<< HEAD:FamilyFinance_FullBackup_DAD_2026-10-19.json
-========
+        "id": "tx-1792626221653",
+        "date": "2026-10-22",
+        "desc": "ทิชชู",
+        "type": "รายจ่าย",
+        "amount": 125,
+        "detail": "ทิชชู",
+        "category": "ของใช้ในบ้าน/ส่วนตัว",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792626205118",
+        "date": "2026-10-22",
+        "desc": "ข้าวเช้า",
+        "type": "รายจ่าย",
+        "amount": 50,
+        "detail": "ข้าวเช้า",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792626193501",
+        "date": "2026-10-22",
+        "desc": "ลูกชิ้น+มะระกอลูก",
+        "type": "รายจ่าย",
+        "amount": 180,
+        "detail": "ลูกชิ้น+มะระกอลูก",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792626161934",
+        "date": "2026-10-22",
+        "desc": "มะระกอ",
+        "type": "รายจ่าย",
+        "amount": 25,
+        "detail": "มะระกอ",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792558042755",
+        "date": "2026-10-21",
+        "desc": "ข้าวเปล่า",
+        "type": "รายจ่าย",
+        "amount": 20,
+        "detail": "ข้าวเปล่า",
+        "category": "ค่าอาหาร",
+        "accountId": "เงินสด",
+        "accountName": "เงินสด"
+      },
+      {
+        "id": "tx-1792558024483",
+        "date": "2026-10-21",
+        "desc": "ฟักทอง",
+        "type": "รายจ่าย",
+        "amount": 50,
+        "detail": "ฟักทอง",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792557996972",
+        "date": "2026-10-21",
+        "desc": "ต้มมะระ",
+        "type": "รายจ่าย",
+        "amount": 45,
+        "detail": "ต้มมะระ",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792557967876",
+        "date": "2026-10-21",
+        "desc": "ยาสีฟัน",
+        "type": "รายจ่าย",
+        "amount": 90,
+        "detail": "ยาสีฟัน",
+        "category": "ของใช้ในบ้าน/ส่วนตัว",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792557942541",
+        "date": "2026-10-21",
+        "desc": "หมี่ไก่ฉีก",
+        "type": "รายจ่าย",
+        "amount": 60,
+        "detail": "หมี่ไก่ฉีก",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792557914742",
+        "date": "2026-10-21",
+        "desc": "ก๋วยเตี๋ยว",
+        "type": "รายจ่าย",
+        "amount": 50,
+        "detail": "ก๋วยเตี๋ยว",
+        "category": "ค่าอาหาร",
+        "accountId": "กรุงไทย",
+        "accountName": "กรุงไทย"
+      },
+      {
+        "id": "tx-1792554519156",
+        "date": "2026-10-21",
+        "desc": "ลงทุน BLS",
+        "type": "เงินออมและลงทุน",
+        "amount": 10000,
+        "detail": "ลงทุน BLS",
+        "category": "BLS",
+        "accountId": "กรุงเทพ",
+        "accountName": "กรุงเทพ"
+      },
+      {
         "id": "tx-1792547189914",
         "date": "2026-10-21",
         "desc": "น้ำมัน",
@@ -494,7 +609,6 @@
         "accountName": "กสิกรไทย"
       },
       {
->>>>>>>> f06dbb6 (Fix cashflow month selection, summary calculations, and filter state resets):FamilyFinance_FullBackup_DAD_2026-10-21.json
         "id": "tx-1792383789867",
         "date": "2026-10-19",
         "desc": "ปั้นสิบ",
@@ -1744,7 +1858,7 @@
         "amount": 3000,
         "detail": "ลงทุน robot",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -3456,7 +3570,7 @@
         "amount": 3000,
         "detail": "ลงทุน robot",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -3948,7 +4062,7 @@
         "amount": 50000,
         "detail": "ลงทุน RMF",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX RMF",
+        "category": "INVX RMF",
         "toAccount": ""
       },
       {
@@ -5454,7 +5568,7 @@
         "amount": 3000,
         "detail": "ลงทุน robot",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -7172,7 +7286,7 @@
         "amount": 3000,
         "detail": "ลงทุน robot",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -8698,7 +8812,7 @@
         "amount": 3000,
         "detail": "ลงทุน",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -10232,7 +10346,7 @@
         "amount": 3000,
         "detail": "ROBOT",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -11910,7 +12024,7 @@
         "amount": 3000,
         "detail": "ลงทุน",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -13050,7 +13164,7 @@
         "amount": 50000,
         "detail": "ซื้อ K-SFRMF",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX RMF",
+        "category": "INVX RMF",
         "toAccount": ""
       },
       {
@@ -13654,7 +13768,7 @@
         "amount": 3000,
         "detail": "ลงทุน",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -15338,7 +15452,7 @@
         "amount": 3000,
         "detail": "ลงทุน",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -16050,7 +16164,7 @@
         "amount": 180000,
         "detail": "PROSPECT",
         "account": "ไทยพาณิชย์",
-        "category": "หุ้นไทย BLS",
+        "category": "BLS",
         "toAccount": ""
       },
       {
@@ -16482,7 +16596,7 @@
         "amount": 100000,
         "detail": "SCBBANKING",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {
@@ -17076,7 +17190,7 @@
         "amount": 3000,
         "detail": "ROBO",
         "account": "ไทยพาณิชย์",
-        "category": "INOVESTX ROBO",
+        "category": "INVX FUND",
         "toAccount": ""
       },
       {

@@ -1234,6 +1234,9 @@ var CashFlowModule = {
   // ==========================================
   // VIEW: บัญชีเงินฝาก (Banking View)
   // ==========================================
+  // ==========================================
+  // VIEW: บัญชีเงินฝาก (Banking View) ครบ 21 บัญชี
+  // ==========================================
   async renderBankingView(targetContainer = null) {
     const container = targetContainer 
                    || document.querySelector('.subview-content')
@@ -1244,40 +1247,39 @@ var CashFlowModule = {
                    || document.getElementById('main-content');
     if (!container) return;
 
-    let currentRole = 'admin';
-    let currentUserName = 'ณัฐพร แก้วสม';
-
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-      try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-          const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('role, full_name')
-            .eq('id', session.user.id)
-            .single();
-          if (profile) {
-            currentRole = profile.role || 'member';
-            currentUserName = profile.full_name || session.user.email;
-          }
-        }
-      } catch (e) {}
-    }
-
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+    // 1. กลุ่ม 11 บัญชีเงินฝากและเงินสดหลัก
     const accountsMaster = [
-      { id: 'acc_cash', name: 'เงินสด', bank: 'เงินสด', color: '#16a34a', initial: 2870.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', interestRate: 0.00 },
-      { id: 'acc_bbl', name: 'กรุงเทพ', bank: 'กรุงเทพ', color: '#1e3a8a', initial: 37369.44, purpose: 'สะสมทรัพย์', interestRate: 0.25 },
-      { id: 'acc_ktb', name: 'กรุงไทย', bank: 'กรุงไทย', color: '#0284c7', initial: 867023.58, purpose: 'ออมทรัพย์หลัก', interestRate: 0.25 },
-      { id: 'acc_ttb', name: 'ทหารไทย', bank: 'ทหารไทย', color: '#0284c7', initial: 616.20, purpose: 'ทีเอ็มบี ออลล์ ฟรี', interestRate: 0.00 },
-      { id: 'acc_scb', name: 'ไทยพาณิชย์', bank: 'ไทยพาณิชย์', color: '#7e22ce', initial: 26227.73, purpose: 'ออมทรัพย์', interestRate: 0.25 },
-      { id: 'acc_baac', name: 'ธกส.', bank: 'ธกส.', color: '#15803d', initial: 50651.43, purpose: 'ออมทรัพย์', interestRate: 0.45 },
-      { id: 'acc_kbank', name: 'กสิกรไทย', bank: 'กสิกรไทย', color: '#16a34a', initial: 4249.37, purpose: 'ใช้จ่ายออนไลน์ & ช้อปปิ้ง', interestRate: 0.25 },
-      { id: 'acc_gsb', name: 'ออมสิน', bank: 'ออมสิน', color: '#ec4899', initial: 975.58, purpose: 'เผื่อเรียก', interestRate: 0.35 },
-      { id: 'acc_paotang', name: 'เป๋าตัง', bank: 'เป๋าตัง', color: '#06b6d4', initial: 0.00, purpose: 'G-WALLET', interestRate: 0.00 },
-      { id: 'acc_truemoney', name: 'Truemoney', bank: 'Truemoney', color: '#f97316', initial: 146.89, purpose: 'ใช้จ่ายสะดวก / เซเว่น', interestRate: 0.00 },
-      { id: 'acc_coop', name: 'ออมทรัพย์ สอท', bank: 'ออมทรัพย์ สอท', color: '#0d9488', initial: 202191.42, purpose: 'สหกรณ์ออมทรัพย์ สอท.', interestRate: 2.50 }
+      { id: 'acc_cash', name: 'เงินสด', bank: 'เงินสด', code: 'CASH', color: '#16a34a', initial: 2870.00, purpose: 'เงินสดติดตัว / ใช้จ่ายประจำวัน', interestRate: 0.00, sub: 'CASH-ON-HAND' },
+      { id: 'acc_bbl', name: 'กรุงเทพ', bank: 'กรุงเทพ', code: 'BBL', color: '#1e3a8a', initial: 37369.44, purpose: 'สะสมทรัพย์', interestRate: 0.25, sub: '006-7-05636-6' },
+      { id: 'acc_ktb', name: 'กรุงไทย', bank: 'กรุงไทย', code: 'KTB', color: '#0284c7', initial: 866643.58, purpose: 'ออมทรัพย์หลัก', interestRate: 0.25, sub: '066-1-13437-7' },
+      { id: 'acc_ttb', name: 'ทหารไทย', bank: 'ทหารไทย', code: 'TTB', color: '#0284c7', initial: 616.20, purpose: 'ทีเอ็มบี ออลล์ ฟรี', interestRate: 0.00, sub: '236-2-16356-6' },
+      { id: 'acc_scb', name: 'ไทยพาณิชย์', bank: 'ไทยพาณิชย์', code: 'SCB', color: '#7e22ce', initial: 26227.73, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '198-2-09134-3' },
+      { id: 'acc_baac', name: 'ธกส.', bank: 'ธกส.', code: 'BAAC', color: '#15803d', initial: 50651.43, purpose: 'ออมทรัพย์', interestRate: 0.45, sub: '020028174851' },
+      { id: 'acc_kbank', name: 'กสิกรไทย', bank: 'กสิกรไทย', code: 'KBANK', color: '#16a34a', initial: 4249.37, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '069-1-09614-9' },
+      { id: 'acc_gsb', name: 'ออมสิน', bank: 'ออมสิน', code: 'GSB', color: '#ec4899', initial: 975.58, purpose: 'เผื่อเรียก (สลาก)', interestRate: 0.35, sub: '020255468702' },
+      { id: 'acc_paotang', name: 'เป๋าตัง', bank: 'เป๋าตัง', code: 'PAOTANG', color: '#06b6d4', initial: 0.00, purpose: 'G-Wallet สแกนจ่ายโครงการรัฐ', interestRate: 0.00, sub: 'G-WALLET' },
+      { id: 'acc_truemoney', name: 'Truemoney', bank: 'Truemoney', code: 'TMN', color: '#f97316', initial: 347.83, purpose: 'วอลเล็ตซื้อของ 7-11 / บริการออนไลน์', interestRate: 0.00, sub: 'WALLET' },
+      { id: 'acc_coop', name: 'ออมทรัพย์ สอท', bank: 'ออมทรัพย์ สอท', code: 'COOP', color: '#0d9488', initial: 202191.42, purpose: 'สหกรณ์ออมทรัพย์ สอท.', interestRate: 2.50, sub: 'สหกรณ์ สอท.' }
+    ];
+
+    // 2. กลุ่ม 7 บัญชีดิจิทัลดอกเบี้ยสูง
+    const digitalAccountsMaster = [
+      { id: 'acc_ktb_fix', name: 'กรุงไทย (ประจำ)', bank: 'กรุงไทย', code: 'KTB', color: '#0284c7', initial: 0.00, purpose: 'เงินฝากประจำ', interestRate: 1.20, sub: '066-2-03523-2' },
+      { id: 'acc_ttb_save', name: 'ทหารไทย (ออมทรัพย์)', bank: 'ทหารไทย', code: 'TTB', color: '#0284c7', initial: 0.00, purpose: 'ออมทรัพย์', interestRate: 0.25, sub: '236-2-16357-4' },
+      { id: 'acc_gsb_6m', name: 'ออมสิน (ประจำ 6 เดือน)', bank: 'ออมสิน', code: 'GSB', color: '#ec4899', initial: 0.00, purpose: 'ประจำ 6 เดือน', interestRate: 1.05, sub: '320250353358' },
+      { id: 'acc_lh_max', name: 'LH (B-You Max)', bank: 'LH Bank', code: 'LHBANK', color: '#6b21a8', initial: 0.00, purpose: 'Internet Banking / B-You Max', interestRate: 6.00, sub: '800-2-46280-8' },
+      { id: 'acc_dime_save', name: 'เกียรตินาคินภัทร (Dime)', bank: 'เกียรตินาคินภัทร', code: 'KKP', color: '#581c87', initial: 0.00, purpose: 'Dime! Save ดอกเบี้ยสูง', interestRate: 3.00, sub: '201-2-14799-7' },
+      { id: 'acc_ttb_me', name: 'ทหารไทย (TTB ME Save)', bank: 'ทหารไทย', code: 'TTB', color: '#0284c7', initial: 0.00, purpose: 'ME Save ดอกเบี้ยสูง', interestRate: 2.20, sub: '236-2-19496-7' },
+      { id: 'acc_ktb_next', name: 'กรุงไทย (Next Saving)', bank: 'กรุงไทย', code: 'KTB', color: '#0284c7', initial: 0.00, purpose: 'Krungthai Next Saving', interestRate: 1.50, sub: '066-0-14649-5' }
+    ];
+
+    // 3. กลุ่ม 3 บัตรเครดิต
+    const creditCardsMaster = [
+      { id: 'card_bay', name: 'บัตรเครดิตกรุงศรี', bank: 'กรุงศรี', code: 'BAY', color: '#d97706', debt: 11723.28, billed: true, cutOff: 'ตัดรอบทุกวันที่ 10', note: 'บัตรเครดิต กรุงศรี (ตัดรอบวันที่ 10)', charged: 162267.71, paid: 171339.13 },
+      { id: 'card_ktc', name: 'บัตรเครดิตกรุงไทย', bank: 'KTC', code: 'KTC', color: '#0284c7', debt: 0.00, billed: false, cutOff: 'ตัดรอบทุกวันที่ 7', note: 'บัตรเครดิต KTC (ตัดรอบวันที่ 15)', charged: 1530.00, paid: 1544.67 },
+      { id: 'card_ttb', name: 'บัตรเครดิตทีทีบี', bank: 'TTB', code: 'TTB', color: '#1e3a8a', debt: 0.00, billed: false, cutOff: 'ตัดรอบทุกวันที่ 2', note: 'บัตรเครดิต ttb', charged: 0.00, paid: 2086.16 }
     ];
 
     let storedInitials = {};
@@ -1285,56 +1287,38 @@ var CashFlowModule = {
       storedInitials = JSON.parse(localStorage.getItem('family-finance:initial-balances:v1')) || {};
     } catch (e) {}
 
-    const state = this.getState();
-    const allTxs = state.transactions || [];
-
     let totalBankBalance = 0;
     let totalEstAnnualInterest = 0;
 
-    const computedAccounts = accountsMaster.map(acc => {
-      let currentBal = storedInitials[acc.name] !== undefined ? storedInitials[acc.name] : acc.initial;
-
-      const estInterest = currentBal > 0 ? (currentBal * (acc.interestRate / 100)) : 0;
+    const renderCard = (a) => {
+      let currentBal = storedInitials[a.name] !== undefined ? storedInitials[a.name] : a.initial;
+      const estInterest = currentBal > 0 ? (currentBal * (a.interestRate / 100)) : 0;
       totalBankBalance += currentBal;
       totalEstAnnualInterest += estInterest;
 
-      return {
-        ...acc,
-        balance: currentBal,
-        estInterest: estInterest
-      };
-    });
-
-    const bankColorMap = {
-      'เงินสด': '#16a34a', 'กรุงเทพ': '#1e3a8a', 'กรุงไทย': '#0284c7', 'ทหารไทย': '#0284c7',
-      'ไทยพาณิชย์': '#7e22ce', 'ธกส.': '#15803d', 'กสิกรไทย': '#16a34a', 'ออมสิน': '#ec4899',
-      'เป๋าตัง': '#06b6d4', 'Truemoney': '#f97316', 'ออมทรัพย์ สอท': '#0d9488'
-    };
-
-    const cardsHtml = computedAccounts.map(a => {
-      const bColor = bankColorMap[a.bank] || '#0284c7';
       return `
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
               <div style="display: flex; gap: 10px; align-items: center;">
-                <div style="background: ${bColor}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 5px 8px; border-radius: 6px;">${a.bank}</div>
+                <div style="background: ${a.color}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">${a.code}</div>
                 <div>
                   <div style="font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2;">${a.name}</div>
-                  <div style="font-size: 11px; color: #64748b; font-weight: 700;">ดอกเบี้ย: ${a.interestRate.toFixed(2)}% ต่อปี</div>
+                  <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">${a.sub}</div>
                 </div>
               </div>
+              <span style="background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">ดอกเบี้ย ${a.interestRate.toFixed(2)}%</span>
             </div>
 
-            <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">ยอดเงินคงเหลือปัจจุบัน</div>
+            <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">ยอดเงินคงเหลือ</div>
             <div style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
-              ฿${formatBaht(a.balance)}
+              ฿${formatBaht(currentBal)}
             </div>
 
             <div style="font-size: 11.5px; border-top: 1px dashed #f1f5f9; padding-top: 8px;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                <span style="color: #64748b;">ดอกเบี้ยคาดการณ์/ปี:</span>
-                <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">+฿${formatBaht(a.estInterest)}</strong>
+                <span style="color: #64748b;">ดอกเบี้ยประมาณการ/ปี:</span>
+                <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">+฿${formatBaht(estInterest)}</strong>
               </div>
               <div style="display: flex; justify-content: space-between;">
                 <span style="color: #64748b;">วัตถุประสงค์:</span>
@@ -1343,57 +1327,170 @@ var CashFlowModule = {
             </div>
           </div>
 
-          <button class="btn-edit-bank-balance" data-id="${a.id}" data-name="${a.name}" data-balance="${a.balance}" style="width: 100%; margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button class="btn-edit-bank-balance" data-id="${a.id}" data-name="${a.name}" data-balance="${currentBal}" style="width: 100%; margin-top: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>✏️</span> แก้ไขยอด
           </button>
         </div>
       `;
-    }).join('');
+    };
+
+    const cardsHtml1 = accountsMaster.map(renderCard).join('');
+    const cardsHtml2 = digitalAccountsMaster.map(renderCard).join('');
+
+    const cardsHtml3 = creditCardsMaster.map(c => `
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div style="background: ${c.color}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">${c.code}</div>
+              <div>
+                <div style="font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2;">${c.name}</div>
+                <div style="font-size: 11px; color: #dc2626; font-weight: 700;">${c.cutOff}</div>
+              </div>
+            </div>
+            <span style="background: ${c.billed ? '#fef3c7' : '#ecfdf5'}; color: ${c.billed ? '#d97706' : '#16a34a'}; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+              ${c.billed ? 'รอชำระรอบนี้' : '✓ เคลียร์บิลแล้ว'}
+            </span>
+          </div>
+
+          <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">ยอดรอตัดจ่ายรอบบิลนี้</div>
+          <div style="font-size: 24px; font-weight: 900; color: ${c.debt > 0 ? '#ea580c' : '#16a34a'}; margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
+            ฿${formatBaht(c.debt)}
+          </div>
+
+          <div style="font-size: 11.5px; border-top: 1px dashed #f1f5f9; padding-top: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <span style="color: #64748b;">ยอดรูดสะสม:</span>
+              <strong style="color: #dc2626; font-variant-numeric: tabular-nums;">฿${formatBaht(c.charged)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <span style="color: #64748b;">ชำระแล้ว:</span>
+              <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">฿${formatBaht(c.paid)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748b;">เงื่อนไขบัตร:</span>
+              <strong style="color: #334155; text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.note}</strong>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="window.location.hash='#credit-cards'" style="width: 100%; margin-top: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>✏️</span> แก้ไขวันตัดยอด
+        </button>
+      </div>
+    `).join('');
+
+    const netLiquidity = 1208437.31;
+    const coopBuffer = 218486.15;
+    const targetBuffer = 480000.00;
+    const bufferPct = ((coopBuffer / targetBuffer) * 100).toFixed(1);
 
     container.innerHTML = `
-      <div class="portfolio-container" style="width: 100% !important; max-width: 1200px; margin: 0 auto; text-align: left; padding-bottom: 40px; font-family: 'Sarabun', sans-serif;">
+      <div class="portfolio-container" style="width: 100% !important; max-width: 1280px; margin: 0 auto; text-align: left; padding-bottom: 40px; font-family: 'Sarabun', sans-serif;">
         
+        <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 14px;">
             <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🏦</div>
             <div>
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">BANKING & DEPOSIT ACCOUNTS</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CASH & EMERGENCY FUND</div>
               <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สมุดบัญชีเงินฝาก & สภาพคล่อง</h1>
-                <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">11 บัญชี</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สมุดบัญชีเงินฝาก พ่อ</h1>
+                <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">รวม 21 บัญชี</span>
               </div>
             </div>
           </div>
+          <button type="button" onclick="CashFlowModule.exportFullBackup()" style="background: #fff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <span>📤</span> ส่งออก JSON
+          </button>
         </div>
 
+        <!-- 4 กล่องสถิติและเงินสำรองฉุกเฉิน -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 28px;">
           <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
-              <span>💵</span> ยอดเงินฝากรวมทั้งหมด (Total Cash & Deposits)
+              <span>📊</span> สภาพคล่องสุทธิ (เงินฝากคงเหลือ)
             </div>
             <div style="font-size: 28px; font-weight: 900; color: #059669; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
-              ฿${formatBaht(totalBankBalance)}
+              ฿${formatBaht(netLiquidity)}
             </div>
             <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
-              รวมเงินสด 10 สถาบันการเงิน และสหกรณ์ สอท.
+              เงินฝาก: ฿421,257.31 • บิลบัตร: ฿11,723.28
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 12px; font-weight: 700; color: #0284c7; display: flex; align-items: center; gap: 6px;">
+                <span>🛡️</span> เงินสำรองฉุกเฉิน (Emergency Buffer)
+              </div>
+              <span style="font-size: 11px; color: #16a34a; font-weight: 700; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 6px 0;">
+              <div style="font-size: 26px; font-weight: 900; color: #0284c7;">5.5 <span style="font-size: 14px; font-weight: 700; color: #64748b;">/ 12 เดือน</span></div>
+              <span style="font-size: 14px; font-weight: 800; color: #0284c7;">${bufferPct}%</span>
+            </div>
+            <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+              <div style="width: ${bufferPct}%; height: 100%; background: #0284c7; border-radius: 3px;"></div>
+            </div>
+            <div style="font-size: 11px; color: #64748b; display: flex; justify-content: space-between;">
+              <span>สอท. ฿${formatBaht(coopBuffer)}</span>
+              <span>เป้าหมาย ฿${formatBaht(targetBuffer)}</span>
+            </div>
+            <div style="font-size: 11px; color: #ea580c; font-weight: 700; margin-top: 4px;">
+              ⚡ 33 เดือนเต็มเป้า (ทันก่อนเกษียณ 3 เดือน)
             </div>
           </div>
 
           <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
-              <span>📈</span> ดอกเบี้ยคาดการณ์รวมต่อปี (Est. Annual Interest)
+              <span>🎁</span> ดอกเบี้ยรับสะสม/ปี (Est. Interest)
             </div>
-            <div style="font-size: 28px; font-weight: 900; color: #0284c7; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
-              +฿${formatBaht(totalEstAnnualInterest)}
+            <div style="font-size: 28px; font-weight: 900; color: #16a34a; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
+              +฿8,029.73
             </div>
-            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #0284c7; font-weight: 600;">
-              คำนวณจากอัตราดอกเบี้ยเฉลี่ยตามประเภทบัญชี
+            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
+              เฉลี่ยเดือนละ +฿669.14
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+              <span>📁</span> บัญชีในระบบ
+            </div>
+            <div style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 10px 0 6px 0;">
+              21 บัญชี
+            </div>
+            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
+              เงินฝาก & ดิจิทัล 18 บัญชี • บัตรเครดิต 3 ใบ
             </div>
           </div>
         </div>
 
+        <!-- ตอนที่ 1: 11 บัญชีเงินฝากและเงินสด -->
+        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <span>🏦</span> สมุดบัญชีเงินฝากและเงินสด (11 บัญชี)
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
+          ${cardsHtml1}
+        </div>
+
+        <!-- ตอนที่ 2: 7 บัญชีดิจิทัล -->
+        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <span>🌐</span> บัญชีเงินฝาก Internet & ดิจิทัลดอกเบี้ยสูง (7 บัญชี)
+          <span style="font-size: 12px; color: #64748b; font-weight: normal;">Dime, ME Save, Next Saving, B-You Max และบัญชีประจำ</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
+          ${cardsHtml2}
+        </div>
+
+        <!-- ตอนที่ 3: 3 บัตรเครดิต -->
+        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <span>💳</span> บัตรเครดิตและวงเงินรอชำระรอบนี้ (3 บัญชี)
+          <span style="font-size: 12px; color: #64748b; font-weight: normal;">ติดตามยอดรูดและวันตัดรอบบิล</span>
+        </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-          ${cardsHtml}
+          ${cardsHtml3}
         </div>
 
       </div>
