@@ -1080,11 +1080,22 @@ var CashFlowModule = {
 
     const tbody = document.getElementById('tx-table-body');
     const countEl = document.getElementById('tx-count-label');
-    if (countEl) countEl.textContent = `รายการธุรกรรม (${filtered.length} รายการ)`;
+    const totalCount = filtered.length;
+    
+    // ถ้าดูทั้งหมดและรายการเยอะเกิน ให้ตัดมาแสดงตาม displayLimit ก่อนเพื่อไม่ให้หน่วง
+    const limit = this.displayLimit || 100;
+    const isOverLimit = totalCount > limit;
+    const displayList = isOverLimit ? filtered.slice(0, limit) : filtered;
+
+    if (countEl) {
+      countEl.textContent = isOverLimit 
+        ? `รายการธุรกรรม (แสดง ${displayList.length} จาก ${totalCount} รายการ)` 
+        : `รายการธุรกรรม (${totalCount} รายการ)`;
+    }
 
     if (!tbody) return;
 
-    tbody.innerHTML = filtered.map(t => {
+    let rowsHtml = displayList.map(t => {
       const isIncome = t.type === 'รายรับ';
       const isInvest = t.type === 'ลงทุน' || t.type === 'เงินออมและลงทุน' || t.type === 'เงินออม';
       const isDebt = t.type === 'หนี้สิน';
@@ -1135,7 +1146,23 @@ var CashFlowModule = {
           </td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
+    }).join('');
+
+    // เพิ่มปุ่มโหลดต่อท้ายตารางถ้ายังมีรายการเหลือ
+    if (isOverLimit) {
+      rowsHtml += `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 14px; background: #f8fafc;">
+            <button type="button" onclick="CashFlowModule.displayLimit = (CashFlowModule.displayLimit || 100) + 200; CashFlowModule.renderTableOnly();" style="background: #0284c7; color: #fff; border: none; padding: 8px 24px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              📥 โหลดรายการเพิ่มเติมอีก (+200)
+            </button>
+            <span style="margin-left: 10px; font-size: 12px; color: #64748b;">(เหลืออีก ${totalCount - limit} รายการ)</span>
+          </td>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
   },
 
   renderAnnualSummary(targetContainer = null) {
@@ -1969,7 +1996,6 @@ var CashFlowModule = {
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const state = this.getState();
     const allTx = state.transactions || [];
-    if (!this.selectedMonth) this.selectedMonth = '2026-10';
     if (!this.currentPeriodType) this.currentPeriodType = 'monthly';
     const filteredTx = this.getFilteredTransactions(allTx);
 
