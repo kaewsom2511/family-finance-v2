@@ -257,11 +257,10 @@
           }
         }, 50);
       } else {
-        if (window.CashFlowModule) {
-          if (typeof window.CashFlowModule.render === 'function') window.CashFlowModule.render();
-          else if (typeof window.CashFlowModule.init === 'function') window.CashFlowModule.init();
-        }
-      }
+    if (window.CashFlowModule && typeof window.CashFlowModule.checkRouteFromHash === 'function') {
+      window.CashFlowModule.checkRouteFromHash();
+    }
+  }
     }
 
     window.addEventListener('hashchange', handleRoute);
@@ -269,7 +268,6 @@
   if (window.CashFlowModule && typeof window.CashFlowModule.init === 'function') {
     window.CashFlowModule.init();
   }
-  handleRoute();
 });
   </script>
 </body>

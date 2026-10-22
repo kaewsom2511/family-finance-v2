@@ -122,16 +122,35 @@ var CashFlowModule = {
   init() {
     const now = new Date();
     this.selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    this.currentPeriodType = 'monthly';
     this.dateFrom = '';
     this.dateTo = '';
     this.searchQuery = '';
 
     this.bindEvents();
     this.bindSidebarNav();
-    this.checkRouteFromHash();
+
+    // จัดการ Route ครั้งแรกทันทีเมื่อเปิดหน้าเว็บ (ป้องกันการสั่งซ้ำซ้อน)
+    let initialRouted = false;
+    const triggerInitialRoute = () => {
+      if (initialRouted) return;
+      initialRouted = true;
+
+      if (!window.location.hash || window.location.hash === '#') {
+        window.location.hash = '#daily';
+      }
+      this.checkRouteFromHash();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', triggerInitialRoute, { once: true });
+    } else {
+      triggerInitialRoute();
+    }
 
     if (!this._hashBound) {
       window.addEventListener('hashchange', () => {
+        // ถ้าผู้ใช้เปลี่ยน hash ด้วยตัวเองถึงจะทำงาน
         this.checkRouteFromHash();
       });
       this._hashBound = true;
@@ -160,6 +179,11 @@ var CashFlowModule = {
       this.currentView = 'dividend';
     } else {
       this.currentView = 'daily';
+      if (!this.selectedMonth) {
+        const now = new Date();
+        this.selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      }
+      if (!this.currentPeriodType) this.currentPeriodType = 'monthly';
     }
 
     this.render();
@@ -235,9 +259,12 @@ var CashFlowModule = {
         window.location.href = 'index.html';
       } else if (id === 'nav-daily' || id === 'menu-daily' || txt.includes('รายรับรายจ่าย')) {
         e.preventDefault();
-        window.location.hash = '#daily';
         this.currentView = 'daily';
-        this.render();
+        if (window.location.hash === '#daily') {
+          this.checkRouteFromHash();
+        } else {
+          window.location.hash = '#daily';
+        }
       } else if (id === 'nav-annual' || txt.includes('สรุปรายเดือน')) {
         e.preventDefault();
         window.location.hash = '#annual';
@@ -608,16 +635,22 @@ var CashFlowModule = {
       const y = parseInt(parts[0], 10);
       const m = parseInt(parts[1], 10);
 
-      if (this.currentPeriodType === 'monthly') {
-        const prefix = `${y}-${String(m).padStart(2, '0')}`;
-        list = list.filter(t => normalizeDate(t.date).startsWith(prefix));
-      } else {
-        const range = this.getPayrollRange(this.selectedMonth);
+      if (this.currentPeriodType === 'payroll' || this.currentPeriodType === 'salary') {
+      const range = this.getPayrollRange ? this.getPayrollRange(this.selectedMonth) : null;
+      if (range && range.startDate && range.endDate) {
         list = list.filter(t => {
           const nd = normalizeDate(t.date);
           return nd >= range.startDate && nd <= range.endDate;
         });
+      } else {
+        const prefix = `${y}-${String(m).padStart(2, '0')}`;
+        list = list.filter(t => normalizeDate(t.date).startsWith(prefix));
       }
+    } else {
+      // ค่าเริ่มต้น หรือเมื่อเป็น 'monthly' ให้ใช้เดือนปฏิทินเสมอ
+      const prefix = `${y}-${String(m).padStart(2, '0')}`;
+      list = list.filter(t => normalizeDate(t.date).startsWith(prefix));
+    }
     }
 
     if (this.dateFrom) list = list.filter(t => normalizeDate(t.date) >= this.dateFrom);
@@ -1936,6 +1969,8 @@ var CashFlowModule = {
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const state = this.getState();
     const allTx = state.transactions || [];
+    if (!this.selectedMonth) this.selectedMonth = '2026-10';
+    if (!this.currentPeriodType) this.currentPeriodType = 'monthly';
     const filteredTx = this.getFilteredTransactions(allTx);
 
     // ชุดข้อมูลสำหรับ 4 การ์ดสรุปและกราฟหมวดหมู่ (กรองตามรอบเดือน แต่ไม่ตัดตามแท็บประเภท)
@@ -1954,12 +1989,13 @@ var CashFlowModule = {
         return s;
       };
       const nd = normalizeDate(t.date);
-      if (this.currentPeriodType === 'monthly') {
-        return nd.startsWith(this.selectedMonth);
-      } else {
-        const range = this.getPayrollRange(this.selectedMonth);
-        return nd >= range.startDate && nd <= range.endDate;
+      if (this.currentPeriodType === 'payroll' || this.currentPeriodType === 'salary') {
+        const range = this.getPayrollRange ? this.getPayrollRange(this.selectedMonth) : null;
+        if (range && range.startDate && range.endDate) {
+          return nd >= range.startDate && nd <= range.endDate;
+        }
       }
+      return nd.startsWith(this.selectedMonth || '2026-10');
     });
     filteredTx.sort((a, b) => {
       const dateA = new Date(a.date).getTime() || 0;
