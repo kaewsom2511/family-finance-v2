@@ -1616,37 +1616,73 @@ var CashFlowModule = {
 
     const formatBaht = (n) => '฿' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // 1. ดึงยอดคงเหลือจริง 10 บัญชีธนาคาร (ไม่รวม สอท.)
-    const actualBalances = {
-      'เงินสด': 2870.00, 'กรุงเทพ': 37369.44, 'กรุงไทย': 867023.58, 'ทหารไทย': 616.20,
-      'ไทยพาณิชย์': 26227.73, 'ธกส.': 50651.43, 'กสิกรไทย': 4249.37, 'ออมสิน': 975.58,
-      'เป๋าตัง': 0.00, 'Truemoney': 146.89, 'ออมทรัพย์ สอท': 202191.42
+    // 1. ดึง State ธุรกรรมเพื่อคำนวณยอดเงินฝากจริงแบบ Dynamic
+    const state = this.getState();
+    const allTxs = state.transactions || [];
+
+    const dynamicBalances = {};
+    allTxs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (amt === 0) return;
+      const type = (t.type || '').trim();
+      const acc = (t.accountName || t.accountId || t.account || '').trim();
+      const fromAcc = (t.fromAccount || (type === 'โอนระหว่างบัญชี' || type === 'โอนเงิน' ? t.account : '') || '').trim();
+      const toAcc = (t.toAccount || '').trim();
+
+      if (type === 'โอนระหว่างบัญชี' || type === 'โอนเงิน') {
+        if (fromAcc) dynamicBalances[fromAcc] = (dynamicBalances[fromAcc] || 0) - amt;
+        if (toAcc) dynamicBalances[toAcc] = (dynamicBalances[toAcc] || 0) + amt;
+      } else if (type === 'รายรับ' || type.includes('รายได้')) {
+        if (acc) dynamicBalances[acc] = (dynamicBalances[acc] || 0) + amt;
+      } else if (['รายจ่าย', 'บิล', 'หนี้สิน', 'ลงทุน', 'เงินออมและลงทุน', 'เงินออม'].includes(type)) {
+        if (acc) dynamicBalances[acc] = (dynamicBalances[acc] || 0) - amt;
+      }
+    });
+
+    const defaultInitials = {
+      'เงินสด': 1445.00, 'กรุงเทพ': 8461.30, 'กรุงไทย': 6761.61, 'ทหารไทย': 1146.20,
+      'ไทยพาณิชย์': 40865.84, 'ธกส.': 50651.43, 'กสิกรไทย': 3207.86, 'ออมสิน': 772.79,
+      'เป๋าตัง': 56.40, 'Truemoney': 146.89, 'ออมทรัพย์ สอท': 202191.42
     };
+
     let storedInitials = {};
     try { storedInitials = JSON.parse(localStorage.getItem('family-finance:initial-balances:v1')) || {}; } catch (e) {}
 
     let totalBankCash = 0;
-    let coopSavingBal = storedInitials['ออมทรัพย์ สอท'] !== undefined ? storedInitials['ออมทรัพย์ สอท'] : actualBalances['ออมทรัพย์ สอท'];
+    // คำนวณยอดเงินฝากออมทรัพย์ สอท. ตามจริง (ยอดเริ่มต้น + เงินเข้า/ออกจริง)
+    const coopBase = storedInitials['ออมทรัพย์ สอท'] !== undefined ? storedInitials['ออมทรัพย์ สอท'] : defaultInitials['ออมทรัพย์ สอท'];
+    const coopSavingBal = coopBase + (dynamicBalances['ออมทรัพย์ สอท'] || 0);
 
-    Object.keys(actualBalances).forEach(accName => {
-      const bal = storedInitials[accName] !== undefined ? storedInitials[accName] : actualBalances[accName];
-      if (accName === 'ออมทรัพย์ สอท') {
-        coopSavingBal = bal;
-      } else {
-        totalBankCash += bal;
+    Object.keys(defaultInitials).forEach(accName => {
+      if (accName !== 'ออมทรัพย์ สอท') {
+        const base = storedInitials[accName] !== undefined ? storedInitials[accName] : defaultInitials[accName];
+        totalBankCash += (base + (dynamicBalances[accName] || 0));
       }
     });
 
-    // 2. ดึงข้อมูลสินทรัพย์ PVD, RMF, และ ทุนเรือนหุ้น สอท.
+    // 2. ดึงข้อมูลสินทรัพย์ PVD, RMF และ ทุนเรือนหุ้น สอท. (อัปเดตเป็น 1,352,400 บาท)
     let wealthExtras = {
       memberAccum: 2043963.45,
       employerMatch: 2099909.75,
       earnings: 1063753.44,
       totalPvd: 5207626.64,
-      rmfVal: 1183061.27,      // ยอด INVX RMF ตามไฟล์สำรองข้อมูล
-      coopShareVal: 1272400.00, // ทุนเรือนหุ้น สอท. ตามไฟล์สำรองข้อมูล
-      updatedDate: '2026-10-21'
+      rmfVal: 1183061.27,
+      coopShareVal: 1352400.00, // อัปเดตยอดจริงตาม Statement ล่าสุด
+      updatedDate: '2026-10-23'
     };
+    try {
+      const savedExtras = JSON.parse(localStorage.getItem('family-finance:wealth-extras:v1') || localStorage.getItem('family-finance:pvd:v1'));
+      if (savedExtras) {
+        wealthExtras = Object.assign(wealthExtras, savedExtras);
+        // ถ้ายอดเดิมในเครื่องยังค้างอยู่ที่ 1,272,400 ให้อัปเดตเป็นยอดจริงตาม Statement
+        if (wealthExtras.coopShareVal === 1272400) {
+          wealthExtras.coopShareVal = 1352400.00;
+        }
+        wealthExtras.totalPvd = (parseFloat(wealthExtras.memberAccum) || 0) + 
+                                (parseFloat(wealthExtras.employerMatch) || 0) + 
+                                (parseFloat(wealthExtras.earnings) || 0);
+      }
+    } catch(e) {}
     try {
       const savedExtras = JSON.parse(localStorage.getItem('family-finance:wealth-extras:v1') || localStorage.getItem('family-finance:pvd:v1'));
       if (savedExtras) {
