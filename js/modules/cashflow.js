@@ -1483,9 +1483,14 @@ var CashFlowModule = {
     `).join('');
 
     const netLiquidity = 1208437.31;
-    const coopBuffer = 218486.15;
+    const coopAcc = accountsMaster.find(a => a.name === 'ออมทรัพย์ สอท');
+    const coopBase = storedInitials['ออมทรัพย์ สอท'] !== undefined ? storedInitials['ออมทรัพย์ สอท'] : (coopAcc ? coopAcc.initial : 202191.42);
+    const coopBuffer = coopBase + (dynamicBalances['ออมทรัพย์ สอท'] || 0);
+
     const targetBuffer = 480000.00;
-    const bufferPct = ((coopBuffer / targetBuffer) * 100).toFixed(1);
+    const bufferPct = targetBuffer > 0 ? ((coopBuffer / targetBuffer) * 100).toFixed(1) : 0;
+    const monthlyTarget = targetBuffer / 12; // 40,000 บาท/เดือน
+    const bufferMonths = monthlyTarget > 0 ? (coopBuffer / monthlyTarget).toFixed(1) : 0;
 
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 1280px; margin: 0 auto; text-align: left; padding-bottom: 40px; font-family: 'Sarabun', sans-serif;">
@@ -1529,7 +1534,7 @@ var CashFlowModule = {
               <span style="font-size: 11px; color: #16a34a; font-weight: 700; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 6px 0;">
-              <div style="font-size: 26px; font-weight: 900; color: #0284c7;">5.5 <span style="font-size: 14px; font-weight: 700; color: #64748b;">/ 12 เดือน</span></div>
+              <div style="font-size: 26px; font-weight: 900; color: #0284c7;">${bufferMonths} <span style="font-size: 14px; font-weight: 700; color: #64748b;">/ 12 เดือน</span></div>
               <span style="font-size: 14px; font-weight: 800; color: #0284c7;">${bufferPct}%</span>
             </div>
             <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
