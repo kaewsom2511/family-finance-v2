@@ -2600,6 +2600,7 @@ this.openAssetModal(holding.symbol);
     renderDividendTracker(container) {
     this.divSummarySortKey = this.divSummarySortKey || 'amount';
     this.divSummarySortAsc = this.divSummarySortAsc ?? false;
+    this.divYieldViewMode = this.divYieldViewMode || 'current'; // 'current' หรือ 'lot'
 
     const data = getPortfolioDataHelper();
     const portMap = this.getPortfolioMap(data);
@@ -2767,22 +2768,84 @@ this.openAssetModal(holding.symbol);
 
     const summary = this.calculatePortfolioDetail(data, 'ALL');
 
-    // 1. ผูกข้อมูล Cost Yield เข้ากับแต่ละรายการ
-    const enrichedAssets = topDivAssets.map(item => {
-      const matchedHolding = (summary.activeHoldings || []).find(
-        h => normalizeCleanSymbol(h.symbol) === normalizeCleanSymbol(item.symbol)
-      );
-      const costBasis = matchedHolding ? matchedHolding.totalCost : 0;
-      const grossDiv = item.totalAmount / 0.9;
-      const costYieldVal = costBasis > 0 ? (grossDiv / costBasis) * 100 : -1;
+    // 1. ฟังก์ชันคำนวณ Cost Yield จากประวัติไม้ซื้อจริง เทียบกับวันที่ปันผลเข้า
+    const calculateRunningYieldForSymbol = (sym, totalDivAmt) => {
+      const cleanTarget = normalizeCleanSymbol(sym);
 
-      return {
-        ...item,
-        cleanSymbol: item.symbol.replace(/\.BK$/i, ''),
-        costBasis,
-        costYieldVal
-      };
+      // ดึงไม้ซื้อทั้งหมดของหุ้นตัวนี้จาก trades เรียงตามวันที่
+      const buyTrades = (trades || [])
+        .filter(t => normalizeCleanSymbol(t.symbol) === cleanTarget && String(t.side || t.type || '').toLowerCase() === 'buy')
+        .sort((a, b) => new Date(a.tradeDate || a.date || 0) - new Date(b.tradeDate || b.date || 0));
+
+      // ดึงรายการปันผลทั้งหมดของหุ้นตัวนี้ เรียงตามวันที่
+      const divEvents = portFilteredDividends
+        .filter(d => normalizeCleanSymbol(d.symbol) === cleanTarget)
+        .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+      // ถ้าไม่มีประวัติไม้ซื้อในระบบ trades เลย ให้คิดแบบเดิมสำรองไว้
+      if (buyTrades.length === 0) {
+        const matched = (summary.activeHoldings || []).find(h => normalizeCleanSymbol(h.symbol) === cleanTarget);
+        return matched && matched.totalCost > 0 ? (totalDivAmt / matched.totalCost) * 100 : 0;
+      }
+
+      let runningYieldTotal = 0;
+
+      // วนลูปคำนวณปันผลทีละงวด
+      divEvents.forEach(div => {
+      const divDate = new Date(div.date || 0);
+
+      // หาต้นทุนสะสม ณ วันที่เกิดปันผล
+      let costAtThatTime = buyTrades
+        .filter(b => new Date(b.tradeDate || b.date || 0) <= divDate)
+        .reduce((sum, b) => {
+          const q = parseFloat(b.quantity ?? b.shares ?? 0) || 0;
+          const p = parseFloat(b.price ?? 0) || 0;
+          const f = parseFloat(b.fee ?? 0) || 0;
+          return sum + (q * p) + f;
+        }, 0);
+
+      // ถ้าไม่พบไม้ซื้อก่อนหน้า หรือซื้อครบแล้ว ให้ใช้ต้นทุนรวมปัจจุบันเป็นฐาน
+      if (costAtThatTime <= 0) {
+        const matched = (summary.activeHoldings || []).find(h => normalizeCleanSymbol(h.symbol) === cleanTarget);
+        costAtThatTime = matched && matched.totalCost > 0 ? matched.totalCost : 0;
+      }
+
+      if (costAtThatTime > 0) {
+        runningYieldTotal += (parseFloat(div.amount || 0) / costAtThatTime) * 100;
+      }
     });
+
+      return runningYieldTotal;
+    };
+
+    // 2. นำไปแสดงผลในตารางสรุปปันผล (รองรับปุ่มสลับ Current / Lot)
+  const isLotMode = this.divYieldViewMode === 'lot';
+
+  const enrichedAssets = topDivAssets.map(item => {
+    const matchedHolding = (summary.activeHoldings || []).find(
+      h => normalizeCleanSymbol(h.symbol) === normalizeCleanSymbol(item.symbol)
+    );
+    const currentCostBasis = matchedHolding ? matchedHolding.totalCost : 0;
+
+    // คำนวณแบบต้นทุนปัจจุบัน
+    const currentYieldVal = currentCostBasis > 0 ? ((item.totalAmount / 0.9) / currentCostBasis) * 100 : -1;
+    // คำนวณแบบรอบเงินจริง
+    const lotYieldVal = calculateRunningYieldForSymbol(item.symbol, item.totalAmount);
+
+    // เลือกว่าจะแสดงค่าไหนตามปุ่มที่กดเลือก
+    const activeCostYieldVal = isLotMode 
+      ? (lotYieldVal > 0 ? lotYieldVal : currentYieldVal) 
+      : currentYieldVal;
+
+    return {
+      ...item,
+      cleanSymbol: item.symbol.replace(/\.BK$/i, ''),
+      costBasis: currentCostBasis,
+      currentYieldVal,
+      lotYieldVal,
+      costYieldVal: activeCostYieldVal
+    };
+  });
 
     // 2. จัดเรียง (Sort) ตามเงื่อนไขที่เลือก
     enrichedAssets.sort((a, b) => {
@@ -2885,7 +2948,18 @@ this.openAssetModal(holding.symbol);
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px;">
           <div class="holdings-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="holdings-card-header" style="margin-bottom: 12px;"><h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">🏆 สรุปยอดเงินปันผลสะสมรายตัว (${topDivAssets.length} ตัว)</h3></div>
+            <div class="holdings-card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">🏆 สรุปยอดเงินปันผลสะสมรายตัว (${topDivAssets.length} ตัว)</h3>
+                <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                  โหมด: <strong style="color: ${isLotMode ? '#16a34a' : '#0284c7'};">${isLotMode ? '🌱 รอบเงินจริง (Lot Yield)' : '💼 ต้นทุนปัจจุบัน (Current Cost)'}</strong>
+                </div>
+              </div>
+              <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 6px;">
+                <button type="button" onclick="PortfolioModule.divYieldViewMode='current'; PortfolioModule.render();" style="border: none; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 4px; cursor: pointer; background: ${!isLotMode ? '#fff' : 'transparent'}; color: ${!isLotMode ? '#0284c7' : '#64748b'};">💼 ต้นทุนปัจจุบัน</button>
+                <button type="button" onclick="PortfolioModule.divYieldViewMode='lot'; PortfolioModule.render();" style="border: none; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 4px; cursor: pointer; background: ${isLotMode ? '#fff' : 'transparent'}; color: ${isLotMode ? '#16a34a' : '#64748b'};">🌱 รอบเงินจริง</button>
+              </div>
+            </div>
             <div style="overflow-x: auto; max-height: 420px;">
               <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
