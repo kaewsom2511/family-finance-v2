@@ -1164,6 +1164,24 @@ var CashFlowModule = {
 
     tbody.innerHTML = rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
   },
+  viewMonthDetails(year, month) {
+    const pad = n => String(n).padStart(2, '0');
+    const startDate = `${year}-${pad(month)}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${pad(month)}-${pad(lastDay)}`;
+
+    this.currentView = 'daily';
+    window.location.hash = '#daily';
+
+    setTimeout(() => {
+      this.selectedMonth = `${year}-${pad(month)}`;
+      this.dateFrom = startDate;
+      this.dateTo = endDate;
+      this.filterType = 'ทั้งหมด';
+      this.searchQuery = '';
+      this.render();
+    }, 50);
+  },
 
   renderAnnualSummary(targetContainer = null) {
     const container = targetContainer 
@@ -1176,6 +1194,17 @@ var CashFlowModule = {
     if (!container) return;
 
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // แปลงเป็นตัวเลขเต็ม มีจุลภาคคั่นหลักพัน และมีทศนิยม 2 ตำแหน่ง (.00)
+    const formatInt = (num) => {
+      if (num === null || num === undefined || isNaN(num) || parseFloat(num) === 0) return '-';
+      const val = parseFloat(num);
+      return (val < 0 ? '-' : '') + '฿' + Math.abs(val).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const formatIntPlain = (num) => {
+      if (num === null || num === undefined || isNaN(num) || parseFloat(num) === 0) return '-';
+      return parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
     const state = this.getState();
     const allTx = state.transactions || [];
 
@@ -1187,34 +1216,80 @@ var CashFlowModule = {
     let totalYearIncome = 0;
     let totalYearExpense = 0;
     let totalYearInvest = 0;
+    let totalYearNet = 0;
+    let activeMonthCount = 0;
+
+    const currentYear = new Date().getFullYear();
+    const currentMonthIdx = new Date().getMonth();
 
     const monthlyData = months.map((mName, idx) => {
       const monthStr = `${year}-${String(idx + 1).padStart(2, '0')}`;
       const mTx = yearTx.filter(t => (t.date || '').startsWith(monthStr));
 
-      const inc = mTx.filter(t => t.type === 'รายรับ').reduce((s, t) => s + t.amount, 0);
-      const exp = mTx.filter(t => t.type === 'รายจ่าย' || t.type === 'บิล' || t.type === 'หนี้สิน').reduce((s, t) => s + t.amount, 0);
-      const inv = mTx.filter(t => t.type === 'ลงทุน' || t.type === 'เงินออมและลงทุน' || t.type === 'เงินออม').reduce((s, t) => s + t.amount, 0);
+      const inc = mTx.filter(t => t.type === 'รายรับ').reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+      const exp = mTx.filter(t => t.type === 'รายจ่าย' || t.type === 'บิล' || t.type === 'หนี้สิน').reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+      const inv = mTx.filter(t => t.type === 'ลงทุน' || t.type === 'เงินออมและลงทุน' || t.type === 'เงินออม').reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
       const net = inc - exp;
 
-      totalYearIncome += inc;
-      totalYearExpense += exp;
-      totalYearInvest += inv;
+      const hasData = mTx.length > 0;
+      const isFuture = !hasData && (year > currentYear || (year === currentYear && idx > currentMonthIdx));
 
-      return { month: mName, inc, exp, inv, net };
+      if (hasData) {
+        totalYearIncome += inc;
+        totalYearExpense += exp;
+        totalYearInvest += inv;
+        totalYearNet += net;
+        activeMonthCount++;
+      }
+
+      return { month: mName, monthNum: idx + 1, inc, exp, inv, net, hasData, isFuture };
     });
 
     const netYearSavings = totalYearIncome - totalYearExpense;
 
-    const rowsHtml = monthlyData.map(d => `
-      <tr style="border-bottom: 1px solid #f1f5f9;">
-        <td style="padding: 12px 14px; font-weight: 700; color: #0f172a;">${d.month} ${year + 543}</td>
-        <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #16a34a;">${d.inc > 0 ? '฿' + formatBaht(d.inc) : '-'}</td>
-        <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #dc2626;">${d.exp > 0 ? '฿' + formatBaht(d.exp) : '-'}</td>
-        <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #0284c7;">${d.inv > 0 ? '฿' + formatBaht(d.inv) : '-'}</td>
-        <td style="padding: 12px 14px; text-align: right; font-weight: 900; color: ${d.net >= 0 ? '#0284c7' : '#dc2626'};">${d.inc > 0 || d.exp > 0 ? '฿' + formatBaht(d.net) : '-'}</td>
-      </tr>
-    `).join('');
+    // ค่าเฉลี่ยคิดเฉพาะเดือนที่มีข้อมูลจริง
+    const avgDivisor = activeMonthCount > 0 ? activeMonthCount : 1;
+    const avgIncome = totalYearIncome / avgDivisor;
+    const avgExpense = totalYearExpense / avgDivisor;
+    const avgInvest = totalYearInvest / avgDivisor;
+    const avgNet = totalYearNet / avgDivisor;
+
+    const rowsHtml = monthlyData.map(d => {
+      const rowStyle = d.isFuture 
+        ? 'opacity: 0.45; background-color: #fafafa;' 
+        : 'cursor: pointer; transition: background 0.15s;';
+      const rowHover = d.isFuture ? '' : 'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'"';
+      const clickAction = d.isFuture ? '' : `onclick="CashFlowModule.viewMonthDetails(${year}, ${d.monthNum})"`;
+
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9; ${rowStyle}" ${rowHover} ${clickAction} title="${d.isFuture ? 'ยังไม่มีข้อมูล' : 'คลิกเพื่อดูรายการแยกย่อยของเดือนนี้'}">
+          <td style="padding: 12px 14px; font-weight: 700; color: #0f172a;">${d.month} ${year + 543}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #16a34a;">${d.hasData ? formatInt(d.inc) : '-'}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #dc2626;">${d.hasData ? formatInt(d.exp) : '-'}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #0284c7;">${d.hasData ? formatInt(d.inv) : '-'}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 900; color: ${d.net >= 0 ? '#0284c7' : '#dc2626'};">${d.hasData ? formatInt(d.net) : '-'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const tableFooterHtml = `
+      <tfoot style="border-top: 2px solid #cbd5e1; background: #f8fafc; font-size: 13px;">
+        <tr style="font-weight: 700; border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 12px 14px; color: #0f172a;">รวมทั้งปี (${activeMonthCount} เดือน)</td>
+          <td style="padding: 12px 14px; text-align: right; color: #16a34a; font-weight: 800;">${formatInt(totalYearIncome)}</td>
+          <td style="padding: 12px 14px; text-align: right; color: #dc2626; font-weight: 800;">${formatInt(totalYearExpense)}</td>
+          <td style="padding: 12px 14px; text-align: right; color: #0284c7; font-weight: 800;">${formatInt(totalYearInvest)}</td>
+          <td style="padding: 12px 14px; text-align: right; color: ${totalYearNet >= 0 ? '#0284c7' : '#dc2626'}; font-weight: 900;">${formatInt(totalYearNet)}</td>
+        </tr>
+        <tr style="color: #64748b; font-size: 12px;">
+          <td style="padding: 10px 14px; font-weight: 600;">เฉลี่ยต่อเดือน (${activeMonthCount} ด.)</td>
+          <td style="padding: 10px 14px; text-align: right; font-weight: 700;">${formatInt(avgIncome)}</td>
+          <td style="padding: 10px 14px; text-align: right; font-weight: 700;">${formatInt(avgExpense)}</td>
+          <td style="padding: 10px 14px; text-align: right; font-weight: 700;">${formatInt(avgInvest)}</td>
+          <td style="padding: 10px 14px; text-align: right; color: ${avgNet >= 0 ? '#0284c7' : '#dc2626'}; font-weight: 800;">${formatInt(avgNet)}</td>
+        </tr>
+      </tfoot>
+    `;
 
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
@@ -1240,35 +1315,48 @@ var CashFlowModule = {
               </button>
             </div>
 
-            <button id="btn-prev-year" type="button" onclick="CashFlowModule.changeYear(-1)" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">◀ ปีก่อนหน้า</button>
-            <span style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 0 8px;">ปี ${year} (พ.ศ. ${year + 543})</span>
-            <button id="btn-next-year" type="button" onclick="CashFlowModule.changeYear(1)" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">ปีถัดไป ▶</button>
+            <button id="btn-prev-year" type="button" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">◀ ปีก่อนหน้า</button>
+<span style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 0 8px;">ปี ${year} (พ.ศ. ${year + 543})</span>
+<button id="btn-next-year" type="button" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">ปีถัดไป ▶</button>
           </div>
         </div>
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
           <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🟢 รายรับทั้งปี (Total Income)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #16a34a;">฿${formatBaht(totalYearIncome)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ ฿${formatBaht(totalYearIncome / 12)}</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #16a34a;">${formatInt(totalYearIncome)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ ${formatInt(avgIncome)}</div>
           </div>
 
           <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔴 รายจ่ายทั้งปี (Total Expense)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #dc2626;">฿${formatBaht(totalYearExpense)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ ฿${formatBaht(totalYearExpense / 12)}</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #dc2626;">${formatInt(totalYearExpense)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ ${formatInt(avgExpense)}</div>
           </div>
 
           <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔵 กระแสเงินสดสุทธิทั้งปี</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: ${netYearSavings >= 0 ? '#0284c7' : '#dc2626'};">฿${formatBaht(netYearSavings)}</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: ${netYearSavings >= 0 ? '#0284c7' : '#dc2626'};">${formatInt(netYearSavings)}</div>
             <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เงินสดคงเหลือสุทธิรอบปี</div>
           </div>
 
           <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🚀 ยอดสะสมเงินออม/ลงทุน</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0284c7;">฿${formatBaht(totalYearInvest)}</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0284c7;">${formatInt(totalYearInvest)}</div>
             <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">สะสมเข้าพอร์ตและ สอท.</div>
+          </div>
+        </div>
+
+        <!-- กล่องกราฟแท่งเปรียบเทียบรายเดือน -->
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+              <span>📊</span> ภาพรวมกระแสเงินสดรายเดือน (เปรียบเทียบ รับ - จ่าย - ลงทุน)
+            </h3>
+            <span style="font-size: 12px; color: #64748b; font-weight: 600;">หน่วย: บาท</span>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="annualCashflowBarChart"></canvas>
           </div>
         </div>
 
@@ -1288,12 +1376,153 @@ var CashFlowModule = {
               <tbody>
                 ${rowsHtml}
               </tbody>
+              ${tableFooterHtml}
             </table>
+          </div>
+        </div>
+
+        <!-- Accordion Matrix แจกแจงตามหมวดหมู่ 5 กลุ่ม -->
+        <div style="margin-top: 24px;">
+          <h3 style="margin: 0 0 14px; font-size: 16px; font-weight: 800; color: #0f172a;">📂 แจกแจงตามหมวดหมู่</h3>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            ${[
+              { key: 'รายรับ', label: 'รายรับ', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+              { key: 'รายจ่าย', label: 'รายจ่าย', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+              { key: 'บิล', label: 'บิล', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+              { key: 'เงินออมและลงทุน', label: 'ออม & ลงทุน', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+              { key: 'หนี้สิน', label: 'หนี้สิน', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' }
+            ].map(g => {
+              const txInGroup = yearTx.filter(t => {
+                const ty = (t.type || '').trim();
+                if (g.key === 'เงินออมและลงทุน') return ty === 'เงินออมและลงทุน' || ty === 'ลงทุน' || ty === 'เงินออม';
+                return ty === g.key;
+              });
+              const totalGroupAmt = txInGroup.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+
+              const catMap = {};
+              txInGroup.forEach(t => {
+                const cat = t.category || 'อื่นๆ';
+                const mIdx = new Date(t.date).getMonth();
+                if (!catMap[cat]) catMap[cat] = { months: Array(12).fill(0), total: 0 };
+                const amt = parseFloat(t.amount) || 0;
+                catMap[cat].months[mIdx] += amt;
+                catMap[cat].total += amt;
+              });
+
+              const catList = Object.keys(catMap).sort((a, b) => catMap[b].total - catMap[a].total);
+
+              return `
+                <div style="border: 1px solid ${g.border}; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                  <div onclick="const b=document.getElementById('matrix-body-${g.key}'); const isH=b.style.display==='none'; b.style.display=isH?'block':'none';" 
+                       style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: ${g.bg}; cursor: pointer; user-select: none;">
+                    <span style="font-weight: 800; color: ${g.color}; font-size: 14.5px;">${g.label}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 800; color: ${g.color}; font-size: 15px;">${formatInt(totalGroupAmt)}</span>
+                      <span style="color: ${g.color}; font-size: 12px;">▾</span>
+                    </div>
+                  </div>
+                  <div id="matrix-body-${g.key}" style="display: ${g.key === 'รายรับ' ? 'block' : 'none'}; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 860px;">
+                      <thead>
+                        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569;">
+                          <th style="padding: 8px 12px; text-align: left; position: sticky; left: 0; background: #f8fafc; z-index: 2; min-width: 140px;">รายการ</th>
+                          ${months.map(m => `<th style="padding: 8px 6px; text-align: right; min-width: 58px;">${m}</th>`).join('')}
+                          <th style="padding: 8px 10px; text-align: right; min-width: 80px; font-weight: 800; background: #f1f5f9; position: sticky; right: 0;">รวมทั้งปี</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${catList.length === 0 ? `<tr><td colspan="14" style="text-align: center; padding: 16px; color: #94a3b8;">ไม่มีรายการในหมวดนี้</td></tr>` : ''}
+                        ${catList.map(cat => `
+                          <tr style="border-bottom: 1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+                            <td style="padding: 8px 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #fff; z-index: 1;">${cat}</td>
+                            ${catMap[cat].months.map(val => `<td style="padding: 8px 6px; text-align: right; color: ${val > 0 ? '#334155' : '#cbd5e1'}; font-weight: ${val > 0 ? '600' : 'normal'};">${formatIntPlain(val)}</td>`).join('')}
+                            <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${g.color}; background: #fafafa; position: sticky; right: 0;">${formatIntPlain(catMap[cat].total)}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
 
       </div>
     `;
+    // วาดกราฟ Chart.js
+    setTimeout(() => {
+      const ctx = document.getElementById('annualCashflowBarChart');
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      if (window._annualCashflowChartInstance) {
+        window._annualCashflowChartInstance.destroy();
+      }
+
+      window._annualCashflowChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [
+            {
+              label: 'รายรับ',
+              data: monthlyData.map(d => d.inc),
+              backgroundColor: '#16a34a',
+              borderRadius: 4
+            },
+            {
+              label: 'รายจ่ายรวม',
+              data: monthlyData.map(d => d.exp),
+              backgroundColor: '#dc2626',
+              borderRadius: 4
+            },
+            {
+              label: 'เงินออม/ลงทุน',
+              data: monthlyData.map(d => d.inv),
+              backgroundColor: '#0284c7',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                boxWidth: 12,
+                font: { family: "'Sarabun', sans-serif", weight: 'bold', size: 12 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed.y || 0;
+                  return context.dataset.label + ': ฿' + Number(val).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false }
+            },
+            y: {
+              ticks: {
+                callback: function(value) {
+                  return '฿' + Number(value).toLocaleString('th-TH');
+                }
+              }
+            }
+          }
+        }
+      });
+    }, 50);
   },
 
   // ==========================================
