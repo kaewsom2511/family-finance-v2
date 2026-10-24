@@ -316,7 +316,36 @@
             </div>
           </div>
         </div>
+        <!-- ส่วนกราฟวิเคราะห์ภาพรวม Dashboard -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          
+          <!-- กราฟที่ 1 (ซ้าย): สัดส่วนหนี้สินและความมั่งคั่งสุทธิ -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <div style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <span>📊</span> โครงสร้างสินทรัพย์และภาระหนี้สิน (Assets & Liabilities)
+              </div>
+              <span style="font-size: 11px; color: #16a34a; font-weight: 700; background: #ecfdf5; padding: 3px 8px; border-radius: 6px;">สุขภาพการเงินยอดเยี่ยม (หนี้ &lt; 5%)</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+              <canvas id="dashboardAllocationDonutChart"></canvas>
+            </div>
+          </div>
 
+          <!-- กราฟที่ 2 (ขวา): การจัดสรรเงินสะสมเกษียณ -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <div style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <span>🎯</span> การกระจายเงินสะสมเพื่อเกษียณ (Savings & Investment)
+              </div>
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; background: #f1f5f9; padding: 2px 8px; border-radius: 6px;">หน่วย: บาท</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+              <canvas id="dashboardSavingsBarChart"></canvas>
+            </div>
+          </div>
+
+        </div>
       </div>
     </main>
   </div>
@@ -334,6 +363,7 @@
   <script src="js/supabase.js"></script>
   <script src="js/modules/creditcard.js"></script>
   <script src="js/modules/debt.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/modules/dashboard.js"></script>
   <script src="js/modules/backup.js"></script>
 

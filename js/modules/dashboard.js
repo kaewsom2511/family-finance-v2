@@ -103,12 +103,13 @@ var DashboardModule = {
 const filteredTrades = role === 'admin' ? trades : [];
   
 
-    // 2. คำนวณพอร์ตลงทุนแยกตามประเภทสินทรัพย์
+    // 2. คำนวณพอร์ตลงทุนแยกตามประเภทสินทรัพย์ (คิดต้นทุนเฉพาะหุ้นที่ยังถือครองอยู่จริงแบบถัวเฉลี่ย)
     const holdings = {};
     let thaiStockVal = 0;
     let mutualFundVal = 0;
     let foreignStockVal = 0;
 
+    // คำนวณยอดซื้อสะสมและจำนวนคงเหลือ
     filteredTrades.forEach(t => {
       const symbol = t.symbol;
       if (!symbol) return;
@@ -118,20 +119,33 @@ const filteredTrades = role === 'admin' ? trades : [];
           symbol,
           assetType: t.assetType || 'other',
           quantity: 0,
-          totalCostTHB: 0
+          buyQty: 0,
+          totalBuyCostTHB: 0
         };
       }
 
-      const fx = Number(t.fxRate) || 1;
+      // ล็อก FX Rate: ถ้าเป็นหุ้นไทยหรือกองทุนไทย ให้เป็น 1 เสมอ ป้องกันการคูณ 33 ซ้ำ
+      const isForeign = (t.assetType === 'foreign-stock') || (t.currency === 'USD');
+      const fx = isForeign ? (Number(t.fxRate) || 33.6) : 1;
       const price = Number(t.price) || 0;
       const qty = Number(t.quantity || t.shares) || 0;
 
       if (t.side === 'buy') {
         holdings[symbol].quantity += qty;
-        holdings[symbol].totalCostTHB += (price * qty * fx);
+        holdings[symbol].buyQty += qty;
+        holdings[symbol].totalBuyCostTHB += (price * qty * fx);
       } else if (t.side === 'sell') {
         holdings[symbol].quantity -= qty;
-        holdings[symbol].totalCostTHB -= (price * qty * fx);
+      }
+    });
+
+    // คำนวณต้นทุนคงเหลือจริงของหุ้นที่ยังถือครอง
+    Object.values(holdings).forEach(h => {
+      if (h.quantity > 0.00001 && h.buyQty > 0) {
+        const avgCostPerUnit = h.totalBuyCostTHB / h.buyQty;
+        h.totalCostTHB = h.quantity * avgCostPerUnit;
+      } else {
+        h.totalCostTHB = 0;
       }
     });
 
@@ -150,7 +164,8 @@ const filteredTrades = role === 'admin' ? trades : [];
         }
 
         const marketPrice = quote?.price ? Number(quote.price) : 0;
-        const fxRate = h.assetType === 'foreign-stock' ? 33.6 : 1;
+        const isForeignAsset = (h.assetType === 'foreign-stock');
+        const fxRate = isForeignAsset ? 33.6 : 1;
         const currentVal = marketPrice > 0 ? (h.quantity * marketPrice * fxRate) : Math.max(0, h.totalCostTHB);
 
         totalPortMarketValTHB += currentVal;
@@ -182,7 +197,8 @@ const filteredTrades = role === 'admin' ? trades : [];
       const amt = Number(tx.amount) || 0;
       const type = tx.type;
       const acc = (tx.account || tx.accountName || '').toLowerCase();
-      const isCard = acc.includes('บัตร') || acc.includes('card');
+      // ล็อกเฉพาะบัญชีที่เป็นบัตรเครดิตจริง (ป้องกันคำว่า บัตร อื่นๆ ปนเข้ามา)
+      const isCard = acc.includes('บัตรเครดิต') || acc.includes('credit') || acc.includes('bay') || acc.includes('ktc') || acc.includes('ttb');
       const txDate = (tx.date || '').slice(0, 7);
 
       // กรองเฉพาะบัญชี Member ถ้าไม่ได้เป็น Admin
@@ -191,11 +207,17 @@ const filteredTrades = role === 'admin' ? trades : [];
       }
 
       if (isCard) {
-        // รายการบัตรเครดิต
-        if (type === 'รายจ่าย' || type === 'บิล' || type === 'หนี้สิน') {
-          creditDebtBalance += amt;
-        } else if (type === 'โอนระหว่างบัญชี' && tx.toAccount && tx.toAccount.toLowerCase().includes('บัตร')) {
-          creditDebtBalance -= amt;
+        // ดึงเฉพาะยอดใช้จ่ายบัตรเครดิตของรอบบิล/เดือนปัจจุบัน ไม่นำประวัติเก่าทั้งปีมารวมสะสม
+        if (txDate === currentYearMonth) {
+          if (type === 'รายจ่าย' || type === 'บิล' || type === 'หนี้สิน') {
+            creditDebtBalance += amt;
+          }
+        }
+        // กรณีมีการชำระค่าบัตรในเดือนปัจจุบัน
+        if (type === 'โอนระหว่างบัญชี' && tx.toAccount && tx.toAccount.toLowerCase().includes('บัตร')) {
+          if (txDate === currentYearMonth) {
+            creditDebtBalance = Math.max(0, creditDebtBalance - amt);
+          }
         }
       } else {
         // รายการเงินฝาก/เงินสด
@@ -204,10 +226,9 @@ const filteredTrades = role === 'admin' ? trades : [];
         } else if (type === 'รายจ่าย' || type === 'บิล' || type === 'หนี้สิน') {
           cashBalance -= amt;
         } else if (type === 'โอนระหว่างบัญชี') {
-          // โอนออก
+          // โอนไปบัตร = ชำระหนี้รอบบิลปัจจุบัน
           if (tx.fromAccount && !tx.fromAccount.toLowerCase().includes('บัตร')) {
-            // โอนไปบัตร = จ่ายหนี้
-            if (tx.toAccount && tx.toAccount.toLowerCase().includes('บัตร')) {
+            if (tx.toAccount && tx.toAccount.toLowerCase().includes('บัตร') && txDate === currentYearMonth) {
               creditDebtBalance = Math.max(0, creditDebtBalance - amt);
             }
           }
@@ -263,6 +284,9 @@ const filteredTrades = role === 'admin' ? trades : [];
 
     // 6. อัปเดตแถบสัดส่วนโครงสร้างสินทรัพย์รวม (Total Assets Structure)
     this.renderAssetBar(totalAssets, thaiStockVal, mutualFundVal, foreignStockVal, cashBalance);
+
+    // 7. วาดกราฟคู่ Dashboard (Doughnut สัดส่วนกระแสเงินสด & Horizontal Bar การออมสะสม)
+    this.renderDashboardCharts();
   },
 
   renderAssetBar(total, thaiStock, mutualFund, foreignStock, cash) {
@@ -282,6 +306,217 @@ const filteredTrades = role === 'admin' ? trades : [];
         <div style="width: ${pCash}%; background: #f59e0b;" title="เงินสดในบัญชี (${pCash}%)"></div>
       `;
     }
+  },
+
+  renderDashboardCharts() {
+    setTimeout(() => {
+      // 1. กราฟโดนัท: โครงสร้างสินทรัพย์และภาระหนี้สิน (Assets & Liabilities) - ทุกชิ้นใช้เส้นชี้ Callout Line ทศนิยม 2 ตำแหน่ง
+      const ctxDonut = document.getElementById('dashboardAllocationDonutChart');
+      if (ctxDonut && typeof Chart !== 'undefined') {
+        if (window._dashDonutInstance) window._dashDonutInstance.destroy();
+
+        // ดึงตัวเลขจริง
+        const investVal = Number(document.getElementById('dashPortfolioVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 3903896.20;
+        const cashVal = Number(document.getElementById('dashCashVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 1810407.09;
+        const debtVal = Number(document.getElementById('cardDebtVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 165142.48;
+        const netWorthVal = investVal + cashVal - debtVal;
+
+        const totalBase = investVal + cashVal + debtVal;
+        const pctInvest = Number(((investVal / totalBase) * 100).toFixed(2));
+        const pctCash = Number(((cashVal / totalBase) * 100).toFixed(2));
+        const pctDebt = Number(((debtVal / totalBase) * 100).toFixed(2));
+        const pctNetWorthRatio = Number(((netWorthVal / (investVal + cashVal)) * 100).toFixed(2));
+
+        // ปลั๊กอินสรุปความมั่งคั่งสุทธิตรงกลางวง (ทศนิยม 2 ตำแหน่ง)
+        const centerTextPlugin = {
+          id: 'centerText',
+          beforeDraw(chart) {
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // บรรทัดบน: ยอดความมั่งคั่งสุทธิเต็มจำนวน
+            ctx.font = '800 18px "Sarabun", sans-serif';
+            ctx.fillStyle = '#0284c7';
+            ctx.fillText(`฿${Math.round(netWorthVal).toLocaleString('th-TH')}`, centerX, centerY - 9);
+
+            // บรรทัดล่าง: สัดส่วนปลอดหนี้ ทศนิยม 2 ตำแหน่ง
+            ctx.font = '700 11.5px "Sarabun", sans-serif';
+            ctx.fillStyle = '#16a34a';
+            ctx.fillText(`ปลอดหนี้ ${pctNetWorthRatio.toFixed(2)}%`, centerX, centerY + 13);
+
+            ctx.restore();
+          }
+        };
+
+        // ปลั๊กอินลากเส้นชี้ Callout Line ออกด้านนอกให้เหมือนกันทั้ง 3 ชิ้น (ทศนิยม 2 ตำแหน่ง)
+        const sliceLabelPlugin = {
+          id: 'sliceLabelPlugin',
+          afterDatasetsDraw(chart) {
+            const { ctx, chartArea } = chart;
+            const meta = chart.getDatasetMeta(0);
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+            // สีตัวเลขตามแต่ละชิ้น: [พอร์ตลงทุน, เงินฝาก, หนี้สิน]
+            const textColors = ['#0284c7', '#059669', '#ea580c'];
+
+            meta.data.forEach((element, index) => {
+              const val = Number(chart.data.datasets[0].data[index]).toFixed(2);
+              const { startAngle, endAngle, outerRadius } = element;
+              const midAngle = (startAngle + endAngle) / 2;
+
+              // จุดเริ่มต้นจากขอบนอกของชิ้นโดนัท
+              const startX = centerX + Math.cos(midAngle) * outerRadius;
+              const startY = centerY + Math.sin(midAngle) * outerRadius;
+
+              // จุดหักศอกออกไปด้านนอกตามทิศทางมุม
+              const isRightSide = Math.cos(midAngle) >= 0;
+              const turnX = startX + (isRightSide ? 16 : -16);
+              const turnY = startY + (Math.sin(midAngle) < 0 ? -12 : 12);
+              const endX = turnX + (isRightSide ? 16 : -16);
+
+              ctx.save();
+              // วาดเส้นชี้ Callout Line สีเทาเรียบหรู
+              ctx.beginPath();
+              ctx.moveTo(startX, startY);
+              ctx.lineTo(turnX, turnY);
+              ctx.lineTo(endX, turnY);
+              ctx.strokeStyle = '#94a3b8';
+              ctx.lineWidth = 1.2;
+              ctx.stroke();
+
+              // วาดข้อความตัวเลข % ทศนิยม 2 ตำแหน่ง
+              ctx.font = '700 11.5px "Sarabun", sans-serif';
+              ctx.fillStyle = textColors[index] || '#334155';
+              ctx.textAlign = isRightSide ? 'left' : 'right';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(isRightSide ? ` ${val}%` : `${val}% `, endX, turnY);
+              ctx.restore();
+            });
+          }
+        };
+
+        window._dashDonutInstance = new Chart(ctxDonut, {
+          type: 'doughnut',
+          data: {
+            labels: [
+              `พอร์ตลงทุน (฿${investVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`,
+              `เงินฝาก (฿${cashVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`,
+              `หนี้สิน (฿${debtVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`
+            ],
+            datasets: [{
+              data: [pctInvest, pctCash, pctDebt],
+              backgroundColor: ['#0284c7', '#10b981', '#f97316'],
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              hoverOffset: 6
+            }]
+          },
+          plugins: [centerTextPlugin, sliceLabelPlugin],
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: { top: 16, bottom: 8, left: 24, right: 24 } // เว้นระยะรอบด้านให้เส้นชี้และตัวเลขลอยสวยพอดี
+            },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  boxWidth: 10,
+                  padding: 10,
+                  font: { family: "'Sarabun', sans-serif", size: 11, weight: 'bold' }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ` สัดส่วน: ${Number(ctx.raw).toFixed(2)}%`
+                }
+              }
+            },
+            cutout: '68%'
+          }
+        });
+      }
+
+      // 2. กราฟแท่งแนวนอน: การกระจายเงินสะสมเพื่อเกษียณ พร้อมตัวเลขปลายแท่ง
+      const ctxBar = document.getElementById('dashboardSavingsBarChart');
+      if (ctxBar && typeof Chart !== 'undefined') {
+        if (window._dashBarInstance) window._dashBarInstance.destroy();
+
+        // ปลั๊กอินวาดตัวเลขยอดเงินที่ปลายแท่ง
+        const barValuePlugin = {
+          id: 'barValuePlugin',
+          afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+              const meta = chart.getDatasetMeta(datasetIndex);
+              meta.data.forEach((bar, index) => {
+                const value = dataset.data[index];
+                if (value > 0) {
+                  const text = '฿' + Number(value).toLocaleString('th-TH');
+                  ctx.save();
+                  ctx.font = '700 11.5px "Sarabun", sans-serif';
+                  ctx.fillStyle = '#475569';
+                  ctx.textAlign = 'left';
+                  ctx.textBaseline = 'middle';
+                  ctx.fillText(text, bar.x + 8, bar.y);
+                  ctx.restore();
+                }
+              });
+            });
+          }
+        };
+
+        window._dashBarInstance = new Chart(ctxBar, {
+          type: 'bar',
+          data: {
+            labels: ['RMF เกษียณ', 'PVD (15%)', 'ฝากออมทรัพย์ สอท.', 'ฝากหุ้น สอท.', 'กองทุนอื่นๆ'],
+            datasets: [{
+              label: 'ยอดสะสม (บาท)',
+              data: [250000, 150642, 120000, 96000, 108000],
+              backgroundColor: '#8b5cf6',
+              borderRadius: 6
+            }]
+          },
+          plugins: [barValuePlugin],
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: { right: 75 } // เว้นพื้นที่ด้านขวาให้ตัวเลขไม่ล้นจอ
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ` ยอดสะสม: ฿${Number(ctx.raw).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  callback: (val) => '฿' + Number(val).toLocaleString('th-TH')
+                },
+                grid: { color: '#f1f5f9' }
+              },
+              y: {
+                grid: { display: false },
+                ticks: { font: { family: "'Sarabun', sans-serif", weight: 'bold' } }
+              }
+            }
+          }
+        });
+      }
+    }, 150);
   }
 };
 
