@@ -310,24 +310,32 @@ const filteredTrades = role === 'admin' ? trades : [];
 
   renderDashboardCharts() {
     setTimeout(() => {
-      // 1. กราฟโดนัท: โครงสร้างสินทรัพย์และภาระหนี้สิน (Assets & Liabilities) - ทุกชิ้นใช้เส้นชี้ Callout Line ทศนิยม 2 ตำแหน่ง
+      // 1. กราฟโดนัท: โครงสร้างสินทรัพย์และภาระหนี้สินรวม (รวมหนี้บัตร + หนี้สัญญาผ่อนชำระ)
       const ctxDonut = document.getElementById('dashboardAllocationDonutChart');
       if (ctxDonut && typeof Chart !== 'undefined') {
         if (window._dashDonutInstance) window._dashDonutInstance.destroy();
 
-        // ดึงตัวเลขจริง
+        // 1. ดึงสินทรัพย์
         const investVal = Number(document.getElementById('dashPortfolioVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 3903896.20;
         const cashVal = Number(document.getElementById('dashCashVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 1810407.09;
-        const debtVal = Number(document.getElementById('cardDebtVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 165142.48;
-        const netWorthVal = investVal + cashVal - debtVal;
+        const totalAssets = investVal + cashVal;
 
-        const totalBase = investVal + cashVal + debtVal;
+        // 2. ดึงหนี้สินครบทั้ง 2 ก้อน (หนี้บัตร/ใช้จ่าย + สัญญาผ่อนชำระ)
+        const creditDebt = Number(document.getElementById('cardDebtVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 165142.48;
+        const installmentDebt = Number(document.getElementById('installmentDebtVal')?.innerText.replace(/[^0-9.-]+/g, '')) || 974688.96;
+        const debtVal = creditDebt + installmentDebt; // รวม ฿1,139,831.44
+
+        // 3. คำนวณความมั่งคั่งสุทธิแท้จริง (Net Worth)
+        const netWorthVal = totalAssets - debtVal; // ฿4,574,471.85
+        const pctNetWorthRatio = Number(((netWorthVal / totalAssets) * 100).toFixed(2)); // 80.05%
+
+        // 4. สัดส่วนในวงแหวนโดนัท (เทียบฐานผลรวมพอร์ต Assets + Debt)
+        const totalBase = totalAssets + debtVal;
         const pctInvest = Number(((investVal / totalBase) * 100).toFixed(2));
         const pctCash = Number(((cashVal / totalBase) * 100).toFixed(2));
         const pctDebt = Number(((debtVal / totalBase) * 100).toFixed(2));
-        const pctNetWorthRatio = Number(((netWorthVal / (investVal + cashVal)) * 100).toFixed(2));
 
-        // ปลั๊กอินสรุปความมั่งคั่งสุทธิตรงกลางวง (ทศนิยม 2 ตำแหน่ง)
+        // ปลั๊กอินสรุปความมั่งคั่งสุทธิตรงกลางวง
         const centerTextPlugin = {
           id: 'centerText',
           beforeDraw(chart) {
@@ -340,12 +348,12 @@ const filteredTrades = role === 'admin' ? trades : [];
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // บรรทัดบน: ยอดความมั่งคั่งสุทธิเต็มจำนวน
+            // บรรทัดบน: ยอดความมั่งคั่งสุทธิตัวเลขเต็ม
             ctx.font = '800 18px "Sarabun", sans-serif';
             ctx.fillStyle = '#0284c7';
             ctx.fillText(`฿${Math.round(netWorthVal).toLocaleString('th-TH')}`, centerX, centerY - 9);
 
-            // บรรทัดล่าง: สัดส่วนปลอดหนี้ ทศนิยม 2 ตำแหน่ง
+            // บรรทัดล่าง: สัดส่วนปลอดหนี้
             ctx.font = '700 11.5px "Sarabun", sans-serif';
             ctx.fillStyle = '#16a34a';
             ctx.fillText(`ปลอดหนี้ ${pctNetWorthRatio.toFixed(2)}%`, centerX, centerY + 13);
@@ -354,7 +362,7 @@ const filteredTrades = role === 'admin' ? trades : [];
           }
         };
 
-        // ปลั๊กอินลากเส้นชี้ Callout Line ออกด้านนอกให้เหมือนกันทั้ง 3 ชิ้น (ทศนิยม 2 ตำแหน่ง)
+        // ปลั๊กอินลากเส้นชี้ Callout Line ออกด้านนอกทั้ง 3 ชิ้น
         const sliceLabelPlugin = {
           id: 'sliceLabelPlugin',
           afterDatasetsDraw(chart) {
@@ -363,7 +371,6 @@ const filteredTrades = role === 'admin' ? trades : [];
             const centerX = (chartArea.left + chartArea.right) / 2;
             const centerY = (chartArea.top + chartArea.bottom) / 2;
 
-            // สีตัวเลขตามแต่ละชิ้น: [พอร์ตลงทุน, เงินฝาก, หนี้สิน]
             const textColors = ['#0284c7', '#059669', '#ea580c'];
 
             meta.data.forEach((element, index) => {
@@ -371,18 +378,15 @@ const filteredTrades = role === 'admin' ? trades : [];
               const { startAngle, endAngle, outerRadius } = element;
               const midAngle = (startAngle + endAngle) / 2;
 
-              // จุดเริ่มต้นจากขอบนอกของชิ้นโดนัท
               const startX = centerX + Math.cos(midAngle) * outerRadius;
               const startY = centerY + Math.sin(midAngle) * outerRadius;
 
-              // จุดหักศอกออกไปด้านนอกตามทิศทางมุม
               const isRightSide = Math.cos(midAngle) >= 0;
               const turnX = startX + (isRightSide ? 16 : -16);
               const turnY = startY + (Math.sin(midAngle) < 0 ? -12 : 12);
               const endX = turnX + (isRightSide ? 16 : -16);
 
               ctx.save();
-              // วาดเส้นชี้ Callout Line สีเทาเรียบหรู
               ctx.beginPath();
               ctx.moveTo(startX, startY);
               ctx.lineTo(turnX, turnY);
@@ -391,7 +395,6 @@ const filteredTrades = role === 'admin' ? trades : [];
               ctx.lineWidth = 1.2;
               ctx.stroke();
 
-              // วาดข้อความตัวเลข % ทศนิยม 2 ตำแหน่ง
               ctx.font = '700 11.5px "Sarabun", sans-serif';
               ctx.fillStyle = textColors[index] || '#334155';
               ctx.textAlign = isRightSide ? 'left' : 'right';
@@ -408,7 +411,7 @@ const filteredTrades = role === 'admin' ? trades : [];
             labels: [
               `พอร์ตลงทุน (฿${investVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`,
               `เงินฝาก (฿${cashVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`,
-              `หนี้สิน (฿${debtVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`
+              `หนี้สินรวม (฿${debtVal.toLocaleString('th-TH', { maximumFractionDigits: 0 })})`
             ],
             datasets: [{
               data: [pctInvest, pctCash, pctDebt],
@@ -423,7 +426,7 @@ const filteredTrades = role === 'admin' ? trades : [];
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-              padding: { top: 16, bottom: 8, left: 24, right: 24 } // เว้นระยะรอบด้านให้เส้นชี้และตัวเลขลอยสวยพอดี
+              padding: { top: 16, bottom: 8, left: 24, right: 24 }
             },
             plugins: {
               legend: {
