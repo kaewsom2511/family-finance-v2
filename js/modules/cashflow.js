@@ -280,15 +280,10 @@ var CashFlowModule = {
         window.location.hash = '#wealth';
         this.currentView = 'wealth';
         this.render();
-      } else if (id.includes('credit-card') || txt.includes('รอบบิลบัตรเครดิต')) {
+      } else if (id.includes('credit-card') || id.includes('debt') || txt.includes('หนี้สิน') || txt.includes('บัตรเครดิต')) {
         e.preventDefault();
         window.location.hash = '#credit-cards';
         this.currentView = 'credit-cards';
-        this.render();
-      } else if (id.includes('debt') || txt.includes('หนี้สิน')) {
-        e.preventDefault();
-        window.location.hash = '#debts';
-        this.currentView = 'debts';
         this.render();
       }
     });
@@ -904,6 +899,11 @@ var CashFlowModule = {
         try {
           contracts = JSON.parse(localStorage.getItem(debtStorageKey)) || [];
         } catch (e) {}
+
+        // ถ้าสัญญาในระบบว่างเปล่า ให้ดึงค่าเริ่มต้นมาตรฐาน 5 รายการมาเป็นฐานก่อนเสมอ
+        if (!Array.isArray(contracts) || contracts.length === 0) {
+          contracts = (typeof defaultContracts !== 'undefined') ? [...defaultContracts] : [];
+        }
 
         const contractId = 'debt_' + (txId || Date.now());
         const contractName = detail || category || 'สัญญาผ่อนชำระ';
@@ -2675,6 +2675,15 @@ var CashFlowModule = {
       + '    </div>'
       + '  </div>'
       + '</div>'
+         // แถบปุ่มสลับแท็บ (หน้าบัตรเครดิต: ปุ่มซ้ายสีฟ้า)
+      + '<div style="display: flex; gap: 10px; margin-bottom: 22px;">'
+      + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: none; background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
+      + '    <span>💳</span> รอบบิลบัตรเครดิต & รูดใช้จ่าย'
+      + '  </button>'
+      + '  <button onclick="window.location.hash=\'#debts\'; CashFlowModule.currentView=\'debts\'; CashFlowModule.render();" style="border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">'
+      + '    <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน'
+      + '  </button>'
+      + '</div>'
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 26px;">'
       + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
       + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
@@ -2905,9 +2914,10 @@ var CashFlowModule = {
     try {
       contracts = JSON.parse(localStorage.getItem(storageKey));
     } catch(e) {}
-    if (!contracts || !Array.isArray(contracts) || contracts.length === 0) {
-      contracts = defaultContracts;
-    }
+    if (!contracts || !Array.isArray(contracts) || contracts.length < 5) {
+  contracts = defaultContracts;
+  localStorage.setItem(storageKey, JSON.stringify(contracts));
+}
 
     var formatNum = function(num) {
       return Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2941,6 +2951,15 @@ var CashFlowModule = {
       + '  </div>'
       + '  <button onclick="CashFlowModule.openAddContractModal()" style="background: #0284c7; color: #ffffff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
       + '    <span style="font-size: 16px; line-height: 1;">+</span> เพิ่มสัญญาผ่อนใหม่'
+      + '  </button>'
+      + '</div>'
+         // แถบปุ่มสลับแท็บ (หน้าสัญญาผ่อน: ปุ่มขวาสีฟ้า)
+      + '<div style="display: flex; gap: 10px; margin-bottom: 22px;">'
+      + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">'
+      + '    <span>💳</span> รอบบิลบัตรเครดิต & รูดใช้จ่าย'
+      + '  </button>'
+      + '  <button onclick="window.location.hash=\'#debts\'; CashFlowModule.currentView=\'debts\'; CashFlowModule.render();" style="border: none; background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
+      + '    <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน'
       + '  </button>'
       + '</div>'
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;">'
