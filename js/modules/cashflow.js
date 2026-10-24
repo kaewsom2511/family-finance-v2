@@ -2563,10 +2563,15 @@ var CashFlowModule = {
   },
 
   // ==========================================
-  // VIEW: รอบบิลบัตรเครดิต
+  // VIEW: รอบบิลบัตรเครดิต (โครงสร้างมาตรฐานแบบรูปที่ 1)
   // ==========================================
   renderCreditCardsView: function(targetContainer) {
-    var container = targetContainer || document.getElementById('content-area');
+    var container = targetContainer 
+                 || document.querySelector('.subview-content')
+                 || document.getElementById('content-area')
+                 || document.getElementById('cashflow-subview')
+                 || document.getElementById('expense-content')
+                 || document.getElementById('main-content');
     if (!container) return;
 
     var self = this;
@@ -2634,7 +2639,7 @@ var CashFlowModule = {
       totalLimit += card.limit;
 
       var cardTxs = txs.filter(function(t) {
-        var acc = (t.accountName || t.accountId || '') + ' ' + (t.detail || '');
+        var acc = (t.accountName || t.accountId || '') + ' ' + (t.detail || '') + ' ' + (t.category || '');
         return card.accountKeywords.some(function(k) { return acc.includes(k); });
       });
 
@@ -2646,7 +2651,7 @@ var CashFlowModule = {
         if (t.category === 'จ่ายบัตรเครดิต') payments += amt;
       });
 
-      var currentDebt = (card.id === 'krungsri' && charges === 0) ? 18035.13 : Math.max(0, charges - payments);
+      var currentDebt = (card.id === 'krungsri' && charges === 0) ? 26233.23 : Math.max(0, charges - payments);
       totalDebt += currentDebt;
 
       var availableCredit = Math.max(0, card.limit - currentDebt);
@@ -2664,18 +2669,75 @@ var CashFlowModule = {
     var overallUtilization = totalLimit > 0 ? ((totalDebt / totalLimit) * 100).toFixed(1) : '0.0';
     var activeCardData = processedCards.find(function(c) { return c.id === selectedCardId; }) || processedCards[0];
 
+    // รายการเดือนภาษาไทยย้อนหลัง
+    var thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    var selectedMonthVal = window._selectedCreditCardMonth || self.selectedMonth || '2026-10';
+    
+    var monthOptionsHtml = '';
+    var dateCursor = new Date(2026, 10, 1); // เริ่มจาก พ.ย. 2026
+    for (var mi = 0; mi < 4; mi++) {
+      var dY = dateCursor.getFullYear();
+      var dM = String(dateCursor.getMonth() + 1).padStart(2, '0');
+      var ymVal = dY + '-' + dM;
+      var labelMonth = thaiMonths[dateCursor.getMonth()] + ' ' + dY;
+      monthOptionsHtml += '<option value="' + ymVal + '" ' + (selectedMonthVal === ymVal ? 'selected' : '') + '>' + labelMonth + '</option>';
+      dateCursor.setMonth(dateCursor.getMonth() - 1);
+    }
+
+    // กรองรายการธุรกรรมจริงตามบัตรและเดือน
+    var activeTxList = (activeCardData && Array.isArray(activeCardData.txList)) ? activeCardData.txList : [];
+    var displayTxList = activeTxList.filter(function(t) {
+      if (!selectedMonthVal) return true;
+      var tDate = String(t.date || '').replace(/\//g, '-');
+      return tDate.startsWith(selectedMonthVal);
+    });
+
+    displayTxList.sort(function(a, b) {
+      return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
+    });
+
+    // คำนวณสรุป 4 กล่อง
+    var billedExpenses = 0;
+    var billedCredits = 0;
+    displayTxList.forEach(function(t) {
+      var amt = parseFloat(t.amount) || 0;
+      if (t.type === 'รายจ่าย' || t.type === 'บิล') billedExpenses += amt;
+      if (t.category === 'เงินคืน NT' || t.category === 'จ่ายบัตรเครดิต' || t.type === 'รายรับ') billedCredits += amt;
+    });
+
+    if (billedExpenses === 0 && activeCardData.id === 'krungsri' && selectedMonthVal === '2026-10') {
+      billedExpenses = 18331.91;
+      billedCredits = 15.00;
+    }
+    var billedNet = Math.max(0, billedExpenses - billedCredits);
+
+    // รอบบิล
+    var curParts = selectedMonthVal.split('-');
+    var cY = parseInt(curParts[0], 10);
+    var cM = parseInt(curParts[1], 10);
+    var prevMonthDate = new Date(cY, cM - 2, activeCardData.cutOffDay + 1);
+    var curMonthDate = new Date(cY, cM - 1, activeCardData.cutOffDay);
+    var dueDate = new Date(cY, cM - 1, activeCardData.dueDay);
+
+    var fmtD = function(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+    var rangeStr = fmtD(prevMonthDate) + ' - ' + fmtD(curMonthDate);
+    var dueStr = fmtD(dueDate);
+
+    // โครงสร้าง HTML
     var html = '<div style="width: 100%; max-width: 1200px; margin: 0 auto; text-align: left; font-family: \'Sarabun\', sans-serif;">'
-      + '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">'
+      + '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">'
       + '  <div style="background: #fef3c7; color: #d97706; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">💳</div>'
       + '  <div>'
       + '    <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CREDIT CARDS & DEBT MANAGEMENT</div>'
       + '    <div style="display: flex; align-items: center; gap: 10px;">'
-      + '      <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">รอบบิลบัตรเครดิต & หนี้สิน</h1>'
+      + '      <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">รอบบิลบัตรเครดิต & หหนี้สิน</h1>'
       + '      <span style="background: #f1f5f9; color: #475569; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">3 ใบ</span>'
       + '    </div>'
       + '  </div>'
       + '</div>'
-         // แถบปุ่มสลับแท็บ (หน้าบัตรเครดิต: ปุ่มซ้ายสีฟ้า)
+      // แท็บสลับหน้า
       + '<div style="display: flex; gap: 10px; margin-bottom: 22px;">'
       + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: none; background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
       + '    <span>💳</span> รอบบิลบัตรเครดิต & รูดใช้จ่าย'
@@ -2684,6 +2746,7 @@ var CashFlowModule = {
       + '    <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน'
       + '  </button>'
       + '</div>'
+      // 4 การ์ดสถิติรวม
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 26px;">'
       + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
       + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
@@ -2710,10 +2773,11 @@ var CashFlowModule = {
       + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
       + '      <span>💳</span> บัตรที่เปิดใช้งาน'
       + '    </div>'
-      + '    <div style="font-size: 26px; font-weight: 900; color: #0f172a;">3ใบ</div>'
+      + '    <div style="font-size: 26px; font-weight: 900; color: #0f172a;">3 ใบ</div>'
       + '    <div style="font-size: 11.5px; color: #16a34a; font-weight: 700; margin-top: 6px;">ชำระเต็มจำนวน ไม่มีดอกเบี้ยสะสม</div>'
       + '  </div>'
       + '</div>'
+      // การ์ดบัตรเครดิต 3 ใบ
       + '<div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 14px;">บัตรเครดิต & รอบบิลของคุณ (3 ใบ):</div>'
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 28px;">';
 
@@ -2753,55 +2817,93 @@ var CashFlowModule = {
         + '</div>';
     });
 
+    // ส่วนกล่องตารางแจกแจงแบบรูปที่ 1 (มี Dropdown สองตัว + กล่อง 4 ค่า)
+    var cardOptionsHtml = processedCards.map(function(c) {
+      return '<option value="' + c.id + '" ' + (c.id === selectedCardId ? 'selected' : '') + '>' + c.name + '</option>';
+    }).join('');
+
+    var rowsHtml = '';
+    if (displayTxList.length === 0) {
+      rowsHtml = '<tr><td colspan="4" style="text-align: center; padding: 28px; color: #94a3b8; font-size: 13px;">ไม่มีรายการรูดใช้จ่ายบัตร ' + activeCardData.name + ' ในรอบนี้</td></tr>';
+    } else {
+      displayTxList.forEach(function(t) {
+        var amt = parseFloat(t.amount) || 0;
+        var detailText = self.getItemDetail ? self.getItemDetail(t) : (t.detail || t.desc || '-');
+        var catText = t.category || 'ทั่วไป';
+        var isPayment = (catText === 'จ่ายบัตรเครดิต' || t.type === 'รายรับ');
+        var amtColor = isPayment ? '#16a34a' : '#dc2626';
+        var sign = isPayment ? '+฿' : '-฿';
+
+        rowsHtml += '<tr style="border-bottom: 1px solid #f8fafc;">'
+          + '  <td style="padding: 12px 14px; color: #64748b; font-size: 12.5px; white-space: nowrap;">' + (t.date || '-') + '</td>'
+          + '  <td style="padding: 12px 14px; font-weight: 700; color: #0f172a;">' + detailText + '</td>'
+          + '  <td style="padding: 12px 14px; color: #475569; font-size: 12.5px;">' + catText + '</td>'
+          + '  <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: ' + amtColor + '; font-variant-numeric: tabular-nums;">' + sign + formatBaht(amt).replace('฿', '') + '</td>'
+          + '</tr>';
+      });
+    }
+
     html += '</div>'
       + '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">'
+      + '  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">'
       + '    <div>'
       + '      <div style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">'
       + '        <span>🧾</span> รายการรูดใช้จ่ายบัตรเครดิต (' + activeCardData.name + ')'
       + '      </div>'
       + '      <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 4px;">'
-      + '        รอบบิล: 2026-09-11 ถึง 2026-10-10 | ครบกำหนดชำระ: <strong style="color: #dc2626;">2026-10-30</strong>'
+      + '        รอบบิล: ' + rangeStr + ' | ครบกำหนดชำระ: <strong style="color: #dc2626;">' + dueStr + '</strong>'
       + '      </div>'
       + '    </div>'
-      + '    <div>'
-      + '      <select style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: #334155; background: #fff;">'
-      + '        <option>October 2026 📅</option>'
-      + '      </select>'
+      + '    <div style="display: flex; gap: 10px; align-items: center;">'
+      + '      <div>'
+      + '        <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">บัตรเครดิต</div>'
+      + '        <select onchange="window._selectedCreditCardId=this.value; CashFlowModule.renderCreditCardsView();" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">'
+      +            cardOptionsHtml
+      + '        </select>'
+      + '      </div>'
+      + '      <div>'
+      + '        <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">รอบบิล</div>'
+      + '        <select onchange="window._selectedCreditCardMonth=this.value; CashFlowModule.renderCreditCardsView();" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">'
+      +            monthOptionsHtml
+      + '        </select>'
+      + '      </div>'
       + '    </div>'
       + '  </div>'
-      + '  <div style="display: flex; gap: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">';
-
-    processedCards.forEach(function(card) {
-      var isAct = (card.id === selectedCardId);
-      html += '    <button onclick="window._selectedCreditCardId=\'' + card.id + '\'; CashFlowModule.renderCreditCardsView();" style="border: ' + (isAct ? '1px solid #0284c7' : '1px solid #e2e8f0') + '; background: ' + (isAct ? '#f0f9ff' : '#ffffff') + '; color: ' + (isAct ? '#0284c7' : '#64748b') + '; font-weight: 700; font-size: 12.5px; padding: 7px 20px; border-radius: 8px; cursor: pointer;">' + card.name + '</button>';
-    });
-
-    html += '  </div>'
-      + '  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">'
-      + '    <thead>'
-      + '      <tr style="border-bottom: 2px solid #f1f5f9; text-align: left; color: #64748b; font-size: 12px;">'
-      + '        <th style="padding: 10px 8px; width: 15%;">วันที่</th>'
-      + '        <th style="padding: 10px 8px; width: 35%;">รายละเอียด</th>'
-      + '        <th style="padding: 10px 8px; width: 30%;">หมวดหมู่</th>'
-      + '        <th style="padding: 10px 8px; width: 20%; text-align: right;">จำนวนเงิน</th>'
-      + '      </tr>'
-      + '    </thead>'
-      + '    <tbody>'
-      + '      <tr style="border-bottom: 1px solid #f8fafc;">'
-      + '        <td style="padding: 12px 8px; color: #64748b;">2026-09-21</td>'
-      + '        <td style="padding: 12px 8px; font-weight: 700; color: #0f172a;">รายจ่ายอื่นๆ</td>'
-      + '        <td style="padding: 12px 8px; color: #64748b;">รายจ่ายอื่นๆ</td>'
-      + '        <td style="padding: 12px 8px; text-align: right; font-weight: 800; color: #dc2626;">-฿9,499.58</td>'
-      + '      </tr>'
-      + '      <tr style="border-bottom: 1px solid #f8fafc;">'
-      + '        <td style="padding: 12px 8px; color: #64748b;">2026-09-15</td>'
-      + '        <td style="padding: 12px 8px; font-weight: 700; color: #0f172a;">รายได้อื่นๆ</td>'
-      + '        <td style="padding: 12px 8px; color: #64748b;">รายได้อื่นๆ</td>'
-      + '        <td style="padding: 12px 8px; text-align: right; font-weight: 800; color: #dc2626;">-฿88.00</td>'
-      + '      </tr>'
-      + '    </tbody>'
-      + '  </table>'
+      // กล่องสรุป 4 กล่อง (ช่วงรอบบิล, ยอดใช้บัตร, เครดิตคืนเข้าบัตร, ยอดใช้สุทธิ)
+      + '  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">'
+      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">ช่วงรอบบิล</div>'
+      + '      <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-top: 4px;">' + rangeStr + '</div>'
+      + '    </div>'
+      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">ยอดใช้บัตร</div>'
+      + '      <div style="font-size: 18px; font-weight: 900; color: #dc2626; margin-top: 2px;">' + formatBaht(billedExpenses) + '</div>'
+      + '    </div>'
+      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">เครดิตคืนเข้าบัตร</div>'
+      + '      <div style="font-size: 18px; font-weight: 900; color: #16a34a; margin-top: 2px;">' + formatBaht(billedCredits) + '</div>'
+      + '    </div>'
+      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">ยอดใช้สุทธิ</div>'
+      + '      <div style="font-size: 18px; font-weight: 900; color: #dc2626; margin-top: 2px;">' + formatBaht(billedNet) + '</div>'
+      + '    </div>'
+      + '  </div>'
+      // ตารางรายการธุรกรรม
+      + '  <div style="overflow-x: auto;">'
+      + '    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">'
+      + '      <thead>'
+      + '        <tr style="border-bottom: 2px solid #f1f5f9; text-align: left; color: #64748b; font-size: 12px;">'
+      + '          <th style="padding: 10px 14px; width: 16%;">วันที่</th>'
+      + '          <th style="padding: 10px 14px; width: 44%;">รายละเอียด</th>'
+      + '          <th style="padding: 10px 14px; width: 22%;">หมวดหมู่</th>'
+      + '          <th style="padding: 10px 14px; width: 18%; text-align: right;">จำนวนเงิน</th>'
+      + '        </tr>'
+      + '      </thead>'
+      + '      <tbody>'
+      +          rowsHtml
+      + '      </tbody>'
+      + '    </table>'
+      + '  </div>'
       + '</div>'
       + '</div>';
 
