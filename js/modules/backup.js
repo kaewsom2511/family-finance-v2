@@ -284,6 +284,13 @@
           localStorage.setItem(accKey, JSON.stringify(data.accounts));
         }
 
+        // ดันข้อมูลขึ้น Cloud ก่อน reload เพื่อไม่ให้ pullFromCloud เขียนข้อมูลเก่าทับ
+        try {
+          if (typeof CloudSync !== 'undefined' && typeof CloudSync.pushToCloud === 'function') {
+            await CloudSync.pushToCloud();
+          }
+        } catch (e) {}
+
         alert('✅ กู้คืนข้อมูลรวมทั้งระบบสำเร็จ! ระบบจะรีเฟรชหน้าเว็บเพื่อปรับปรุงข้อมูล');
         window.location.reload();
       } catch (err) {

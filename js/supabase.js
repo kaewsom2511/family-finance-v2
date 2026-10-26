@@ -203,6 +203,12 @@ async function applyUserPermissions(user) {
 
   updateDashboardHeader();
   setTimeout(updateDashboardHeader, 300);
+
+  // CashFlowModule อ่านข้อมูลตามสิทธิ์ผู้ใช้ ซึ่งช่วงโหลดหน้าแรก auth ยังไม่พร้อม
+  // ทำให้ render ครั้งแรกอาจอ่านผิดคีย์ ให้วาดใหม่เมื่อระบุตัวตนเสร็จแล้ว
+  if (typeof CashFlowModule !== 'undefined' && typeof CashFlowModule.render === 'function') {
+    try { CashFlowModule.render(); } catch (e) {}
+  }
 }
 
 async function handleSignOut() {
@@ -220,6 +226,11 @@ async function handleSignOut() {
 // ==========================================
 
 const CloudSync = {
+  // โหมด Local: เมื่อรันบน 127.0.0.1 / localhost ให้ใช้ localStorage อย่างเดียว
+  // ปิดทั้ง pull และ push เพื่อไม่ให้การทดสอบในเครื่องไปแก้ข้อมูลบน Cloud
+  // เปลี่ยนค่าเป็น false เมื่อพร้อมให้เครื่องนี้ sync กับ Cloud
+  LOCAL_ONLY: ['127.0.0.1', 'localhost', '0.0.0.0'].includes(window.location.hostname),
+
   STORAGE_KEYS: [
     'family-finance:cashflow:v2',
     'family-finance:cashflow:member:ploy',
@@ -285,6 +296,10 @@ const CloudSync = {
   // 1. ดึงข้อมูลจาก Cloud ลงมาใส่ LocalStorage (อัตโนมัติเมื่อเปิดเว็บ)
   async pullFromCloud() {
     if (!supabaseClient) return;
+    if (this.LOCAL_ONLY) {
+      console.log('[CloudSync] โหมด Local: ข้ามการดึงข้อมูลจาก Cloud (ใช้ localStorage เท่านั้น)');
+      return;
+    }
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) return;
@@ -320,6 +335,10 @@ const CloudSync = {
   // 2. ส่งข้อมูลทั้งหมดจากเครื่องนี้ขึ้นไปเก็บไว้บน Cloud
   async pushToCloud() {
     if (!supabaseClient) return;
+    if (this.LOCAL_ONLY) {
+      console.log('[CloudSync] โหมด Local: ข้ามการส่งข้อมูลขึ้น Cloud (ข้อมูลอยู่ในเครื่องเท่านั้น)');
+      return;
+    }
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) return;

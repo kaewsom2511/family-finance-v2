@@ -3290,32 +3290,135 @@ var CashFlowModule = {
   importFullBackup: function() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.json';
+    fileInput.accept = '.json,application/json';
 
     fileInput.onchange = function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(event) {
+      reader.onload = async function(event) {
         try {
-          const parsed = JSON.parse(event.target.result);
-          
-          if (parsed.data) {
-            const ctx = CashFlowModule.getUserContext();
-            const targetCashflowKey = ctx.isMember ? ctx.storageKey : 'family-finance:cashflow:v2';
+          // ดันข้อมูลขึ้น Cloud ก่อน reload ไม่งั้น pullFromCloud จะเขียนข้อมูลเก่าทับการนำเข้า
+          const syncBeforeReload = async () => {
+            try {
+              if (typeof CloudSync !== 'undefined' && typeof CloudSync.pushToCloud === 'function') {
+                await CloudSync.pushToCloud();
+              }
+            } catch (e) {}
+          };
 
-            if (parsed.data.cashflow_v2) {
-              localStorage.setItem(targetCashflowKey, JSON.stringify(parsed.data.cashflow_v2));
-            }
+          const text = String(event.target.result || '').replace(/^\uFEFF+/, '');
+          const parsed = JSON.parse(text);
+          if (!parsed || typeof parsed !== 'object') {
+            throw new Error('ไฟล์ว่างเปล่าหรือไม่ใช่รูปแบบ JSON ของระบบ');
+          }
+
+          const ctx = CashFlowModule.getUserContext();
+          const meta = parsed._metadata || null;
+          const isAdminFile = !!meta && meta.ownerRole === 'ADMIN';
+
+          if (ctx.isMember && isAdminFile) {
+            alert('⚠️ ไม่อนุญาตให้นำเข้า! ไฟล์นี้เป็นข้อมูลสำรองของแอดมิน (DAD) ไม่สามารถนำเข้าสู่บัญชีสมาชิกได้ เพื่อป้องกันข้อมูลการเงินปะปนกัน');
+            return;
+          }
+
+          const targetCashflowKey = ctx.isMember ? ctx.storageKey : 'family-finance:cashflow:v2';
+
+          let existingTxCount = 0;
+          try {
+            const existing = JSON.parse(localStorage.getItem(targetCashflowKey) || 'null');
+            if (existing && Array.isArray(existing.transactions)) existingTxCount = existing.transactions.length;
+          } catch (e) {}
+          if (existingTxCount > 0 &&
+              !confirm('พบข้อมูลในระบบอยู่แล้ว ' + existingTxCount + ' รายการ\nการนำเข้าจะเขียนทับข้อมูลเดิมทั้งหมด ต้องการดำเนินการต่อ?')) {
+            return;
+          }
+
+          // ========================================================
+          // รูปแบบที่ 1: V2.0 (ไฟล์ส่งออกจาก CashFlowModule มีคีย์ data)
+          // ========================================================
+          if (parsed.data && (parsed.data.cashflow_v2 || parsed.data.cashflow)) {
+            const cfData = parsed.data.cashflow_v2 || parsed.data.cashflow;
+            localStorage.setItem(targetCashflowKey, JSON.stringify(cfData));
+
             if (!ctx.isMember) {
               if (parsed.data.debts_contracts) localStorage.setItem('family-finance:debts-contracts:v1', JSON.stringify(parsed.data.debts_contracts));
               if (parsed.data.credit_cards) localStorage.setItem('family-finance:credit-cards:v1', JSON.stringify(parsed.data.credit_cards));
               if (parsed.data.settings) localStorage.setItem('family-finance:settings', JSON.stringify(parsed.data.settings));
+              if (parsed.data.portfolio) localStorage.setItem('family-finance:portfolio:v1', JSON.stringify(parsed.data.portfolio));
             }
-            alert('นำเข้าข้อมูลสำเร็จเรียบร้อยแล้ว!');
+            alert('นำเข้าข้อมูล V2.0 สำเร็จเรียบร้อยแล้ว!');
+            await syncBeforeReload();
             window.location.reload();
             return;
+          }
+
+          // ========================================================
+          // รูปแบบที่ 2: V1 / V1.1 (ไฟล์ Full Backup ระบบ เช่น FamilyFinance_FullBackup_DAD_...)
+          // ========================================================
+          if (parsed.cashflow) {
+            localStorage.setItem(targetCashflowKey, JSON.stringify(parsed.cashflow));
+
+            if (!ctx.isMember) {
+              if (parsed.portfolio) {
+                localStorage.setItem('stock-trading-log:v3', JSON.stringify(parsed.portfolio));
+              }
+              if (parsed.accounts) {
+                localStorage.setItem('family-finance:master-accounts:v1', JSON.stringify(parsed.accounts));
+              }
+              if (parsed.categories) {
+                localStorage.setItem('family-finance:categories:v1', JSON.stringify(parsed.categories));
+              }
+              if (parsed.tax) {
+                Object.keys(parsed.tax).forEach(k => {
+                  localStorage.setItem(k, typeof parsed.tax[k] === 'object' ? JSON.stringify(parsed.tax[k]) : parsed.tax[k]);
+                });
+              }
+              if (Array.isArray(parsed.cashflow.debts) && parsed.cashflow.debts.length > 0) {
+                const contracts = parsed.cashflow.debts.map(d => ({
+                  id: d.id || ('debt_' + Date.now()),
+                  name: d.name || 'หนี้สิน',
+                  totalDebt: d.initialAmount || d.totalDebt || 0,
+                  monthly: d.monthlyPayment || d.monthly || 0,
+                  startDate: d.startDate || '',
+                  endDate: d.dueDate || d.endDate || '',
+                  paid: d.paid || 0,
+                  remaining: d.remaining !== undefined ? d.remaining : (d.initialAmount || 0),
+                  isClosed: !!d.isClosed
+                }));
+                localStorage.setItem('family-finance:debts-contracts:v1', JSON.stringify(contracts));
+              }
+            }
+
+            alert('นำเข้าข้อมูลระบบ V1.1 สมบูรณ์เรียบร้อยทุกหมวด!');
+            await syncBeforeReload();
+            window.location.reload();
+            return;
+          }
+
+          if (meta && meta.type === 'FULL_BACKUP') {
+            throw new Error('ไฟล์สำรองนี้ไม่มีข้อมูล cashflow (ไฟล์ว่างเปล่าหรือเก็บข้อมูลไม่ครบ)');
+          }
+
+          // ========================================================
+          // รูปแบบที่ 3: ไฟล์ Dump จาก LocalStorage ทั้งหมด (กู้คืนทุกคีย์ตรงๆ)
+          // ========================================================
+          if (typeof parsed === 'object') {
+            let restoredCount = 0;
+            Object.keys(parsed).forEach(k => {
+              if (k !== '_metadata' && k !== 'appName') {
+                const val = parsed[k];
+                localStorage.setItem(k, typeof val === 'object' ? JSON.stringify(val) : val);
+                restoredCount++;
+              }
+            });
+            if (restoredCount > 0) {
+              alert('กู้คืนข้อมูลสำรองทั้งหมดสำเร็จ (' + restoredCount + ' รายการ)!');
+              await syncBeforeReload();
+              window.location.reload();
+              return;
+            }
           }
 
           throw new Error('โครงสร้างไฟล์ไม่ตรงกับระบบ');
@@ -3387,7 +3490,7 @@ var CashFlowModule = {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const text = event.target.result;
           const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
@@ -3447,6 +3550,11 @@ var CashFlowModule = {
             cashflowData.transactions = newTxs;
             localStorage.setItem(targetKey, JSON.stringify(cashflowData));
             alert('นำเข้ารายการจาก CSV สำเร็จเรียบร้อยแล้ว!');
+            try {
+              if (typeof CloudSync !== 'undefined' && typeof CloudSync.pushToCloud === 'function') {
+                await CloudSync.pushToCloud();
+              }
+            } catch (e) {}
             window.location.reload();
           }
         } catch (err) {
