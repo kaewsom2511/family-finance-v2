@@ -3604,10 +3604,13 @@ this.openAssetModal(holding.symbol);
   }
 };
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => PortfolioModule.init());
-} else {
-  setTimeout(() => PortfolioModule.init(), 200);
+// cashflow.html โหลดโมดูลนี้เพียงเพื่อดึงข้อมูลพอร์ตไปสรุป จึงต้องไม่ auto-render ทับหน้าจอ
+if (window.__WEALTHPORT_EMBED !== 'cashflow') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => PortfolioModule.init());
+  } else {
+    setTimeout(() => PortfolioModule.init(), 200);
+  }
 }
 // ฟังก์ชัน Sort ตารางสรุปเงินปันผลสะสมรายตัวโดยตรงผ่าน DOM
 window.sortDivTable = function(colType) {

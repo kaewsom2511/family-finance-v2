@@ -210,6 +210,9 @@
 
   <!-- 2. โหลดโมดูลระบบการเงินต่าง ๆ -->
   <script src="js/modules/settings.js"></script>
+  <!-- ใช้เฉพาะ calculatePortfolioDetail/ข้อมูลพอร์ตในหน้าภาพรวมความมั่งคั่ง จึงปิด auto-init ของหน้านี้ -->
+  <script>window.__WEALTHPORT_EMBED = 'cashflow';</script>
+  <script src="js/modules/portfolio.js"></script>
   <script src="js/modules/cashflow.js"></script>
   <script src="js/modules/creditcard.js"></script>
   <script src="js/modules/debt.js"></script>

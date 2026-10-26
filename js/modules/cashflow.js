@@ -1846,7 +1846,11 @@ var CashFlowModule = {
     const defaultInitials = {
       'เงินสด': 1445.00, 'กรุงเทพ': 8461.30, 'กรุงไทย': 6761.61, 'ทหารไทย': 1146.20,
       'ไทยพาณิชย์': 40865.84, 'ธกส.': 50651.43, 'กสิกรไทย': 3207.86, 'ออมสิน': 772.79,
-      'เป๋าตัง': 56.40, 'Truemoney': 146.89, 'ออมทรัพย์ สอท': 202191.42
+      'เป๋าตัง': 56.40, 'Truemoney': 146.89, 'ออมทรัพย์ สอท': 202191.42,
+      // 7 บัญชีดิจิทัล ต้องนับรวมด้วยให้ตรงกับหน้าบัญชีเงินฝาก (ยอดเริ่มต้น 0 จนกว่าจะแก้ในหน้านั้น)
+      'กรุงไทย (ประจำ)': 0, 'ทหารไทย (ออมทรัพย์)': 0, 'ออมสิน (ประจำ 6 เดือน)': 0,
+      'LH (B-You Max)': 0, 'เกียรตินาคินภัทร (Dime)': 0, 'ทหารไทย (TTB ME Save)': 0,
+      'กรุงไทย (Next Saving)': 0
     };
 
     let storedInitials = {};
@@ -1856,6 +1860,8 @@ var CashFlowModule = {
     // คำนวณยอดเงินฝากออมทรัพย์ สอท. ตามจริง (ยอดเริ่มต้น + เงินเข้า/ออกจริง)
     const coopBase = storedInitials['ออมทรัพย์ สอท'] !== undefined ? storedInitials['ออมทรัพย์ สอท'] : defaultInitials['ออมทรัพย์ สอท'];
     const coopSavingBal = coopBase + (dynamicBalances['ออมทรัพย์ สอท'] || 0);
+    // ไม่นับบัญชี สอท. ในเสาหลักนี้ เพราะแยกไปแสดงเป็นเสาหลักที่ 2
+    const depositAccountCount = Object.keys(defaultInitials).length - 1;
 
     Object.keys(defaultInitials).forEach(accName => {
       if (accName !== 'ออมทรัพย์ สอท') {
@@ -1887,15 +1893,6 @@ var CashFlowModule = {
                                 (parseFloat(wealthExtras.earnings) || 0);
       }
     } catch(e) {}
-    try {
-      const savedExtras = JSON.parse(localStorage.getItem('family-finance:wealth-extras:v1') || localStorage.getItem('family-finance:pvd:v1'));
-      if (savedExtras) {
-        wealthExtras = Object.assign(wealthExtras, savedExtras);
-        wealthExtras.totalPvd = (parseFloat(wealthExtras.memberAccum) || 0) + 
-                                (parseFloat(wealthExtras.employerMatch) || 0) + 
-                                (parseFloat(wealthExtras.earnings) || 0);
-      }
-    } catch(e) {}
 
     // กลุ่มที่ 2: สหกรณ์ สอท. (ออมทรัพย์ + หุ้น)
     const totalCoop = coopSavingBal + (parseFloat(wealthExtras.coopShareVal) || 0);
@@ -1903,23 +1900,30 @@ var CashFlowModule = {
     // กลุ่มที่ 3: เกษียณระยะยาว (PVD + RMF)
     const totalRetirement = wealthExtras.totalPvd + (parseFloat(wealthExtras.rmfVal) || 0);
 
-    // กลุ่มที่ 4: พอร์ตตลาดหุ้น & ETFs (ดึงจาก portfolio.html หรือ LocalStorage)
-    let totalStockValue = 4140768.31;
+    // กลุ่มที่ 4: พอร์ตตลาดหุ้น & ETFs — ใช้มูลค่าตลาดจริงจาก PortfolioModule ตัวเดียวกับหน้า portfolio
+    let totalStockValue = null;
     try {
-      const savedPort = JSON.parse(localStorage.getItem('family-finance:portfolio:v1'));
-      if (savedPort && savedPort.totalValue) {
-        totalStockValue = parseFloat(savedPort.totalValue) || 4140768.31;
+      if (typeof PortfolioModule !== 'undefined' &&
+          typeof getPortfolioDataHelper === 'function' &&
+          typeof PortfolioModule.calculatePortfolioDetail === 'function') {
+        const portData = getPortfolioDataHelper();
+        if (portData && Array.isArray(portData.portfolios) && portData.portfolios.length > 0) {
+          totalStockValue = Number(PortfolioModule.calculatePortfolioDetail(portData, 'ALL').marketValue) || 0;
+        }
       }
     } catch(e) {}
+    const hasLiveStockValue = totalStockValue !== null;
+    // ยอดสำรองใช้เฉพาะกรณีที่โหลดโมดูลพอร์ตไม่สำเร็จเท่านั้น
+    if (!hasLiveStockValue) totalStockValue = 4140768.31;
 
-    // ยอดรวมความมั่งคั่งสุทธิทั้ง 4 เสาหลัก
-    const totalNetWorth = totalBankCash + totalCoop + totalRetirement + totalStockValue;
+    // ยอดรวมสินทรัพย์ทั้ง 4 เสาหลัก
+    const totalAssets = totalBankCash + totalCoop + totalRetirement + totalStockValue;
 
     // คำนวณร้อยละ Asset Allocation
-    const p1Pct = totalNetWorth > 0 ? ((totalBankCash / totalNetWorth) * 100).toFixed(1) : 0;
-    const p2Pct = totalNetWorth > 0 ? ((totalCoop / totalNetWorth) * 100).toFixed(1) : 0;
-    const p3Pct = totalNetWorth > 0 ? ((totalRetirement / totalNetWorth) * 100).toFixed(1) : 0;
-    const p4Pct = totalNetWorth > 0 ? (100 - parseFloat(p1Pct) - parseFloat(p2Pct) - parseFloat(p3Pct)).toFixed(1) : 0;
+    const p1Pct = totalAssets > 0 ? ((totalBankCash / totalAssets) * 100).toFixed(1) : 0;
+    const p2Pct = totalAssets > 0 ? ((totalCoop / totalAssets) * 100).toFixed(1) : 0;
+    const p3Pct = totalAssets > 0 ? ((totalRetirement / totalAssets) * 100).toFixed(1) : 0;
+    const p4Pct = totalAssets > 0 ? (100 - parseFloat(p1Pct) - parseFloat(p2Pct) - parseFloat(p3Pct)).toFixed(1) : 0;
 
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 1200px; margin: 0 auto; text-align: left; padding-bottom: 40px; font-family: 'Sarabun', sans-serif;">
@@ -1930,7 +1934,7 @@ var CashFlowModule = {
             <div style="background: #e0f2fe; color: #0284c7; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">💎</div>
             <div>
               <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH & RETIREMENT ALLOCATION</div>
-              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ภาพรวมการออม การลงทุน & สินทรัพย์สุทธิ</h1>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ภาพรวมการออม การลงทุน & สินทรัพย์รวม</h1>
             </div>
           </div>
           <button type="button" onclick="CashFlowModule.openEditPvdModal()" style="background: #0284c7; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
@@ -1938,12 +1942,12 @@ var CashFlowModule = {
           </button>
         </div>
 
-        <!-- Banner ความมั่งคั่งสุทธิรวม -->
+        <!-- Banner สินทรัพย์รวม -->
         <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 22px 26px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.18); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <div style="font-size: 12px; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">👑 ความมั่งคั่งสุทธิรวมทั้งหมด (Net Worth)</div>
-            <div style="font-size: 32px; font-weight: 900; color: #38bdf8; margin: 4px 0 2px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalNetWorth)}</div>
-            <div style="font-size: 12px; color: #cbd5e1;">สินทรัพย์ 4 เสาหลัก: เงินสดธนาคาร + สหกรณ์ สอท. + เกษียณระยะยาว + พอร์ตตลาดทุน</div>
+            <div style="font-size: 12px; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">👑 สินทรัพย์รวมทั้งหมด (Total Assets)</div>
+            <div style="font-size: 32px; font-weight: 900; color: #38bdf8; margin: 4px 0 2px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalAssets)}</div>
+            <div style="font-size: 12px; color: #cbd5e1;">สินทรัพย์ 4 เสาหลัก: เงินสดธนาคาร + สหกรณ์ สอท. + เกษียณระยะยาว + พอร์ตตลาดทุน • ยังไม่หักหนี้สิน (บัตรเครดิต/สินเชื่อ) และไม่รวมมูลค่าอสังหาริมทรัพย์</div>
           </div>
           <div style="text-align: right; background: rgba(255,255,255,0.06); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">อัปเดตข้อมูลล่าสุด</div>
@@ -1961,7 +1965,7 @@ var CashFlowModule = {
               <span style="background: #ecfdf5; color: #059669; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p1Pct}%</span>
             </div>
             <div style="font-size: 24px; font-weight: 900; color: #059669; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalBankCash)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">เงินสด + เงินฝากธนาคาร 10 บัญชี</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">เงินสด + เงินฝากธนาคาร ${depositAccountCount} บัญชี</div>
           </div>
 
           <!-- เสาหลัก 2 -->
@@ -1995,7 +1999,7 @@ var CashFlowModule = {
               <span style="background: #e0f2fe; color: #0284c7; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p4Pct}%</span>
             </div>
             <div style="font-size: 24px; font-weight: 900; color: #0284c7; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalStockValue)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม • ${hasLiveStockValue ? 'มูลค่าตลาดปัจจุบัน' : 'ยอดสำรอง'}</div>
           </div>
 
         </div>
@@ -2086,7 +2090,7 @@ var CashFlowModule = {
       employerMatch: 2099909.75,
       earnings: 1063753.44,
       rmfVal: 1183061.27,
-      coopShareVal: 1272400.00,
+      coopShareVal: 1352400.00,
       updatedDate: new Date().toISOString().slice(0, 10)
     };
     try {
