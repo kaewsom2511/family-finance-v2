@@ -281,20 +281,37 @@ window.WealthPortSettings = {
 };
 
 var QuoteSyncService = {
+  // Backend (Render) ใช้เวลา cold start ได้ถึง ~14s จึงต้องตั้ง timeout ให้พอกับการรอครั้งแรก
+  QUOTE_TIMEOUT_MS: 15000,
+  REQUEST_GAP_MS: 300,
+  RATE_LIMIT_BACKOFF_MS: 1200,
+  RATE_LIMITED: false,
+
   getApiBaseUrl() {
     // ให้ชี้ไปที่ Backend Server ของ WealthPort เสมอ ไม่ว่าจะรันบน Local หรือ Web
     return 'https://wealthport.onrender.com';
   },
 
   async fetchExchangeRate() {
+    const maxAgeDays = 4;
+    const isFresh = (value) => {
+      const t = value ? new Date(value).getTime() : NaN;
+      return Number.isFinite(t) && (Date.now() - t) <= maxAgeDays * 24 * 60 * 60 * 1000;
+    };
+    const accept = (rate, asOf) => {
+      const r = parseFloat(rate);
+      if (!r || r <= 25 || r >= 45) return null;
+      localStorage.setItem('wealthport:latest-usd-thb', JSON.stringify({ rate: r, asOf: asOf || null, updatedAt: Date.now() }));
+      return r;
+    };
+
     try {
       const res = await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=THB');
       if (res.ok) {
         const data = await res.json();
-        const thbRate = parseFloat(data?.rates?.THB);
-        if (thbRate && thbRate > 25 && thbRate < 45) {
-          localStorage.setItem('wealthport:latest-usd-thb', JSON.stringify({ rate: thbRate, updatedAt: Date.now() }));
-          return thbRate;
+        if (isFresh(data?.date)) {
+          const r = accept(data?.rates?.THB, data?.date);
+          if (r) return r;
         }
       }
     } catch (e) {}
@@ -303,10 +320,9 @@ var QuoteSyncService = {
       const res2 = await fetch('https://open.er-api.com/v6/latest/USD?t=' + Date.now());
       if (res2.ok) {
         const data2 = await res2.json();
-        const thbRate2 = parseFloat(data2?.rates?.THB);
-        if (thbRate2 && thbRate2 > 25 && thbRate2 < 45) {
-          localStorage.setItem('wealthport:latest-usd-thb', JSON.stringify({ rate: thbRate2, updatedAt: Date.now() }));
-          return thbRate2;
+        if (isFresh(data2?.time_last_update_utc)) {
+          const r = accept(data2?.rates?.THB, data2?.time_last_update_utc);
+          if (r) return r;
         }
       }
     } catch (e) {}
@@ -315,69 +331,119 @@ var QuoteSyncService = {
     return cached.rate || 33.49;
   },
 
-  async fetchQuoteFromApi(symbol, assetType) {
-    const baseUrl = this.getApiBaseUrl();
+  buildQuoteCandidates(symbol, assetType) {
     const cleanSym = String(symbol || '').trim().toUpperCase();
-    let querySym = cleanSym;
-    if (assetType === 'thai-stock' && !querySym.endsWith('.BK')) {
-      querySym += '.BK';
-    }
+    const list = [];
+    const push = (s) => {
+      const v = String(s || '').trim();
+      if (v && !list.includes(v)) list.push(v);
+    };
 
-    const candidates = [querySym];
-    if (assetType === 'mutual-fund') {
-      if (!cleanSym.endsWith('-A') && !cleanSym.endsWith('(A)')) {
-        candidates.push(`${cleanSym}-A`);
+    if (assetType === 'thai-stock') {
+      // ต้องมี .BK เท่านั้น: ถ้าส่ง ticker เปล่าไป backend อาจไปตอบหุ้น US ที่ชื่อชนกัน (เช่น KTB -> Kontoor Brands)
+      push(cleanSym.endsWith('.BK') ? cleanSym : `${cleanSym}.BK`);
+    } else if (assetType === 'mutual-fund') {
+      push(cleanSym);
+      if (!cleanSym.endsWith('-A') && !cleanSym.endsWith('(A)')) push(`${cleanSym}-A`);
+      push(cleanSym.replace(/[-_](A|RMF|SSF)$/i, ''));
+    } else {
+      push(cleanSym);
+    }
+    return list;
+  },
+
+  async requestQuote(symbol, assetType) {
+    this.RATE_LIMITED = false;
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), this.QUOTE_TIMEOUT_MS);
+    try {
+      const url = `${this.getApiBaseUrl()}/api/quote?symbol=${encodeURIComponent(symbol)}&assetType=${encodeURIComponent(assetType)}`;
+      const res = await fetch(url, { signal: ctrl.signal });
+      if (!res.ok) {
+        if (res.status === 429) this.RATE_LIMITED = true;
+        return null;
       }
-      candidates.push(cleanSym.replace(/[-_](A|RMF|SSF)$/i, ''));
-    } else if (assetType === 'foreign-stock' || !cleanSym.endsWith('.BK')) {
-      // สำหรับหุ้นต่างประเทศ เช่น SMH ให้ดึงชื่อย่อเพียวๆ
-      if (!candidates.includes(cleanSym)) candidates.unshift(cleanSym);
+      const data = await res.json();
+      const p = parseFloat(data.price || 0);
+      if (!(p > 0)) {
+        // Backend ตอบ 200 แต่บอกว่าแหล่งข้อมูลต้นทางถูก rate limit
+        if (/429/.test(String(data.detail || ''))) this.RATE_LIMITED = true;
+        return null;
+      }
+      const prev = parseFloat(data.previousClose || data.prevClose || 0);
+      return {
+        price: p,
+        previousClose: prev > 0 ? prev : null,
+        dividendRate: parseFloat(data.dividendRate || 0) || 0,
+        source: data.source || (assetType === 'mutual-fund' ? 'Settrade' : 'Yahoo Finance'),
+        currency: data.currency || null,
+        updatedAt: data.marketTime || data.updatedAt || new Date().toISOString(),
+        stale: false,
+        isEstimate: false
+      };
+    } catch (e) {
+      return null;
+    } finally {
+      clearTimeout(tid);
+    }
+  },
+
+  // ยิงซ้ำเฉพาะกรณีโดน rate limit — ถ้าเป็น "ไม่พบ symbol" ยิงซ้ำก็ไม่ช่วย
+  async requestQuoteWithRetry(symbol, assetType, attempts = 2) {
+    for (let i = 0; i < attempts; i++) {
+      const q = await this.requestQuote(symbol, assetType);
+      if (q) return q;
+      if (!this.RATE_LIMITED || i === attempts - 1) break;
+      await new Promise(r => setTimeout(r, this.RATE_LIMIT_BACKOFF_MS * (i + 1)));
+    }
+    return null;
+  },
+
+  async fetchQuoteFromApi(symbol, assetType) {
+    const cleanSym = String(symbol || '').trim().toUpperCase();
+    const baseTicker = cleanSym.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
+
+    for (const symToFetch of this.buildQuoteCandidates(cleanSym, assetType)) {
+      const live = await this.requestQuoteWithRetry(symToFetch, assetType);
+      if (live) return live;
     }
 
-    for (const symToFetch of candidates) {
-      try {
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 2000);
-        const res = await fetch(`${baseUrl}/api/quote?symbol=${encodeURIComponent(symToFetch)}&assetType=${encodeURIComponent(assetType)}`, { signal: ctrl.signal });
-        clearTimeout(tid);
-
-        if (res.ok) {
-          const data = await res.json();
-          const p = parseFloat(data.price || 0);
-          if (p > 0) {
-            const isFund = assetType === 'mutual-fund';
-            return {
-              price: p,
-              previousClose: parseFloat(data.previousClose || data.prevClose || p),
-              dividendRate: parseFloat(data.dividendRate || 0),
-              source: isFund ? 'Settrade Nuxt Live' : 'Yahoo Live',
-              updatedAt: new Date().toISOString()
-            };
-          }
-        }
-      } catch (e) {}
-    }
-
-    const baseTicker = cleanSym.replace(/\.BK$/i, '');
     const currentCache = getQuoteCacheHelper();
     const cached = currentCache[`${assetType}|${cleanSym}`] ||
-                   currentCache[`${assetType}|${cleanSym}-A`] ||
                    currentCache[`${assetType}|${baseTicker}`] ||
+                   currentCache[`${assetType}|${cleanSym}-A`] ||
                    currentCache[cleanSym] ||
                    currentCache[baseTicker];
-    if (cached && parseFloat(cached.price) > 0) return cached;
+    const cachedPrice = parseFloat(cached?.price || 0);
+    if (cachedPrice > 0) {
+      const oldSource = String(cached.source || '');
+      const wasFakeLiveLabel = !oldSource || /Yahoo Live|Settrade Nuxt Live|Settrade API/i.test(oldSource);
+      return {
+        price: cachedPrice,
+        previousClose: parseFloat(cached.previousClose || 0) || null,
+        dividendRate: 0,
+        source: wasFakeLiveLabel ? 'แคชในเครื่อง' : oldSource,
+        currency: cached.currency || null,
+        updatedAt: cached.updatedAt || null,
+        stale: true,
+        isEstimate: false
+      };
+    }
 
     if (stockPricePresetMap[baseTicker]) {
-      const range = stockPricePresetMap[baseTicker].priceRange;
-      const nums = range.replace(/,/g, "").match(/(\d+(?:\.\d+)?)/g);
+      const preset = stockPricePresetMap[baseTicker];
+      const nums = String(preset.priceRange || '').replace(/,/g, '').match(/(\d+(?:\.\d+)?)/g);
       if (nums && nums.length > 0) {
         const p = nums.length > 1 ? (Number(nums[0]) + Number(nums[1])) / 2 : Number(nums[0]);
         return {
           price: p,
-          previousClose: p * 0.99,
-          dividendRate: stockPricePresetMap[baseTicker].yield || 0,
-          source: assetType === 'mutual-fund' ? 'Settrade Nuxt Live' : 'Yahoo Live',
-          updatedAt: new Date().toISOString()
+          previousClose: null,
+          dividendRate: 0,
+          source: 'ประมาณการจากช่วงราคา',
+          currency: null,
+          updatedAt: null,
+          stale: true,
+          isEstimate: true
         };
       }
     }
@@ -385,19 +451,23 @@ var QuoteSyncService = {
     return null;
   },
 
+  // เขียนแคชเฉพาะราคาที่ดึงสดได้จริง (ไม่บันทึกราคาประมาณการ/แคชเก่าทับของเดิม)
+  cacheQuote(symbol, assetType, quote) {
+    if (!quote || quote.stale || quote.isEstimate) return false;
+    const cache = getQuoteCacheHelper();
+    const cleanUpper = String(symbol).toUpperCase();
+    const baseSym = cleanUpper.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
+    [`${assetType}|${symbol}`, `${assetType}|${cleanUpper}`, `${assetType}|${baseSym}`].forEach((key) => {
+      cache[key] = quote;
+    });
+    localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(cache));
+    return true;
+  },
+
   async syncSingleQuote(symbol, assetType) {
     const quote = await this.fetchQuoteFromApi(symbol, assetType);
-    if (quote && typeof quote.price !== 'undefined') {
-      const cache = getQuoteCacheHelper();
-      const cleanUpper = symbol.toUpperCase();
-      const baseSym = cleanUpper.replace(/\.BK$/i, '');
-      cache[symbol] = quote;
-      cache[cleanUpper] = quote;
-      cache[baseSym] = quote;
-      cache[`${assetType}|${symbol}`] = quote;
-      cache[`${assetType}|${cleanUpper}`] = quote;
-      cache[`${assetType}|${baseSym}`] = quote;
-      localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(cache));
+    if (quote && parseFloat(quote.price) > 0) {
+      this.cacheQuote(symbol, assetType, quote);
       return quote;
     }
     return null;
@@ -406,7 +476,7 @@ var QuoteSyncService = {
   async syncSpecificQuotes(targetAssets, onProgress = null) {
     const cache = getQuoteCacheHelper();
     let liveCount = 0;
-    let fallbackCount = 0;
+    let cachedCount = 0;
     const failedList = [];
     const total = targetAssets.length;
 
@@ -421,29 +491,27 @@ var QuoteSyncService = {
         quote = null;
       }
 
-      if (quote && typeof quote.price !== 'undefined' && parseFloat(quote.price) > 0) {
-        const cleanUpper = item.symbol.toUpperCase();
-        const baseSym = cleanUpper.replace(/\.BK$/i, '');
-        cache[item.symbol] = quote;
-        cache[cleanUpper] = quote;
-        cache[baseSym] = quote;
-        cache[`${item.type}|${item.symbol}`] = quote;
-        cache[`${item.type}|${cleanUpper}`] = quote;
-        cache[`${item.type}|${baseSym}`] = quote;
-
-        if (quote.source && (quote.source.includes('Live') || quote.source.includes('Nuxt') || quote.source.includes('Settrade'))) {
-          liveCount++;
+      if (quote && parseFloat(quote.price) > 0) {
+        if (quote.stale || quote.isEstimate) {
+          cachedCount++;
         } else {
-          fallbackCount++;
+          liveCount++;
+          const cleanUpper = String(item.symbol).toUpperCase();
+          const baseSym = cleanUpper.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
+          [`${item.type}|${item.symbol}`, `${item.type}|${cleanUpper}`, `${item.type}|${baseSym}`].forEach((key) => {
+            cache[key] = quote;
+          });
         }
       } else {
         failedList.push(item.symbol);
       }
-      await new Promise(r => setTimeout(r, 10));
+
+      const gap = this.RATE_LIMITED ? 2500 : this.REQUEST_GAP_MS;
+      await new Promise(r => setTimeout(r, gap));
     }
 
     localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(cache));
-    return { successCount: liveCount + fallbackCount, liveCount, fallbackCount, total, failedList };
+    return { successCount: liveCount + cachedCount, liveCount, cachedCount, total, failedList };
   }
 };
 
@@ -463,6 +531,17 @@ var PortfolioModule = {
   currentChartSymbol: 'NASDAQ:AAPL',
   eventsBound: false,
 
+  formatFxLabel(rate) {
+    let asOf = '';
+    try {
+      const meta = JSON.parse(localStorage.getItem('wealthport:latest-usd-thb') || '{}');
+      if (meta.asOf) {
+        asOf = new Date(meta.asOf).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' });
+      }
+    } catch (e) {}
+    return `💵 1 USD = ฿${Number(rate).toFixed(2)}${asOf ? ` <span style="font-weight:600; opacity:.75;">(${asOf})</span>` : ''}`;
+  },
+
   init() {
     try {
       const data = getPortfolioDataHelper();
@@ -472,12 +551,12 @@ var PortfolioModule = {
       }
 
       QuoteSyncService.fetchExchangeRate().then(liveRate => {
-        if (liveRate) {
-          const mainBadge = document.getElementById('main-fx-badge');
-          if (mainBadge) mainBadge.innerHTML = `💵 1 USD = ฿${Number(liveRate).toFixed(2)}`;
-          const modalBadge = document.getElementById('avg-fx-badge');
-          if (modalBadge) modalBadge.innerHTML = `💵 1 USD = ฿${Number(liveRate).toFixed(2)}`;
-        }
+        if (!liveRate) return;
+        const label = this.formatFxLabel(liveRate);
+        const mainBadge = document.getElementById('main-fx-badge');
+        if (mainBadge) mainBadge.innerHTML = label;
+        const modalBadge = document.getElementById('avg-fx-badge');
+        if (modalBadge) modalBadge.innerHTML = label;
       });
 
       this.checkRouteFromHash();
@@ -588,42 +667,46 @@ var PortfolioModule = {
   findQuote(quotes, rawSymbol, assetType) {
     const s = String(rawSymbol || '').trim();
     if (!s) return null;
+    if (!quotes || typeof quotes !== 'object') return null;
+
     const cleanSym = s.toUpperCase();
     const baseSym = cleanSym.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
+    const type = assetType || 'foreign-stock';
 
-    if (quotes && typeof quotes === 'object') {
-      const candidates = [
-        `thai-stock|${baseSym}`,
-        `thai-stock|${cleanSym}`,
-        `thai-stock|${baseSym}.BK`,
-        `${baseSym}.BK`,
-        baseSym,
-        cleanSym,
-        `foreign-stock|${cleanSym}`,
-        `foreign-stock|${baseSym}`,
-        `mutual-fund|${cleanSym}`,
-        `mutual-fund|${cleanSym}-A`,
-        `mutual-fund|${baseSym}`,
-        `${cleanSym}-A`
-      ];
+    const keysFor = {
+      'thai-stock': [baseSym, cleanSym, `${baseSym}.BK`, `${cleanSym}.BK`],
+      'mutual-fund': [cleanSym, baseSym, `${cleanSym}-A`, `${baseSym}-A`],
+      'foreign-stock': [cleanSym, baseSym]
+    };
 
-      for (const key of candidates) {
-        if (quotes[key] && typeof quotes[key].price !== 'undefined') {
-          const p = parseFloat(quotes[key].price);
-          if (!isNaN(p) && p > 0) return quotes[key];
-        }
-      }
+    // ค้นประเภทของสินทรัพย์ตัวเองก่อน แล้วค่อยประเภทอื่น จากนั้นคีย์แบบเก่าที่ไม่มีประเภท
+    const order = [];
+    (keysFor[type] || keysFor['foreign-stock']).forEach(k => order.push(`${type}|${k}`));
+    Object.keys(keysFor).forEach(t => {
+      if (t === type) return;
+      keysFor[t].forEach(k => order.push(`${t}|${k}`));
+    });
+    order.push(`${baseSym}.BK`, baseSym, cleanSym, `${baseSym}-A`, `${cleanSym}-A`);
 
-      const keys = Object.keys(quotes);
-      for (const k of keys) {
-        const ku = k.toUpperCase();
-        if (ku.endsWith(`|${baseSym}`) || ku.endsWith(`|${cleanSym}`) || ku === baseSym || ku === cleanSym || ku.endsWith(`|${cleanSym}-A`)) {
-          const val = quotes[k];
-          if (val && typeof val.price !== 'undefined') {
-            const p = parseFloat(val.price);
-            if (!isNaN(p) && p > 0) return val;
-          }
-        }
+    // กันการหยิบราคาคนละสกุลมาใช้ เช่น หุ้นไทย ALLY ไปได้ราคา Ally Financial (USD)
+    const expectedCurrency = type === 'foreign-stock' ? 'USD' : 'THB';
+    const isValid = (v) => {
+      if (!v || typeof v.price === 'undefined') return false;
+      const p = parseFloat(v.price);
+      if (!(p > 0)) return false;
+      if (v.currency && v.currency !== expectedCurrency) return false;
+      return true;
+    };
+
+    for (const key of order) {
+      if (isValid(quotes[key])) return quotes[key];
+    }
+
+    // เผื่อคีย์รูปแบบเก่าที่ตั้งชื่อไม่ตรง
+    for (const k of Object.keys(quotes)) {
+      const ku = k.toUpperCase();
+      if (ku.endsWith(`|${baseSym}`) || ku.endsWith(`|${cleanSym}`)) {
+        if (isValid(quotes[k])) return quotes[k];
       }
     }
 
@@ -634,8 +717,11 @@ var PortfolioModule = {
         const p = nums.length > 1 ? (Number(nums[0]) + Number(nums[1])) / 2 : Number(nums[0]);
         return {
           price: p,
-          source: assetType === 'mutual-fund' ? 'Settrade Nuxt Live' : 'Yahoo Live',
-          updatedAt: new Date().toISOString()
+          previousClose: null,
+          source: 'ประมาณการจากช่วงราคา',
+          updatedAt: null,
+          stale: true,
+          isEstimate: true
         };
       }
     }
@@ -773,15 +859,31 @@ var PortfolioModule = {
     let allocationTH = 0;
     let allocationFund = 0;
 
+    let liveQuotes = 0;
+    let staleQuotes = 0;
+    let estimateQuotes = 0;
+    let missingQuotes = 0;
+
     activeHoldings.forEach(item => {
       totalCostTHB += item.totalCost;
 
       const q = this.findQuote(quotes, item.symbol, item.assetType);
       let rawPrice = (q && typeof q.price !== 'undefined') ? parseFloat(q.price) : 0;
+      if (!(rawPrice > 0)) rawPrice = 0;
 
       const isFund = item.assetType === 'mutual-fund';
-      item.quoteSource = q?.source || (isFund ? 'Settrade Nuxt Live' : (rawPrice > 0 ? 'Yahoo Live' : 'Cache'));
-      item.quoteTime = q?.updatedAt ? new Date(q.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '';
+      const quoteAgeMs = q?.updatedAt ? (Date.now() - new Date(q.updatedAt).getTime()) : Infinity;
+      if (rawPrice > 0) {
+        if (q.isEstimate) item.quoteStatus = 'estimate';
+        else if (q.stale || !Number.isFinite(quoteAgeMs) || quoteAgeMs > 24 * 60 * 60 * 1000) item.quoteStatus = 'stale';
+        else item.quoteStatus = 'live';
+      } else {
+        item.quoteStatus = 'missing';
+      }
+      item.quoteSource = q?.source || '';
+      item.quoteTime = q?.updatedAt
+        ? new Date(q.updatedAt).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+        : '';
 
       const isForeign = item.assetType === 'foreign-stock';
 
@@ -830,6 +932,11 @@ var PortfolioModule = {
         item.plPct = (item.totalCost > 0) ? (item.unrealizedPL / item.totalCost) * 100 : 0;
       }
 
+      if (item.quoteStatus === 'live') liveQuotes++;
+      else if (item.quoteStatus === 'stale') staleQuotes++;
+      else if (item.quoteStatus === 'estimate') estimateQuotes++;
+      else missingQuotes++;
+
       totalMarketValueTHB += item.marketValue;
     });
 
@@ -865,6 +972,10 @@ var PortfolioModule = {
       unrealizedUSD: unrealizedUSD,
       portName: currentPortName,
       totalNetWorth: totalMarketValueTHB,
+      liveQuotes: liveQuotes,
+      staleQuotes: staleQuotes,
+      estimateQuotes: estimateQuotes,
+      missingQuotes: missingQuotes,
       allocation: {
         us: totalMarketValueTHB > 0 ? (allocationUS / totalMarketValueTHB) * 100 : 0,
         th: totalMarketValueTHB > 0 ? (allocationTH / totalMarketValueTHB) * 100 : 0,
@@ -887,17 +998,10 @@ var PortfolioModule = {
       const data = getPortfolioDataHelper();
       const summary = this.calculatePortfolioDetail(data);
 
-      const activeList = summary.activeHoldings.map(h => {
-        // บังคับประเภทสินทรัพย์ให้แม่นยำ ป้องกันการส่งผิดประเภท
-        let targetType = h.assetType;
-        if (summary.isForeignPort || /^[A-Z]{1,5}$/.test(h.symbol.trim().toUpperCase())) {
-          targetType = 'foreign-stock';
-        }
-        return {
-          symbol: h.symbol,
-          type: targetType
-        };
-      });
+      const activeList = summary.activeHoldings.map(h => ({
+        symbol: h.symbol,
+        type: h.assetType || 'foreign-stock'
+      }));
 
       if (activeList.length === 0) {
         alert('ไม่มีรายการสินทรัพย์ที่ถือครองในพอร์ตนี้');
@@ -910,12 +1014,15 @@ var PortfolioModule = {
 
       this.render();
 
-      let msg = `อัปเดตราคาสำเร็จทั้งหมด ${res.successCount} จาก ${res.total} รายการ\n` +
-                `ดึงสดจากตลาด / Settrade Nuxt Live: ${res.liveCount} รายการ\n` +
+      let msg = `อัปเดตราคาแล้วทั้งหมด ${res.total} รายการ\n` +
+                `• ดึงสดได้: ${res.liveCount} รายการ\n` +
+                `• ยังใช้ข้อมูลเดิม / ราคาประมาณ: ${res.cachedCount} รายการ\n` +
+                `• ดึงไม่ได้: ${res.failedList.length} รายการ\n` +
                 `อัตราแลกเปลี่ยน: ฿${fxRate.toFixed(2)}/USD`;
 
       if (res.failedList && res.failedList.length > 0) {
-        msg += `\n\nไม่พบราคา (${res.failedList.length} รายการ):\n` + res.failedList.join(', ');
+        msg += `\n\nดึงไม่ได้:\n` + res.failedList.join(', ') +
+               `\n\n(แหล่งข้อมูลต้นทางจำกัดจำนวนการเรียก — รอสักครู่แล้วกดอัปเดตซ้ำอีกครั้ง)`;
       }
       alert(msg);
     } catch (err) {
@@ -1170,12 +1277,7 @@ var PortfolioModule = {
       if (refreshBtn) {
         e.preventDefault();
         const symbol = refreshBtn.dataset.symbol;
-        let type = refreshBtn.dataset.type;
-        
-        // ตรวจสอบพอร์ตหรือรูปแบบชื่อย่อ
-        if (!symbol.endsWith('.BK') && /^[A-Z]{1,5}$/.test(symbol.trim().toUpperCase())) {
-          type = 'foreign-stock';
-        }
+        const type = refreshBtn.dataset.type || 'foreign-stock';
 
         refreshBtn.textContent = '⏳';
         refreshBtn.disabled = true;
@@ -1185,7 +1287,7 @@ var PortfolioModule = {
           refreshBtn.textContent = '🔄';
           refreshBtn.disabled = false;
 
-          if (res && res.price > 0) {
+          if (res && res.price > 0 && !res.stale && !res.isEstimate) {
             refreshBtn.style.background = '#0284c7';
             this.render();
           } else {
@@ -2271,13 +2373,17 @@ this.openAssetModal(holding.symbol);
       const marketValDisplay = isForeign ? `<div>${formatUSD(h.marketUSD)}</div><div style="font-size:11px;color:#94a3b8;">≈ ${formatBaht(h.marketValue)}</div>` : formatBaht(h.marketValue);
       const plValDisplay = isForeign ? `${plPrefix}${formatUSD(h.unrealizedUSD || 0)}` : `${plPrefix}${formatBaht(h.unrealizedPL)}`;
 
-      const isLive = h.quoteSource && (
-        h.quoteSource.includes('Live') || 
-        h.quoteSource.includes('Settrade') || 
-        h.quoteSource.includes('Nuxt')
-      );
+      const quoteStatusMeta = {
+        live: { icon: '🟢', bg: '#ecfdf5', color: '#059669', label: h.quoteSource || 'ราคาสด' },
+        stale: { icon: '🟡', bg: '#fffbeb', color: '#d97706', label: 'ข้อมูลเก่า' + (h.quoteTime ? ` (${h.quoteTime})` : '') },
+        estimate: { icon: '🟠', bg: '#fff7ed', color: '#c2410c', label: 'ราคาประมาณการ' },
+        missing: { icon: '🔴', bg: '#fef2f2', color: '#dc2626', label: 'ไม่มีราคา (ใช้ทุนเฉลี่ย)' }
+      };
+      const qs = quoteStatusMeta[h.quoteStatus] || quoteStatusMeta.missing;
+      const isLive = h.quoteStatus === 'live';
 
-      const sourceBadgeHtml = `<span style="background:${isLive ? '#ecfdf5' : '#fffbeb'}; color:${isLive ? '#059669' : '#d97706'}; padding:1px 6px; border-radius:4px; font-weight:600; font-size:11px;">${isLive ? '🟢' : '🟡'} ${h.quoteSource || (isFund ? 'Settrade Nuxt Live' : 'Yahoo Live')}</span>`;
+      const sourceBadgeHtml = `<span style="background:${qs.bg}; color:${qs.color}; padding:1px 6px; border-radius:4px; font-weight:600; font-size:11px;">${qs.icon} ${qs.label}</span>` +
+        (isLive && h.quoteTime ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${h.quoteTime}</div>` : '');
 
       let typeBadge = isFund 
         ? '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">🌱 FUND</span>' 
@@ -2343,7 +2449,7 @@ this.openAssetModal(holding.symbol);
           </select>
           ${(summary.isForeignPort || currentName.toUpperCase().includes('DIME') || currentName.toUpperCase().includes('US') || currentName.toUpperCase().includes('OFFSHORE')) ? `
             <span id="main-fx-badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 6px; padding: 6px 12px; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
-              💵 1 USD = ฿${Number(summary.liveFxRate || 33.49).toFixed(2)}
+              ${this.formatFxLabel(summary.liveFxRate || 33.49)}
             </span>
           ` : ''}
 
@@ -2399,6 +2505,16 @@ this.openAssetModal(holding.symbol);
             </div>
           </div>
         </div>
+
+        ${(summary.missingQuotes || summary.estimateQuotes || summary.staleQuotes) ? `
+          <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; color:#9a3412; line-height:1.7;">
+            ⚠️ ราคาบางรายการยังไม่ใช่ราคาสด:
+            ${summary.missingQuotes ? `<strong>${summary.missingQuotes} รายการไม่มีราคา</strong> (มูลค่าคำนวณจากทุนเฉลี่ย) · ` : ''}
+            ${summary.estimateQuotes ? `<strong>${summary.estimateQuotes} รายการเป็นราคาประมาณการ</strong> · ` : ''}
+            ${summary.staleQuotes ? `<strong>${summary.staleQuotes} รายการเป็นข้อมูลเก่า</strong> · ` : ''}
+            กด "🔄 อัปเดตราคาตลาด" เพื่อลองดึงใหม่
+          </div>
+        ` : ''}
 
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
@@ -3013,55 +3129,46 @@ this.openAssetModal(holding.symbol);
     const cleanSym = rawSym.replace('.BK', '');
     const currencySign = (isThai || isFund) ? '฿' : '$';
 
-    const qKey = isThai ? `${cleanSym}.BK` : cleanSym;
-    const q = quotes[`${isThai ? 'thai-stock' : isFund ? 'mutual-fund' : 'foreign-stock'}|${qKey}`] ||
-              quotes[`thai-stock|${cleanSym}`] ||
-              quotes[qKey] ||
-              quotes[cleanSym] ||
-              quotes[`${cleanSym}.BK`] || {};
+    const chartAssetType = isThai ? 'thai-stock' : isFund ? 'mutual-fund' : 'foreign-stock';
+    const q = this.findQuote(quotes, isThai ? `${cleanSym}.BK` : cleanSym, chartAssetType) || {};
 
     const holdingMatch = activeHoldings.find(h => h.symbol.replace(/\.BK$/i, '').toUpperCase() === cleanSym);
+    const preset = stockPricePresetMap[cleanSym] || {};
 
-    // 1. ดึงราคาจาก API / Cache ล่าสุดก่อนเสมอ
+    // ราคา: ใช้ราคาที่ดึงได้จริงก่อน ถ้าไม่มีจึงใช้ราคาในพอร์ต และติดป้ายให้ชัดว่าไม่ใช่ราคาสด
     let price = parseFloat(q.price || 0);
-
-    // 2. ถ้าใน Cache ยังไม่มี ให้ดึงจากฐานข้อมูล Preset
-    if (price <= 0 && stockPricePresetMap[cleanSym]) {
-      const presetRange = stockPricePresetMap[cleanSym].priceRange || "";
-      const nums = presetRange.replace(/,/g, "").match(/(\d+(?:\.\d+)?)/g);
-      if (nums && nums.length > 0) {
-        price = nums.length > 1 ? (Number(nums[0]) + Number(nums[1])) / 2 : Number(nums[0]);
-      }
+    let priceSource = q.isEstimate ? 'ราคาประมาณการ' : (q.stale ? 'ข้อมูลเก่า' : (q.source || ''));
+    if (!(price > 0) && holdingMatch) {
+      price = parseFloat(holdingMatch.marketPrice || holdingMatch.priceUSD || 0) || 0;
+      priceSource = 'ราคาในพอร์ต (ทุนเฉลี่ย)';
     }
+    const hasPrice = price > 0;
+    const priceDisplay = hasPrice ? `${currencySign}${price.toFixed(isFund ? 4 : 2)}` : '—';
 
-    // 3. ถ้าไม่มีจริง ๆ ค่อยใช้ราคาในพอร์ต หรือค่าเริ่มต้น 4.78
-    if (price <= 0 && holdingMatch) {
-      price = parseFloat(holdingMatch.priceUSD || holdingMatch.marketPrice || holdingMatch.avgCost || 0);
-    }
-    if (price <= 0) price = 4.78;
-
-    // คำนวณส่วนต่าง Change และ %
-    let prevClose = parseFloat(q.previousClose || q.prevClose || 0);
-    if (prevClose <= 0) {
-      prevClose = price !== 4.78 ? (price * 0.99) : 4.90;
-    }
-
-    let change = price - prevClose;
-    let changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
+    // เปลี่ยนราคาวันนี้: คำนวณเฉพาะเมื่อมี previousClose จริงจากแหล่งข้อมูล
+    const prevClose = parseFloat(q.previousClose || q.prevClose || 0);
+    const hasChange = hasPrice && prevClose > 0;
+    const change = hasChange ? price - prevClose : 0;
+    const changePct = hasChange ? (change / prevClose) * 100 : 0;
     const isBullish = change >= 0;
 
-    const high = parseFloat(q.high || q.dayHigh || (price * 1.015));
-    const low = parseFloat(q.low || q.dayLow || (price * 0.985));
-    const pivot = (high + low + price) / 3;
-    const r1 = (2 * pivot) - low;
-    const r2 = pivot + (high - low);
-    const s1 = (2 * pivot) - high;
-    const s2 = pivot - (high - low);
-    const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    // High/Low ใช้เฉพาะข้อมูลจริง — ไม่สังเคราะห์ขึ้นมาเอง
+    const high = parseFloat(q.high || q.dayHigh || 0);
+    const low = parseFloat(q.low || q.dayLow || 0);
+    const hasRange = high > 0 && low > 0 && high >= low;
+    const pivot = hasRange ? (high + low + price) / 3 : 0;
+    const r1 = hasRange ? (2 * pivot) - low : 0;
+    const r2 = hasRange ? pivot + (high - low) : 0;
+    const s1 = hasRange ? (2 * pivot) - high : 0;
+    const s2 = hasRange ? pivot - (high - low) : 0;
 
-    // ตรวจสอบข้อมูลปันผล
-    const preset = stockPricePresetMap[cleanSym] || {};
-    const dps = q.dividendRate || (preset.yield ? (price * preset.yield / 100).toFixed(2) : '0.3');
+    const dataTimeStr = q.updatedAt
+      ? new Date(q.updatedAt).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+      : '';
+
+    // ปันผล: คิดจาก yield ในฐานข้อมูลเท่านั้น (dividendRate จาก API หน่วยไม่ตรงกับ DPS)
+    const yieldPct = Number(preset.yield) || 0;
+    const dps = (hasPrice && yieldPct > 0) ? (price * yieldPct / 100) : 0;
 
     // คำนวณพอร์ตของคุณ
     let portStatusHtml = '';
@@ -3150,15 +3257,15 @@ this.openAssetModal(holding.symbol);
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1;">${currencySign}${price.toFixed(isFund ? 4 : 2)}</div>
+                <div style="font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1;">${priceDisplay}</div>
                 <div style="font-size: 13px; font-weight: 700; color: ${isBullish ? '#16a34a' : '#dc2626'}; margin-top: 4px;">
-                  ${isBullish ? '+' : ''}${change.toFixed(2)} (${isBullish ? '+' : ''}${changePct.toFixed(2)}%) วันนี้
+                  ${hasChange ? `${isBullish ? '+' : ''}${change.toFixed(2)} (${isBullish ? '+' : ''}${changePct.toFixed(2)}%) วันนี้` : '<span style="color:#94a3b8; font-weight:600;">ไม่มีข้อมูลราคาปิดก่อนหน้า</span>'}
                 </div>
               </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-bottom: 16px;">
-              <span>ข้อมูล: อัปเดตล่าสุด (${nowTimeStr})</span>
+              <span>ข้อมูล: ${dataTimeStr ? `อัปเดตล่าสุด ${dataTimeStr}` : 'ยังไม่มีข้อมูลราคา'}${priceSource ? ` · ${priceSource}` : ''}</span>
               <span>กำลังแสดงข้อมูล${isThai ? 'หุ้นไทย' : isFund ? 'กองทุน' : 'หุ้นสหรัฐ'}: ${cleanSym}</span>
             </div>
 
@@ -3177,13 +3284,13 @@ this.openAssetModal(holding.symbol);
               
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
                 <div style="font-size: 11px; color: #64748b;">ราคาล่าสุด</div>
-                <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${currencySign}${price.toFixed(isFund ? 4 : 2)}</div>
+                <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${priceDisplay}</div>
               </div>
 
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 11px; color: #64748b;">สถานะ:</span>
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${isBullish ? '#16a34a' : '#dc2626'}; display: inline-block;"></span>
-                <strong style="font-size: 12.5px; color: ${isBullish ? '#16a34a' : '#dc2626'};">${isThai ? 'หุ้นไทย' : 'สินทรัพย์'} (${isBullish ? 'บวกวันนี้' : 'ย่อตัววันนี้'})</strong>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#cbd5e1'}; display: inline-block;"></span>
+                <strong style="font-size: 12.5px; color: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#64748b'};">${hasChange ? `${isThai ? 'หุ้นไทย' : 'สินทรัพย์'} (${isBullish ? 'บวกวันนี้' : 'ย่อตัววันนี้'})` : 'ยังไม่มีข้อมูลเปลี่ยนแปลงรายวัน'}</strong>
               </div>
               <div style="text-align: right; font-size: 10.5px; color: #94a3b8; margin-top: 8px;">TradingView + ราคาอ้างอิงจากระบบ</div>
             </div>
@@ -3191,6 +3298,7 @@ this.openAssetModal(holding.symbol);
             <!-- การ์ด 2: แนวรับ / แนวต้าน -->
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
               <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">แนวรับ / แนวต้าน</div>
+              ${hasRange ? `
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
                 <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px;">
                   <div style="font-size: 11px; font-weight: 700; color: #dc2626; margin-bottom: 4px;">แนวต้าน (Resistance)</div>
@@ -3204,6 +3312,11 @@ this.openAssetModal(holding.symbol);
                 </div>
               </div>
               <div style="text-align: right; font-size: 11px; color: #64748b;">Pivot Point: ${currencySign}${pivot.toFixed(2)}</div>
+              ` : `
+              <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; font-size: 11.5px; color: #64748b; text-align: center; line-height: 1.6;">
+                แหล่งข้อมูลไม่ได้ให้ราคา High/Low ของวันนี้<br>จึงยังคำนวณแนวรับ-แนวต้านไม่ได้
+              </div>
+              `}
             </div>
 
             <!-- การ์ด 3: สัญญาณเทคนิค & พอร์ต -->
@@ -3215,18 +3328,18 @@ this.openAssetModal(holding.symbol);
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                   <span style="color: #64748b;">• โมเมนตัมวันนี้:</span>
-                  <strong style="color: ${isBullish ? '#16a34a' : '#dc2626'};">${isBullish ? 'แรงซื้อหนุน' : 'มีแรงเทขาย'}</strong>
+                  <strong style="color: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#94a3b8'};">${hasChange ? (isBullish ? 'แรงซื้อหนุน' : 'มีแรงเทขาย') : 'ไม่มีข้อมูล'}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #64748b;">• กรอบราคา High/Low:</span>
-                  <strong style="color: #0f172a;">${currencySign}${low.toFixed(2)} - ${currencySign}${high.toFixed(2)}</strong>
+                  <strong style="color: #0f172a;">${hasRange ? `${currencySign}${low.toFixed(2)} - ${currencySign}${high.toFixed(2)}` : '—'}</strong>
                 </div>
               </div>
 
               <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
                 <span style="color: #7e22ce; font-weight: 700;">🎁 ปันผลล่าสุด:</span>
-                <strong style="color: #0f172a;">${currencySign}${dps}/${isFund ? 'หน่วย' : 'หุ้น'}</strong>
-                <span style="color: #64748b;">(ล่าสุด)</span>
+                <strong style="color: #0f172a;">${dps > 0 ? `${currencySign}${dps.toFixed(isFund ? 4 : 2)}` : '—'}</strong>
+                <span style="color: #64748b;">${yieldPct > 0 ? `(ประมาณจาก yield ${yieldPct}%)` : ''}</span>
               </div>
             </div>
 
@@ -3272,33 +3385,8 @@ this.openAssetModal(holding.symbol);
       }
 
       try {
-        // ดึง Base URL ของ Render ป้องกัน Error 404 บนเครื่อง Local
-        const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-          ? 'https://wealthport.onrender.com'
-          : '';
-
         const querySym = (queryAssetType === 'thai-stock' && !clean.endsWith('.BK')) ? `${clean}.BK` : clean;
-        const res = await fetch(`${baseUrl}/api/quote?symbol=${encodeURIComponent(querySym)}&assetType=${encodeURIComponent(queryAssetType)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && Number(data.price) > 0) {
-            const cache = getQuoteCacheHelper();
-            const quoteObj = {
-              price: Number(data.price),
-              previousClose: Number(data.previousClose || data.prevClose || (data.price * 1.025)),
-              high: Number(data.dayHigh || data.high || (data.price * 1.015)),
-              low: Number(data.dayLow || data.low || (data.price * 0.985)),
-              dividendRate: parseFloat(data.dividendRate || 0.3),
-              source: 'Settrade API',
-              updatedAt: new Date().toISOString()
-            };
-            cache[`thai-stock|${clean}.BK`] = quoteObj;
-            cache[`thai-stock|${clean}`] = quoteObj;
-            cache[clean] = quoteObj;
-            cache[`${clean}.BK`] = quoteObj;
-            localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(cache));
-          }
-        }
+        await QuoteSyncService.syncSingleQuote(querySym, queryAssetType);
       } catch (err) {
         console.warn('Direct fetch quote error:', err);
       } finally {

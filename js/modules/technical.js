@@ -48,43 +48,44 @@ var TechnicalModule = {
     const cleanSym = rawSym.replace('.BK', '');
     const currencySign = (isThai || isFund) ? '฿' : '$';
 
-    const qKey = isThai ? `${cleanSym}.BK` : cleanSym;
-    const q = quotes[`${isThai ? 'thai-stock' : isFund ? 'mutual-fund' : 'foreign-stock'}|${qKey}`] ||
-              quotes[`thai-stock|${cleanSym}`] ||
-              quotes[qKey] ||
-              quotes[cleanSym] || {};
+    const chartAssetType = isThai ? 'thai-stock' : isFund ? 'mutual-fund' : 'foreign-stock';
+    const q = (typeof PortfolioModule !== 'undefined' && PortfolioModule.findQuote)
+      ? (PortfolioModule.findQuote(quotes, isThai ? `${cleanSym}.BK` : cleanSym, chartAssetType) || {})
+      : {};
 
     const holdingMatch = activeHoldings.find(h => h.symbol.replace(/\.BK$/i, '').toUpperCase() === cleanSym);
+    const preset = (typeof stockPricePresetMap !== 'undefined' && stockPricePresetMap[cleanSym]) ? stockPricePresetMap[cleanSym] : {};
 
+    // ราคา: ใช้ราคาที่ดึงได้จริงก่อน ถ้าไม่มีจึงใช้ราคาในพอร์ต และติดป้ายว่าไม่ใช่ราคาสด
     let price = parseFloat(q.price || 0);
-    if (price <= 0 && typeof stockPricePresetMap !== 'undefined' && stockPricePresetMap[cleanSym]) {
-      const presetRange = stockPricePresetMap[cleanSym].priceRange || "";
-      const nums = presetRange.replace(/,/g, "").match(/(\d+(?:\.\d+)?)/g);
-      if (nums && nums.length > 0) {
-        price = nums.length > 1 ? (Number(nums[0]) + Number(nums[1])) / 2 : Number(nums[0]);
-      }
+    let priceSource = q.isEstimate ? 'ราคาประมาณการ' : (q.stale ? 'ข้อมูลเก่า' : (q.source || ''));
+    if (!(price > 0) && holdingMatch) {
+      price = parseFloat(holdingMatch.marketPrice || holdingMatch.priceUSD || 0) || 0;
+      priceSource = 'ราคาในพอร์ต (ทุนเฉลี่ย)';
     }
-    if (price <= 0 && holdingMatch) {
-      price = parseFloat(holdingMatch.priceUSD || holdingMatch.marketPrice || holdingMatch.avgCost || 0);
-    }
-    // ถ้ายังไม่มีราคา ให้เป็น 0 หรือไม่คำนวณหลอกตา $10.00
-if (price <= 0) price = (cleanSym === 'VOO') ? 716.20 : (cleanSym === 'VT' ? 159.68 : 0);
+    const hasPrice = price > 0;
+    const priceDisplay = hasPrice ? `${currencySign}${price.toFixed(isFund ? 4 : 2)}` : '—';
 
-    let prevClose = parseFloat(q.previousClose || q.prevClose || 0);
-    if (prevClose <= 0) prevClose = price * 0.995;
-
-    let change = price - prevClose;
-    let changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
+    // เปลี่ยนราคาวันนี้: คำนวณเฉพาะเมื่อมี previousClose จริงจากแหล่งข้อมูล
+    const prevClose = parseFloat(q.previousClose || q.prevClose || 0);
+    const hasChange = hasPrice && prevClose > 0;
+    const change = hasChange ? price - prevClose : 0;
+    const changePct = hasChange ? (change / prevClose) * 100 : 0;
     const isBullish = change >= 0;
 
-    const high = parseFloat(q.high || q.dayHigh || (price * 1.015));
-    const low = parseFloat(q.low || q.dayLow || (price * 0.985));
-    const pivot = (high + low + price) / 3;
-    const r1 = (2 * pivot) - low;
-    const r2 = pivot + (high - low);
-    const s1 = (2 * pivot) - high;
-    const s2 = pivot - (high - low);
-    const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    // High/Low ใช้เฉพาะข้อมูลจริง — ไม่สังเคราะห์ขึ้นมาเอง
+    const high = parseFloat(q.high || q.dayHigh || 0);
+    const low = parseFloat(q.low || q.dayLow || 0);
+    const hasRange = high > 0 && low > 0 && high >= low;
+    const pivot = hasRange ? (high + low + price) / 3 : 0;
+    const r1 = hasRange ? (2 * pivot) - low : 0;
+    const r2 = hasRange ? pivot + (high - low) : 0;
+    const s1 = hasRange ? (2 * pivot) - high : 0;
+    const s2 = hasRange ? pivot - (high - low) : 0;
+
+    const dataTimeStr = q.updatedAt
+      ? new Date(q.updatedAt).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+      : '';
 
     let portStatusHtml = '';
     if (holdingMatch) {
@@ -167,15 +168,15 @@ if (price <= 0) price = (cleanSym === 'VOO') ? 716.20 : (cleanSym === 'VT' ? 159
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1;">${currencySign}${price.toFixed(isFund ? 4 : 2)}</div>
+                <div style="font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1;">${priceDisplay}</div>
                 <div style="font-size: 13px; font-weight: 700; color: ${isBullish ? '#16a34a' : '#dc2626'}; margin-top: 4px;">
-                  ${isBullish ? '+' : ''}${change.toFixed(2)} (${isBullish ? '+' : ''}${changePct.toFixed(2)}%) วันนี้
+                  ${hasChange ? `${isBullish ? '+' : ''}${change.toFixed(2)} (${isBullish ? '+' : ''}${changePct.toFixed(2)}%) วันนี้` : '<span style="color:#94a3b8; font-weight:600;">ไม่มีข้อมูลราคาปิดก่อนหน้า</span>'}
                 </div>
               </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-bottom: 16px;">
-              <span>ข้อมูล: อัปเดตล่าสุด (${nowTimeStr})</span>
+              <span>ข้อมูล: ${dataTimeStr ? `อัปเดตล่าสุด ${dataTimeStr}` : 'ยังไม่มีข้อมูลราคา'}${priceSource ? ` · ${priceSource}` : ''}</span>
               <span>กำลังแสดงข้อมูล: ${cleanSym}</span>
             </div>
 
@@ -190,17 +191,18 @@ if (price <= 0) price = (cleanSym === 'VOO') ? 716.20 : (cleanSym === 'VT' ? 159
               <h2 style="margin: 4px 0 12px 0; font-size: 20px; font-weight: 900; color: #ea580c;">${cleanSym}</h2>
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
                 <div style="font-size: 11px; color: #64748b;">ราคาล่าสุด</div>
-                <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${currencySign}${price.toFixed(isFund ? 4 : 2)}</div>
+                <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${priceDisplay}</div>
               </div>
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 11px; color: #64748b;">สถานะ:</span>
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${isBullish ? '#16a34a' : '#dc2626'}; display: inline-block;"></span>
-                <strong style="font-size: 12.5px; color: ${isBullish ? '#16a34a' : '#dc2626'};">${isBullish ? 'สินทรัพย์ (บวกวันนี้)' : 'ย่อตัววันนี้'}</strong>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#cbd5e1'}; display: inline-block;"></span>
+                <strong style="font-size: 12.5px; color: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#64748b'};">${hasChange ? (isBullish ? 'สินทรัพย์ (บวกวันนี้)' : 'ย่อตัววันนี้') : 'ยังไม่มีข้อมูลเปลี่ยนแปลงรายวัน'}</strong>
               </div>
             </div>
 
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
               <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">แนวรับ / แนวต้าน</div>
+              ${hasRange ? `
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
                 <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px;">
                   <div style="font-size: 11px; font-weight: 700; color: #dc2626; margin-bottom: 4px;">แนวต้าน (Resistance)</div>
@@ -214,6 +216,11 @@ if (price <= 0) price = (cleanSym === 'VOO') ? 716.20 : (cleanSym === 'VT' ? 159
                 </div>
               </div>
               <div style="text-align: right; font-size: 11px; color: #64748b;">Pivot Point: ${currencySign}${pivot.toFixed(2)}</div>
+              ` : `
+              <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; font-size: 11.5px; color: #64748b; text-align: center; line-height: 1.6;">
+                แหล่งข้อมูลไม่ได้ให้ราคา High/Low ของวันนี้<br>จึงยังคำนวณแนวรับ-แนวต้านไม่ได้
+              </div>
+              `}
             </div>
 
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
@@ -222,11 +229,11 @@ if (price <= 0) price = (cleanSym === 'VOO') ? 716.20 : (cleanSym === 'VT' ? 159
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                   <span style="color: #64748b;">• โมเมนตัมวันนี้:</span>
-                  <strong style="color: ${isBullish ? '#16a34a' : '#dc2626'};">${isBullish ? 'แรงซื้อหนุน' : 'มีแรงเทขาย'}</strong>
+                  <strong style="color: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#94a3b8'};">${hasChange ? (isBullish ? 'แรงซื้อหนุน' : 'มีแรงเทขาย') : 'ไม่มีข้อมูล'}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #64748b;">• กรอบราคา High/Low:</span>
-                  <strong style="color: #0f172a;">${currencySign}${low.toFixed(2)} - ${currencySign}${high.toFixed(2)}</strong>
+                  <strong style="color: #0f172a;">${hasRange ? `${currencySign}${low.toFixed(2)} - ${currencySign}${high.toFixed(2)}` : '—'}</strong>
                 </div>
               </div>
             </div>

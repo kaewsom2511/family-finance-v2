@@ -273,8 +273,19 @@ function loadFromPortfolio() {
     if (rawQuote) {
       try {
         const quotes = JSON.parse(rawQuote);
-        const q = quotes[targetSymbol] || quotes[`${targetSymbol}.BK`];
-        if (q && (q.price || q.close)) marketPrice = parseNum(q.price || q.close);
+        const base = String(targetSymbol || '').toUpperCase();
+        const candidates = [
+          `thai-stock|${base}`, `thai-stock|${base}.BK`, `thai-stock|${base.replace(/\.BK$/, '')}`,
+          `foreign-stock|${base}`, `mutual-fund|${base}`, `mutual-fund|${base}-A`,
+          base, `${base}.BK`
+        ];
+        for (const key of candidates) {
+          const q = quotes[key];
+          if (q && (q.price || q.close) && parseNum(q.price || q.close) > 0) {
+            marketPrice = parseNum(q.price || q.close);
+            break;
+          }
+        }
       } catch (e) {}
     }
 
