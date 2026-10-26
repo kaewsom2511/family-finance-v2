@@ -1901,15 +1901,24 @@ var CashFlowModule = {
     const totalRetirement = wealthExtras.totalPvd + (parseFloat(wealthExtras.rmfVal) || 0);
 
     // กลุ่มที่ 4: พอร์ตตลาดหุ้น & ETFs — ใช้มูลค่าตลาดจริงจาก PortfolioModule ตัวเดียวกับหน้า portfolio
+    // พอร์ต RMF ถูกนับในเสาหลักที่ 3 แล้ว จึงหักออกเพื่อไม่ให้นับซ้ำ
     let totalStockValue = null;
     try {
       if (typeof PortfolioModule !== 'undefined' &&
           typeof getPortfolioDataHelper === 'function' &&
           typeof PortfolioModule.calculatePortfolioDetail === 'function') {
         const portData = getPortfolioDataHelper();
-        totalStockValue = (portData && Array.isArray(portData.portfolios) && portData.portfolios.length > 0)
-          ? Number(PortfolioModule.calculatePortfolioDetail(portData, 'ALL').marketValue) || 0
-          : 0;
+        if (portData && Array.isArray(portData.portfolios) && portData.portfolios.length > 0) {
+          const allMarketValue = Number(PortfolioModule.calculatePortfolioDetail(portData, 'ALL').marketValue) || 0;
+          let rmfMarketValue = 0;
+          portData.portfolios.forEach(p => {
+            if (!/rmf/i.test(String(p.name || ''))) return;
+            rmfMarketValue += Number(PortfolioModule.calculatePortfolioDetail(portData, p.id || p.portfolioId).marketValue) || 0;
+          });
+          totalStockValue = Math.max(0, allMarketValue - rmfMarketValue);
+        } else {
+          totalStockValue = 0;
+        }
       }
     } catch(e) { totalStockValue = null; }
     const hasLiveStockValue = totalStockValue !== null;
@@ -1999,7 +2008,7 @@ var CashFlowModule = {
               <span style="background: #e0f2fe; color: #0284c7; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p4Pct}%</span>
             </div>
             <div style="font-size: 24px; font-weight: 900; color: #0284c7; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalStockValue)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม • ${hasLiveStockValue ? (totalStockValue > 0 ? 'มูลค่าตลาดปัจจุบัน' : 'ยังไม่มีข้อมูลพอร์ต') : 'ยอดสำรอง'}</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม (ไม่รวม RMF) • ${hasLiveStockValue ? (totalStockValue > 0 ? 'มูลค่าตลาดปัจจุบัน' : 'ยังไม่มีข้อมูลพอร์ต') : 'ยอดสำรอง'}</div>
           </div>
 
         </div>
