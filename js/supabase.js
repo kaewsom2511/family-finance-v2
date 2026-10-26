@@ -226,29 +226,49 @@ async function handleSignOut() {
 // ==========================================
 
 const CloudSync = {
-  // โหมด Local: เมื่อรันบน 127.0.0.1 / localhost ให้ใช้ localStorage อย่างเดียว
-  // ปิดทั้ง pull และ push เพื่อไม่ให้การทดสอบในเครื่องไปแก้ข้อมูลบน Cloud
-  // เปลี่ยนค่าเป็น false เมื่อพร้อมให้เครื่องนี้ sync กับ Cloud
-  LOCAL_ONLY: ['127.0.0.1', 'localhost', '0.0.0.0'].includes(window.location.hostname),
+  // โหมด Local: ถ้าเป็น true จะปิดทั้ง pull และ push (ใช้ localStorage อย่างเดียว)
+  // ตั้ง false เพื่อให้เครื่องนี้ sync กับ Cloud / iPad
+  LOCAL_ONLY: false,
 
+  // คีย์ที่ sync แบบระบุชื่อตรงตัว
   STORAGE_KEYS: [
     'family-finance:cashflow:v2',
-    'family-finance:cashflow:member:ploy',
-    'family-finance:cashflow:member:ploy1',
     'family-finance:categories:v1',
     'family-finance:credit-cards:v1',
     'family-finance:debts-contracts:v1',
+    'family-finance:master-accounts:v1',
+    'family-finance:portfolio:v1',
+    'family-finance:initial-balances:v1',
+    'family-finance:wealth-extras:v1',
+    'family-finance:pvd:v1',
     'family-finance:settings',
-    'family-finance:tax-planner:DAD:2025',
-    'family-finance:tax-planner:DAD:2026',
-    'family-finance:tax-planner:DAD:active-year',
-    'family-finance:tax-planner:DAD:years',
     'stock-trading-log:v3',
-    'stock-trading-log:member:ploy',
+    'stock-trading-log:quote-cache:v1',
+    'wealthport:latest-usd-thb',
+    'wealthport:avg-cost-ledger:v1',
     'wealthport:dividend-plan-models:v3',
     'wealthport:dividend-plan-pillars:v3',
     'wealthport:dividend-plan-target:v3'
   ],
+
+  // โมดูลที่ตั้งชื่อคีย์ตามผู้ใช้/ปีอัตโนมัติ (เช่น cashflow:member:ploy, tax-planner:DAD:2569)
+  // จับเป็น prefix แทน เพราะไม่มีทางรู้ชื่อครบทุกค่า
+  STORAGE_PREFIXES: [
+    'family-finance:cashflow:member:',
+    'family-finance:categories:member:',
+    'family-finance:master-accounts:member:',
+    'family-finance:tax-planner:',
+    'stock-trading-log:member:'
+  ],
+
+  // ปิด auto-push ชั่วคราวขณะเขียนหลายคีย์ติดกัน (ตอน pull จาก Cloud) กันการยิง push ซ้อน
+  _bulkWrite: false,
+
+  isSyncedKey(key) {
+    if (!key) return false;
+    return this.STORAGE_KEYS.includes(key) ||
+      this.STORAGE_PREFIXES.some(prefix => key.startsWith(prefix));
+  },
 
   // กล่องแจ้งเตือนสถานะมุมขวาล่าง
   showSyncToast(message, isSuccess = true) {
@@ -314,12 +334,17 @@ const CloudSync = {
 
       if (data && data.data) {
         let hasNewData = false;
-        Object.entries(data.data).forEach(([key, val]) => {
-          if (val !== null && val !== undefined) {
-            localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
-            hasNewData = true;
-          }
-        });
+        this._bulkWrite = true;
+        try {
+          Object.entries(data.data).forEach(([key, val]) => {
+            if (val !== null && val !== undefined) {
+              localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
+              hasNewData = true;
+            }
+          });
+        } finally {
+          this._bulkWrite = false;
+        }
 
         // ถ้าเครื่องปลายทางยังไม่มีข้อมูล แล้วเพิ่งดึงมาจาก Cloud ให้รีโหลด 1 ครั้งเพื่อแสดงผล
         const isCurrentEmpty = !localStorage.getItem('stock-trading-log:v3') && !localStorage.getItem('family-finance:cashflow:v2');
@@ -344,7 +369,9 @@ const CloudSync = {
       if (!session) return;
 
       const bundle = {};
-      this.STORAGE_KEYS.forEach(key => {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!this.isSyncedKey(key)) continue;
         const raw = localStorage.getItem(key);
         if (raw !== null) {
           try {
@@ -353,7 +380,7 @@ const CloudSync = {
             bundle[key] = raw;
           }
         }
-      });
+      }
 
       const { error } = await supabaseClient
         .from('user_storage')
@@ -379,21 +406,27 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => CloudSync.pullFromCloud(), 300);
 });
 
-// ดักจับการเซฟข้อมูลเพื่อ Push ขึ้น Cloud อัตโนมัติ (หน่วงเวลา 1.5 วินาทีเพื่อป้องกันการยิงถี่เกินไป)
+// รวมการเขียน localStorage หลายครั้งติดกันให้ push เป็นรอบเดียว (ทุกโมดูล ไม่ต้องเพิ่มโค้ดในโมดูล)
 let syncTimeout = null;
-window.addEventListener('storage', (e) => {
-  if (CloudSync.STORAGE_KEYS.includes(e.key)) {
-    clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(() => {
-      CloudSync.pushToCloud();
-    }, 1500);
+function scheduleCloudPush(delay = 1500) {
+  if (CloudSync.LOCAL_ONLY || CloudSync._bulkWrite) return;
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => CloudSync.pushToCloud(), delay);
+}
+
+// ดักที่ Storage.prototype.setItem เพราะทุกโมดูลเรียก localStorage.setItem โดยตรง
+const nativeSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key, value) {
+  nativeSetItem.call(this, key, value);
+  if (this === window.localStorage && CloudSync.isSyncedKey(String(key))) {
+    scheduleCloudPush();
   }
+};
+
+// กรณีแท็บอื่นเดียวกันเขียนข้อมูล (cross-tab) ก็ต้อง push ต่อ
+window.addEventListener('storage', (e) => {
+  if (CloudSync.isSyncedKey(e.key)) scheduleCloudPush();
 });
 
 // สร้างฟังก์ชัน Global ให้โมดูลอื่นเรียกสั่งซิงค์ได้ทันที
-window.triggerCloudSync = () => {
-  clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(() => {
-    CloudSync.pushToCloud();
-  }, 500);
-};
+window.triggerCloudSync = () => scheduleCloudPush(500);
