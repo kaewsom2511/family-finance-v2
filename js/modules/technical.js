@@ -59,7 +59,6 @@ var TechnicalModule = {
       : {};
 
     const holdingMatch = activeHoldings.find(h => h.symbol.replace(/\.BK$/i, '').toUpperCase() === cleanSym);
-    const preset = (typeof stockPricePresetMap !== 'undefined' && stockPricePresetMap[cleanSym]) ? stockPricePresetMap[cleanSym] : {};
 
     // ราคา: ใช้ราคาที่ดึงได้จริงก่อน ถ้าไม่มีจึงใช้ราคาในพอร์ต และติดป้ายว่าไม่ใช่ราคาสด
     let price = parseFloat(q.price || 0);

@@ -55,16 +55,30 @@ const stockPricePresetMap = {
   "COMAN": { priceRange: "0.45 – 0.50", yield: 0.0, sector: "เทคโนโลยี" },
   "JAS": { priceRange: "0.72 – 0.78", yield: 0.0, sector: "สื่อสาร" },
   "SGC": { priceRange: "1.60 – 1.70", yield: 0.0, sector: "การเงิน" },
-  "SCHD": { priceRange: "27.50 – 29.00", yield: 3.6, sector: "US Dividend 100 ETF" },
-  "JEPI": { priceRange: "56.00 – 58.50", yield: 7.5, sector: "Equity Premium Income ETF" },
-  "JEPQ": { priceRange: "52.00 – 55.00", yield: 9.0, sector: "Nasdaq Equity Premium ETF" },
-  "O": { priceRange: "53.00 – 56.00", yield: 5.4, sector: "Realty Income (Monthly Div)" },
-  "SMH": { priceRange: "230.00 – 240.00", yield: 0.8, sector: "Semiconductor ETF" },
-  "NVDA": { priceRange: "105.00 – 115.00", yield: 0.2, sector: "US Tech" },
-  "CRWD": { priceRange: "72.00 – 76.00", yield: 0.0, sector: "Cybersecurity" },
-  "MU": { priceRange: "90.00 – 95.00", yield: 0.5, sector: "Semiconductor" },
-  "ASML": { priceRange: "700.00 – 720.00", yield: 1.0, sector: "Semiconductor Equipment" }
+  "SCHD": { priceRange: "27.50 – 29.00", yield: 3.6, sector: "US Dividend 100 ETF", market: "US" },
+  "JEPI": { priceRange: "56.00 – 58.50", yield: 7.5, sector: "Equity Premium Income ETF", market: "US" },
+  "JEPQ": { priceRange: "52.00 – 55.00", yield: 9.0, sector: "Nasdaq Equity Premium ETF", market: "US" },
+  "O": { priceRange: "53.00 – 56.00", yield: 5.4, sector: "Realty Income (Monthly Div)", market: "US" },
+  "SMH": { priceRange: "230.00 – 240.00", yield: 0.8, sector: "Semiconductor ETF", market: "US" },
+  "NVDA": { priceRange: "105.00 – 115.00", yield: 0.2, sector: "US Tech", market: "US" },
+  "CRWD": { priceRange: "72.00 – 76.00", yield: 0.0, sector: "Cybersecurity", market: "US" },
+  "MU": { priceRange: "90.00 – 95.00", yield: 0.5, sector: "Semiconductor", market: "US" },
+  "ASML": { priceRange: "700.00 – 720.00", yield: 1.0, sector: "Semiconductor Equipment", market: "US" }
 };
+
+const presetMarketByAssetType = { "thai-stock": "TH", "mutual-fund": "TH", "foreign-stock": "US" };
+
+// รายการที่ไม่มี market ถือเป็นหุ้นไทย ส่วนหุ้น/ETF สหรัฐฯ ต้องติด market: "US"
+// กัน symbol ชื่อชนกันข้ามตลาด เช่น ALLY (ไทย) กับ Ally Financial (US)
+function getStockPreset(symbol, assetType) {
+  const key = String(symbol || '').trim().toUpperCase().replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
+  if (!key) return null;
+  const preset = stockPricePresetMap[key];
+  if (!preset) return null;
+  const wantedMarket = presetMarketByAssetType[assetType];
+  if (wantedMarket && (preset.market || "TH") !== wantedMarket) return null;
+  return preset;
+}
 
 function normalizeCleanSymbol(str) {
   if (!str) return '';
@@ -430,8 +444,8 @@ var QuoteSyncService = {
       };
     }
 
-    if (stockPricePresetMap[baseTicker]) {
-      const preset = stockPricePresetMap[baseTicker];
+    const preset = getStockPreset(baseTicker, assetType);
+    if (preset) {
       const nums = String(preset.priceRange || '').replace(/,/g, '').match(/(\d+(?:\.\d+)?)/g);
       if (nums && nums.length > 0) {
         const p = nums.length > 1 ? (Number(nums[0]) + Number(nums[1])) / 2 : Number(nums[0]);
@@ -478,6 +492,7 @@ var QuoteSyncService = {
     let liveCount = 0;
     let cachedCount = 0;
     const failedList = [];
+    const failedAssets = [];
     const total = targetAssets.length;
 
     for (let i = 0; i < total; i++) {
@@ -504,6 +519,7 @@ var QuoteSyncService = {
         }
       } else {
         failedList.push(item.symbol);
+        failedAssets.push(item);
       }
 
       const gap = this.RATE_LIMITED ? 2500 : this.REQUEST_GAP_MS;
@@ -511,7 +527,7 @@ var QuoteSyncService = {
     }
 
     localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(cache));
-    return { successCount: liveCount + cachedCount, liveCount, cachedCount, total, failedList };
+    return { successCount: liveCount + cachedCount, liveCount, cachedCount, total, failedList, failedAssets };
   }
 };
 
@@ -529,6 +545,7 @@ var PortfolioModule = {
   selectedPerfYear: 'ALL',
   selectedPerfPortId: 'ALL',
   currentChartSymbol: 'NASDAQ:AAPL',
+  lastSyncFailures: [],
   eventsBound: false,
 
   formatFxLabel(rate) {
@@ -710,9 +727,9 @@ var PortfolioModule = {
       }
     }
 
-    if (stockPricePresetMap[baseSym]) {
-      const range = stockPricePresetMap[baseSym].priceRange;
-      const nums = range.replace(/,/g, "").match(/(\d+(?:\.\d+)?)/g);
+    const preset = getStockPreset(baseSym, type);
+    if (preset) {
+      const nums = String(preset.priceRange || '').replace(/,/g, "").match(/(\d+(?:\.\d+)?)/g);
       if (nums && nums.length > 0) {
         const p = nums.length > 1 ? (Number(nums[0]) + Number(nums[1])) / 2 : Number(nums[0]);
         return {
@@ -1012,6 +1029,7 @@ var PortfolioModule = {
         btn.textContent = `⏳ (${curr}/${total}) ${sym}`;
       });
 
+      this.lastSyncFailures = res.failedAssets || [];
       this.render();
 
       let msg = `อัปเดตราคาแล้วทั้งหมด ${res.total} รายการ\n` +
@@ -1032,6 +1050,36 @@ var PortfolioModule = {
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.textContent = '🔄 อัปเดตราคาตลาด';
+      this.render();
+    }
+  },
+
+  async handleRetryFailedQuotes(btn) {
+    const targets = this.lastSyncFailures.slice();
+    if (targets.length === 0) return;
+
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    try {
+      btn.textContent = `⏳ กำลังลองใหม่ (0/${targets.length})`;
+      const res = await QuoteSyncService.syncSpecificQuotes(targets, (curr, total, sym) => {
+        btn.textContent = `⏳ (${curr}/${total}) ${sym}`;
+      });
+
+      this.lastSyncFailures = res.failedAssets || [];
+      let msg = `ลองใหม่ ${res.total} รายการ\n` +
+                `• ดึงสดได้: ${res.liveCount} รายการ\n` +
+                `• ยังดึงไม่ได้: ${res.failedList.length} รายการ`;
+      if (res.failedList.length > 0) {
+        msg += `\n\n${res.failedList.join(', ')}`;
+      }
+      alert(msg);
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการลองดึงราคาซ้ำ');
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = '1';
       this.render();
     }
   },
@@ -1244,6 +1292,13 @@ var PortfolioModule = {
         return;
       }
 
+      const retryQuotesBtn = e.target.closest('#btn-retry-failed-quotes');
+      if (retryQuotesBtn) {
+        e.preventDefault();
+        await this.handleRetryFailedQuotes(retryQuotesBtn);
+        return;
+      }
+
       const editPortBtn = e.target.closest('#btn-edit-port');
       if (editPortBtn) {
         e.preventDefault();
@@ -1357,6 +1412,7 @@ if (settingsBtn) {
     document.addEventListener('change', (e) => {
       if (e.target && e.target.id === 'portfolio-select') {
         this.selectedPortfolioId = e.target.value;
+        this.lastSyncFailures = [];
         this.render();
       } else if (e.target && e.target.id === 'div-port-filter') {
         this.selectedDivPortId = e.target.value;
@@ -2455,6 +2511,9 @@ this.openAssetModal(holding.symbol);
 
           <button id="btn-open-buy-modal" style="background: #059669; color: #fff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">➕ ซื้อสินทรัพย์เพิ่ม</button>
           <button id="btn-sync-quotes" style="background: #fff; border: 1px solid #38bdf8; color: #0284c7; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 อัปเดตราคาตลาด</button>
+          ${this.lastSyncFailures.length > 0 ? `
+            <button id="btn-retry-failed-quotes" style="background: #fffbeb; border: 1px solid #fbbf24; color: #b45309; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔁 ลองใหม่ ${this.lastSyncFailures.length} รายการที่ดึงไม่ได้</button>
+          ` : ''}
           <button id="btn-edit-port" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">✏️ แก้ไขพอร์ต</button>
           <button id="btn-export-json" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">📤 ส่งออก JSON</button>
           <label style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin: 0;">
@@ -3133,7 +3192,7 @@ this.openAssetModal(holding.symbol);
     const q = this.findQuote(quotes, isThai ? `${cleanSym}.BK` : cleanSym, chartAssetType) || {};
 
     const holdingMatch = activeHoldings.find(h => h.symbol.replace(/\.BK$/i, '').toUpperCase() === cleanSym);
-    const preset = stockPricePresetMap[cleanSym] || {};
+    const preset = getStockPreset(cleanSym, chartAssetType) || {};
 
     // ราคา: ใช้ราคาที่ดึงได้จริงก่อน ถ้าไม่มีจึงใช้ราคาในพอร์ต และติดป้ายให้ชัดว่าไม่ใช่ราคาสด
     let price = parseFloat(q.price || 0);
