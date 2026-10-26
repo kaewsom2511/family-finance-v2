@@ -294,24 +294,22 @@ var TechnicalModule = {
       };
     }
 
+    const chartType = isFund ? 'FUND' : isThai ? 'TH' : 'US';
+
     if (rangeSelect) {
       rangeSelect.onchange = () => {
         this.currentRange = rangeSelect.value;
-        if (isFund || isThai) this.loadOwnChart(cleanSym, isFund ? 'FUND' : 'TH');
+        this.loadOwnChart(cleanSym, chartType);
       };
     }
     if (styleSelect) {
       styleSelect.onchange = () => {
         this.currentChartStyle = styleSelect.value;
-        if (isFund || isThai) this.loadOwnChart(cleanSym, isFund ? 'FUND' : 'TH');
+        this.loadOwnChart(cleanSym, chartType);
       };
     }
 
-    setTimeout(() => {
-      if (isFund) this.loadOwnChart(cleanSym, 'FUND');
-      else if (isThai) this.loadOwnChart(cleanSym, 'TH');
-      else this.loadTradingViewWidget(this.currentChartSymbol);
-    }, 150);
+    setTimeout(() => this.loadOwnChart(cleanSym, chartType), 150);
   },
 
   destroyOwnChart() {
@@ -346,19 +344,25 @@ var TechnicalModule = {
     return map[this.currentRange] || (isFund ? '1y' : '2y');
   },
 
-  chartLinksHtml(cleanSym, isFund) {
+  chartLinksHtml(cleanSym, chartType) {
     const sym = encodeURIComponent(cleanSym);
     const linkStyle = 'display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; font-weight:700; font-size:12.5px; text-decoration:none;';
-    if (isFund) {
+    if (chartType === 'FUND') {
       return `
         <a href="https://www.finnomena.com/fund/${sym}" target="_blank" style="${linkStyle} background:#0f766e; color:#fff;">📈 Finnomena ↗</a>
         <a href="https://www.settrade.com/th/mutualfund/quote/${sym}/overview" target="_blank" style="${linkStyle} background:#f1f5f9; color:#334155; border:1px solid #e2e8f0;">🏛️ Settrade ↗</a>
       `;
     }
+    if (chartType === 'TH') {
+      return `
+        <a href="https://www.settrade.com/th/equities/quote/${sym}/overview" target="_blank" style="${linkStyle} background:#0284c7; color:#fff;">🏛️ Settrade ↗</a>
+        <a href="https://th.tradingview.com/chart/?symbol=SET%3A${sym}" target="_blank" style="${linkStyle} background:#0f172a; color:#fff;">📈 TradingView ↗</a>
+        <a href="https://www.finnomena.com/stock/${sym}" target="_blank" style="${linkStyle} background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">🌱 Finnomena ↗</a>
+      `;
+    }
     return `
-      <a href="https://www.settrade.com/th/equities/quote/${sym}/overview" target="_blank" style="${linkStyle} background:#0284c7; color:#fff;">🏛️ Settrade ↗</a>
-      <a href="https://th.tradingview.com/chart/?symbol=SET%3A${sym}" target="_blank" style="${linkStyle} background:#0f172a; color:#fff;">📈 TradingView ↗</a>
-      <a href="https://www.finnomena.com/stock/${sym}" target="_blank" style="${linkStyle} background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">🌱 Finnomena ↗</a>
+      <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" style="${linkStyle} background:#0284c7; color:#fff;">📊 Yahoo Finance ↗</a>
+      <a href="https://www.tradingview.com/chart/?symbol=${sym}" target="_blank" style="${linkStyle} background:#0f172a; color:#fff;">📈 TradingView ↗</a>
     `;
   },
 
@@ -366,6 +370,7 @@ var TechnicalModule = {
     const host = document.getElementById('tradingview_chart_container');
     if (!host) return;
     const isFund = chartType === 'FUND';
+    const isThai = chartType === 'TH';
     const noteEl = document.getElementById('chart-data-note');
     const linksEl = document.getElementById('chart-links');
     const apiBase = (typeof QuoteSyncService !== 'undefined' && QuoteSyncService.getApiBaseUrl)
@@ -375,7 +380,7 @@ var TechnicalModule = {
     this.destroyOwnChart();
     host.innerHTML = '<div style="height:100%; min-height:560px; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13.5px; font-weight:600;">กำลังโหลดกราฟ…</div>';
     if (noteEl) noteEl.textContent = '';
-    if (linksEl) linksEl.innerHTML = this.chartLinksHtml(cleanSym, isFund);
+    if (linksEl) linksEl.innerHTML = this.chartLinksHtml(cleanSym, chartType);
 
     const showError = (message) => {
       host.innerHTML = '';
@@ -394,19 +399,24 @@ var TechnicalModule = {
       host.appendChild(box);
     };
 
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 15000);
-    try {
-      const url = isFund
-        ? `${apiBase}/api/fund-chart?symbol=${encodeURIComponent(cleanSym)}&range=${this.chartRangeParam(true)}`
-        : `${apiBase}/api/chart?symbol=${encodeURIComponent(cleanSym + '.BK')}&assetType=thai-stock&range=${this.chartRangeParam(false)}&interval=1d`;
-      const res = await fetch(url, { signal: ctrl.signal });
-      const data = await res.json();
-      clearTimeout(tid);
+    const url = isFund
+      ? `${apiBase}/api/fund-chart?symbol=${encodeURIComponent(cleanSym)}&range=${this.chartRangeParam(true)}`
+      : `${apiBase}/api/chart?symbol=${encodeURIComponent(isThai ? `${cleanSym}.BK` : cleanSym)}&assetType=${isThai ? 'thai-stock' : 'foreign-stock'}&range=${this.chartRangeParam(false)}&interval=1d`;
 
-      const rawPoints = Array.isArray(data.points) ? data.points : [];
+    const requestChart = async () => {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 15000);
+      try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        return await res.json();
+      } finally {
+        clearTimeout(tid);
+      }
+    };
+
+    const toPoints = (data) => {
       const byTime = new Map();
-      rawPoints.forEach((p) => {
+      (Array.isArray(data?.points) ? data.points : []).forEach((p) => {
         const time = String(p.time || '').slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(time)) return;
         if (isFund) {
@@ -420,9 +430,23 @@ var TechnicalModule = {
           if ([open, high, low, close].every(Number.isFinite)) byTime.set(time, { time, open, high, low, close });
         }
       });
-      const points = Array.from(byTime.values()).sort((a, b) => a.time.localeCompare(b.time));
+      return Array.from(byTime.values()).sort((a, b) => a.time.localeCompare(b.time));
+    };
+
+    try {
+      let data = await requestChart();
+      let points = toPoints(data);
+      // Yahoo ตอบ 429 เป็นครั้งคราว ลองซ้ำอีกครั้งก่อนแจ้งผู้ใช้
       if (!points.length) {
-        showError(data.detail || data.error || 'แหล่งข้อมูลไม่ส่งข้อมูลกราฟกลับมา');
+        await new Promise((r) => setTimeout(r, 1200));
+        data = await requestChart();
+        points = toPoints(data);
+      }
+      if (!points.length) {
+        const detail = String(data?.detail || '');
+        showError(/429/.test(detail)
+          ? 'แหล่งข้อมูลจำกัดจำนวนการเรียก (429) กรุณากด "วิเคราะห์" ซ้ำอีกครั้ง'
+          : (data?.error || 'แหล่งข้อมูลไม่ส่งข้อมูลกราฟกลับมา'));
         return;
       }
 
@@ -472,7 +496,7 @@ var TechnicalModule = {
       const lastPoint = points[points.length - 1];
       if (noteEl) {
         const parts = [
-          isFund ? 'NAV รายวันจาก Settrade' : 'ราคาจาก Yahoo Finance',
+          isFund ? 'NAV รายวันจาก Settrade' : `ราคาจาก ${data.source || 'Yahoo Finance'}`,
           `${points.length} ${isFund ? 'จุด' : 'วันทำการ'}`,
           `ถึง ${lastPoint.time}`
         ];
@@ -481,39 +505,7 @@ var TechnicalModule = {
         noteEl.textContent = parts.join(' · ');
       }
     } catch (err) {
-      clearTimeout(tid);
       showError(err.name === 'AbortError' ? 'หมดเวลารอข้อมูลกราฟ (15 วินาที)' : err.message);
     }
-  },
-
-  loadTradingViewWidget(symbol) {
-    const container = document.getElementById('tradingview_chart_container');
-    if (!container) return;
-
-    this.destroyOwnChart();
-    container.innerHTML = '';
-
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => {
-      if (typeof TradingView !== 'undefined') {
-        new TradingView.widget({
-          "autosize": true,
-          "symbol": symbol,
-          "interval": "D",
-          "timezone": "Asia/Bangkok",
-          "theme": "light",
-          "style": "1",
-          "locale": "th_TH",
-          "toolbar_bg": "#f8fafc",
-          "enable_publishing": false,
-          "allow_symbol_change": true,
-          "container_id": "tradingview_chart_container",
-          "studies": ["MASimple@tv-basicstudies", "RSI@tv-basicstudies"]
-        });
-      }
-    };
-    container.appendChild(script);
   }
 };
