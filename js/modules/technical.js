@@ -5,6 +5,11 @@
 
 var TechnicalModule = {
   currentChartSymbol: 'AMEX:VOO',
+  currentRange: '2Y',
+  currentChartStyle: 'candles',
+  _chartInstance: null,
+  _chartResize: null,
+  _lwPromise: null,
 
   formatTradingViewSymbol(rawSymbol, marketType) {
     if (!rawSymbol) return 'AMEX:VOO';
@@ -138,20 +143,20 @@ var TechnicalModule = {
             <div style="flex: 1; min-width: 110px;">
               <label style="display: block; font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">ช่วงเวลา</label>
               <select id="select-chart-timeframe" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
-                <option value="1M">1 เดือน</option>
-                <option value="6M">6 เดือน</option>
-                <option value="1Y">1 ปี</option>
-                <option value="2Y" selected>2 ปี</option>
-                <option value="5Y">5 ปี</option>
+                <option value="1M" ${this.currentRange === '1M' ? 'selected' : ''}>1 เดือน</option>
+                <option value="6M" ${this.currentRange === '6M' ? 'selected' : ''}>6 เดือน</option>
+                <option value="1Y" ${this.currentRange === '1Y' ? 'selected' : ''}>1 ปี</option>
+                <option value="2Y" ${this.currentRange === '2Y' ? 'selected' : ''}>2 ปี</option>
+                <option value="5Y" ${this.currentRange === '5Y' ? 'selected' : ''}>5 ปี</option>
               </select>
             </div>
 
             <div style="flex: 1; min-width: 110px;">
               <label style="display: block; font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">รูปแบบ</label>
               <select id="select-chart-style" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
-                <option value="candles" selected>แท่งเทียน</option>
-                <option value="line">เส้น (Line)</option>
-                <option value="area">พื้นที่ (Area)</option>
+                <option value="candles" ${this.currentChartStyle === 'candles' ? 'selected' : ''}>แท่งเทียน</option>
+                <option value="line" ${this.currentChartStyle === 'line' ? 'selected' : ''}>เส้น (Line)</option>
+                <option value="area" ${this.currentChartStyle === 'area' ? 'selected' : ''}>พื้นที่ (Area)</option>
               </select>
             </div>
           </div>
@@ -183,6 +188,9 @@ var TechnicalModule = {
             <div id="chart-viewport-box" style="height: 580px; min-height: 580px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;">
               <div id="tradingview_chart_container" style="width: 100%; height: 100%; min-height: 580px;"></div>
             </div>
+
+            <div id="chart-data-note" style="margin-top: 10px; font-size: 11.5px; color: #64748b; line-height: 1.6;"></div>
+            <div id="chart-links" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;"></div>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -245,14 +253,17 @@ var TechnicalModule = {
     const analyzeBtn = container.querySelector('#btn-submit-analyze');
     const symbolInput = container.querySelector('#input-chart-symbol');
     const marketTypeSelect = container.querySelector('#select-chart-market-type');
+    const rangeSelect = container.querySelector('#select-chart-timeframe');
+    const styleSelect = container.querySelector('#select-chart-style');
 
     const triggerAnalyze = async () => {
       const raw = (symbolInput?.value || '').trim().toUpperCase();
       if (!raw) return;
       const mType = marketTypeSelect?.value || 'US';
       const clean = raw.replace(/\.BK$/i, '');
-      
+
       this.currentChartSymbol = this.formatTradingViewSymbol(clean, mType);
+      this.destroyOwnChart();
 
       if (analyzeBtn) {
         analyzeBtn.textContent = 'กำลังดึง...';
@@ -284,66 +295,204 @@ var TechnicalModule = {
       };
     }
 
-    setTimeout(() => this.loadTradingViewWidget(this.currentChartSymbol), 150);
+    if (rangeSelect) {
+      rangeSelect.onchange = () => {
+        this.currentRange = rangeSelect.value;
+        if (isFund || isThai) this.loadOwnChart(cleanSym, isFund ? 'FUND' : 'TH');
+      };
+    }
+    if (styleSelect) {
+      styleSelect.onchange = () => {
+        this.currentChartStyle = styleSelect.value;
+        if (isFund || isThai) this.loadOwnChart(cleanSym, isFund ? 'FUND' : 'TH');
+      };
+    }
+
+    setTimeout(() => {
+      if (isFund) this.loadOwnChart(cleanSym, 'FUND');
+      else if (isThai) this.loadOwnChart(cleanSym, 'TH');
+      else this.loadTradingViewWidget(this.currentChartSymbol);
+    }, 150);
+  },
+
+  destroyOwnChart() {
+    if (this._chartResize) {
+      try { this._chartResize.disconnect(); } catch (e) {}
+      this._chartResize = null;
+    }
+    if (this._chartInstance) {
+      try { this._chartInstance.remove(); } catch (e) {}
+      this._chartInstance = null;
+    }
+  },
+
+  ensureLightweightCharts() {
+    if (window.LightweightCharts) return Promise.resolve(window.LightweightCharts);
+    if (this._lwPromise) return this._lwPromise;
+    this._lwPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
+      script.async = true;
+      script.onload = () => resolve(window.LightweightCharts);
+      script.onerror = () => reject(new Error('โหลดไลบรารีกราฟไม่สำเร็จ'));
+      document.head.appendChild(script);
+    });
+    return this._lwPromise;
+  },
+
+  chartRangeParam(isFund) {
+    const map = isFund
+      ? { '1M': '1m', '6M': '6m', '1Y': '1y', '2Y': '2y', '5Y': '5y' }
+      : { '1M': '1mo', '6M': '6mo', '1Y': '1y', '2Y': '2y', '5Y': '5y' };
+    return map[this.currentRange] || (isFund ? '1y' : '2y');
+  },
+
+  chartLinksHtml(cleanSym, isFund) {
+    const sym = encodeURIComponent(cleanSym);
+    const linkStyle = 'display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; font-weight:700; font-size:12.5px; text-decoration:none;';
+    if (isFund) {
+      return `
+        <a href="https://www.finnomena.com/fund/${sym}" target="_blank" style="${linkStyle} background:#0f766e; color:#fff;">📈 Finnomena ↗</a>
+        <a href="https://www.settrade.com/th/mutualfund/quote/${sym}/overview" target="_blank" style="${linkStyle} background:#f1f5f9; color:#334155; border:1px solid #e2e8f0;">🏛️ Settrade ↗</a>
+      `;
+    }
+    return `
+      <a href="https://www.settrade.com/th/equities/quote/${sym}/overview" target="_blank" style="${linkStyle} background:#0284c7; color:#fff;">🏛️ Settrade ↗</a>
+      <a href="https://th.tradingview.com/chart/?symbol=SET%3A${sym}" target="_blank" style="${linkStyle} background:#0f172a; color:#fff;">📈 TradingView ↗</a>
+      <a href="https://www.finnomena.com/stock/${sym}" target="_blank" style="${linkStyle} background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">🌱 Finnomena ↗</a>
+    `;
+  },
+
+  async loadOwnChart(cleanSym, chartType) {
+    const host = document.getElementById('tradingview_chart_container');
+    if (!host) return;
+    const isFund = chartType === 'FUND';
+    const noteEl = document.getElementById('chart-data-note');
+    const linksEl = document.getElementById('chart-links');
+    const apiBase = (typeof QuoteSyncService !== 'undefined' && QuoteSyncService.getApiBaseUrl)
+      ? QuoteSyncService.getApiBaseUrl()
+      : 'https://wealthport.onrender.com';
+
+    this.destroyOwnChart();
+    host.innerHTML = '<div style="height:100%; min-height:560px; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13.5px; font-weight:600;">กำลังโหลดกราฟ…</div>';
+    if (noteEl) noteEl.textContent = '';
+    if (linksEl) linksEl.innerHTML = this.chartLinksHtml(cleanSym, isFund);
+
+    const showError = (message) => {
+      host.innerHTML = '';
+      const box = document.createElement('div');
+      box.style.cssText = 'height:100%; min-height:560px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; gap:8px;';
+      const icon = document.createElement('div');
+      icon.textContent = '📉';
+      icon.style.cssText = 'font-size:36px;';
+      const title = document.createElement('div');
+      title.textContent = 'ยังแสดงกราฟไม่ได้';
+      title.style.cssText = 'font-size:16px; font-weight:800; color:#0f172a;';
+      const detail = document.createElement('div');
+      detail.textContent = message;
+      detail.style.cssText = 'font-size:12.5px; color:#64748b; max-width:460px; line-height:1.6;';
+      box.append(icon, title, detail);
+      host.appendChild(box);
+    };
+
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const url = isFund
+        ? `${apiBase}/api/fund-chart?symbol=${encodeURIComponent(cleanSym)}&range=${this.chartRangeParam(true)}`
+        : `${apiBase}/api/chart?symbol=${encodeURIComponent(cleanSym + '.BK')}&assetType=thai-stock&range=${this.chartRangeParam(false)}&interval=1d`;
+      const res = await fetch(url, { signal: ctrl.signal });
+      const data = await res.json();
+      clearTimeout(tid);
+
+      const rawPoints = Array.isArray(data.points) ? data.points : [];
+      const byTime = new Map();
+      rawPoints.forEach((p) => {
+        const time = String(p.time || '').slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(time)) return;
+        if (isFund) {
+          const value = Number(p.value);
+          if (Number.isFinite(value) && value > 0) byTime.set(time, { time, value });
+        } else {
+          const open = Number(p.open);
+          const high = Number(p.high);
+          const low = Number(p.low);
+          const close = Number(p.close);
+          if ([open, high, low, close].every(Number.isFinite)) byTime.set(time, { time, open, high, low, close });
+        }
+      });
+      const points = Array.from(byTime.values()).sort((a, b) => a.time.localeCompare(b.time));
+      if (!points.length) {
+        showError(data.detail || data.error || 'แหล่งข้อมูลไม่ส่งข้อมูลกราฟกลับมา');
+        return;
+      }
+
+      const LW = await this.ensureLightweightCharts();
+      host.innerHTML = '';
+
+      const chart = LW.createChart(host, {
+        width: host.clientWidth || 800,
+        height: host.clientHeight || 560,
+        layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#475569', fontSize: 11 },
+        grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
+        rightPriceScale: { borderColor: '#e2e8f0', scaleMargins: { top: 0.08, bottom: 0.08 } },
+        timeScale: { borderColor: '#e2e8f0', rightOffset: 4 },
+        crosshair: { mode: LW.CrosshairMode.Normal },
+        localization: { locale: 'th-TH' }
+      });
+
+      const style = (isFund && this.currentChartStyle === 'candles') ? 'area' : this.currentChartStyle;
+      if (style === 'candles') {
+        const series = chart.addCandlestickSeries({
+          upColor: '#16a34a', downColor: '#dc2626',
+          wickUpColor: '#16a34a', wickDownColor: '#dc2626',
+          borderVisible: false
+        });
+        series.setData(points);
+      } else {
+        const seriesData = points.map((p) => ({ time: p.time, value: isFund ? p.value : p.close }));
+        if (style === 'line') {
+          chart.addLineSeries({ color: '#0284c7', lineWidth: 2, priceLineVisible: false }).setData(seriesData);
+        } else {
+          chart.addAreaSeries({
+            lineColor: '#0284c7', lineWidth: 2,
+            topColor: 'rgba(2,132,199,0.28)', bottomColor: 'rgba(2,132,199,0.02)',
+            priceLineVisible: false
+          }).setData(seriesData);
+        }
+      }
+
+      chart.timeScale().fitContent();
+      this._chartInstance = chart;
+      this._chartResize = new ResizeObserver(() => {
+        if (!host.isConnected) return;
+        chart.applyOptions({ width: host.clientWidth, height: host.clientHeight });
+      });
+      this._chartResize.observe(host);
+
+      const lastPoint = points[points.length - 1];
+      if (noteEl) {
+        const parts = [
+          isFund ? 'NAV รายวันจาก Settrade' : 'ราคาจาก Yahoo Finance',
+          `${points.length} ${isFund ? 'จุด' : 'วันทำการ'}`,
+          `ถึง ${lastPoint.time}`
+        ];
+        if (isFund && this.currentChartStyle === 'candles') parts.push('กองทุนมีเฉพาะ NAV รายวัน จึงแสดงเป็นกราฟพื้นที่');
+        if (isFund && data.truncated) parts.push(`แหล่งข้อมูลมีข้อมูลย้อนหลังตั้งแต่ ${data.availableFrom}`);
+        noteEl.textContent = parts.join(' · ');
+      }
+    } catch (err) {
+      clearTimeout(tid);
+      showError(err.name === 'AbortError' ? 'หมดเวลารอข้อมูลกราฟ (15 วินาที)' : err.message);
+    }
   },
 
   loadTradingViewWidget(symbol) {
     const container = document.getElementById('tradingview_chart_container');
     if (!container) return;
 
+    this.destroyOwnChart();
     container.innerHTML = '';
-    const displaySym = symbol.replace(/^(BKK|NASDAQ|NYSE|AMEX|SET|FUND):/, '');
-    const isFund = symbol.startsWith('FUND:');
-    const isThai = symbol.startsWith('SET:') || symbol.startsWith('BKK:') || symbol.endsWith('.BK');
-
-    if (isFund) {
-      container.innerHTML = `
-        <div style="width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 24px; text-align: center;">
-          <div style="font-size: 40px; margin-bottom: 12px;">📊</div>
-          <h2 style="font-size: 22px; color: #0f172a; margin: 0 0 6px 0; font-weight: 800;">${displaySym}</h2>
-          <p style="color: #64748b; font-size: 13.5px; max-width: 440px; margin: 0 0 20px 0; line-height: 1.5;">
-            กองทุนรวมประกาศราคาแบบรายวัน (End of Day NAV) ไม่มีชาร์ตสดระหว่างวันบน TradingView
-          </p>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-            <a href="https://www.finnomena.com/fund/${encodeURIComponent(displaySym)}" target="_blank" style="padding: 10px 18px; border-radius: 8px; background: #0f766e; color: #fff; text-decoration: none; font-weight: 700; font-size: 13.5px;">
-              📈 ดูกราฟแท่งเทียน & NAV บน Finnomena ↗
-            </a>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (isThai) {
-      container.innerHTML = `
-        <div style="width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 24px; text-align: center;">
-          <h2 style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-            ${displaySym} <span style="font-size: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 6px;">SET</span>
-          </h2>
-          <p style="color: #64748b; font-size: 13px; max-width: 480px; margin: 0 0 22px 0; line-height: 1.6;">
-            ตรวจสอบราคาและกราฟเทคนิคหุ้นไทยผ่านแพลตฟอร์มตลาดหลักทรัพย์ หรือเปิดดูกราฟเต็มบน TradingView
-          </p>
-          
-          <!-- แถวบน: 2 ปุ่มหลัก (Settrade + TradingView) -->
-          <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px;">
-            <a href="https://www.settrade.com/th/equities/quote/${encodeURIComponent(displaySym)}/overview" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; background: #0284c7; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 13.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-              🏛️ ดูข้อมูลบน Settrade ↗
-            </a>
-            <a href="https://th.tradingview.com/chart/?symbol=SET%3A${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; background: #0f172a; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 13.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-              📈 ดูกราฟเต็มบน TradingView ↗
-            </a>
-          </div>
-
-          <!-- แถวล่าง: ปุ่มบทวิเคราะห์ Finnomena -->
-          <div style="display: flex; justify-content: center;">
-            <a href="https://www.finnomena.com/stock/${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; text-decoration: none; font-weight: 700; font-size: 13px;">
-              🌱 บทวิเคราะห์ Finnomena ↗
-            </a>
-          </div>
-        </div>
-      `;
-      return;
-    }
 
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
