@@ -66,34 +66,6 @@ var SettingsModule = {
     { id: 'acc-21', name: 'บัตรเครดิตทีทีบี', type: 'บัตรเครดิต' }
   ],
 
-  // ค่าเริ่มต้นสำหรับ Member (ลูก/น้องพลอย) - สะอาดตา ไม่มีข้อมูลของพ่อ
-  defaultMemberCategories: {
-    'รายรับ': [
-      'เงินเดือน/ค่าขนม', 'รับจากคุณพ่อ', 'รับจากคุณแม่', 'โบนัส', 'รายได้พิเศษ', 'เงินคืน/รางวัล'
-    ],
-    'รายจ่าย': [
-      'ค่าอาหาร/เครื่องดื่ม', 'ของใช้ส่วนตัว', 'ค่าเดินทาง/BTS/MRT', 
-      'ความบันเทิง/ช็อปปิ้ง', 'หนังสือ/การเรียน', 'สุขภาพ/ยา', 'รายจ่ายอื่นๆ'
-    ],
-    'บิล': [
-      'ค่าโทรศัพท์/เน็ต', 'สมัครสมาชิก/แอป', 'บิลอื่นๆ'
-    ],
-    'หนี้สิน': [
-      'ยืม/คืนเพื่อน', 'ภาระส่วนตัว'
-    ],
-    'เงินออมและลงทุน': [
-      'DIME PLOY', 'เงินออมฉุกเฉิน', 'เงินฝากดอกเบี้ยสูง'
-    ]
-  },
-
-  defaultMemberAccounts: [
-    { id: 'm-acc-1', name: 'เงินสด', type: 'เงินสด' },
-    { id: 'm-acc-2', name: 'กสิกรไทย', type: 'ธนาคาร' },
-    { id: 'm-acc-3', name: 'ไทยพาณิชย์', type: 'ธนาคาร' },
-    { id: 'm-acc-4', name: 'Truemoney', type: 'กระเป๋าเงิน' },
-    { id: 'm-acc-5', name: 'DIME PLOY', type: 'ดิจิทัล' }
-  ],
-
   // หมวดหมู่และบัญชีหลักเป็นข้อมูลร่วมของบ้าน ทุกบทบาทใช้คีย์เดียวกัน (ใครแก้ทุกบัญชีเห็นตาม)
   getCategoriesStorageKey() {
     return 'family-finance:categories:v1';
@@ -108,7 +80,6 @@ var SettingsModule = {
     this.bindEvents();
     this.render();
   },
-
   async checkAuthRole() {
     if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
     try {
@@ -131,31 +102,25 @@ var SettingsModule = {
 
   getCategories() {
     try {
-      const key = this.getCategoriesStorageKey();
-      const data = localStorage.getItem(key);
+      const data = localStorage.getItem(this.getCategoriesStorageKey());
       if (data) return JSON.parse(data);
     } catch(e) {}
-    return this.currentUserRole === 'admin' 
-      ? JSON.parse(JSON.stringify(this.defaultAdminCategories)) 
-      : JSON.parse(JSON.stringify(this.defaultMemberCategories));
+    // ข้อมูลร่วมของบ้าน: ใช้ชุดเริ่มต้นของบ้านเท่านั้น (ชุดสมาชิกจะทำให้ทับข้อมูลทั้งบ้านตอนบันทึก)
+    return JSON.parse(JSON.stringify(this.defaultAdminCategories));
   },
 
   saveCategories(cats) {
     try {
-      const key = this.getCategoriesStorageKey();
-      localStorage.setItem(key, JSON.stringify(cats));
+      localStorage.setItem(this.getCategoriesStorageKey(), JSON.stringify(cats));
     } catch(e) {}
   },
 
   getAccounts() {
     try {
-      const key = this.getAccountsStorageKey();
-      const data = localStorage.getItem(key);
+      const data = localStorage.getItem(this.getAccountsStorageKey());
       if (data) return JSON.parse(data);
     } catch(e) {}
-    return this.currentUserRole === 'admin' 
-      ? JSON.parse(JSON.stringify(this.defaultAdminAccounts)) 
-      : JSON.parse(JSON.stringify(this.defaultMemberAccounts));
+    return JSON.parse(JSON.stringify(this.defaultAdminAccounts));
   },
 
   saveAccounts(accs) {
