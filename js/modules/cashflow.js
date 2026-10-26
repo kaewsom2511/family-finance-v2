@@ -1907,13 +1907,13 @@ var CashFlowModule = {
           typeof getPortfolioDataHelper === 'function' &&
           typeof PortfolioModule.calculatePortfolioDetail === 'function') {
         const portData = getPortfolioDataHelper();
-        if (portData && Array.isArray(portData.portfolios) && portData.portfolios.length > 0) {
-          totalStockValue = Number(PortfolioModule.calculatePortfolioDetail(portData, 'ALL').marketValue) || 0;
-        }
+        totalStockValue = (portData && Array.isArray(portData.portfolios) && portData.portfolios.length > 0)
+          ? Number(PortfolioModule.calculatePortfolioDetail(portData, 'ALL').marketValue) || 0
+          : 0;
       }
-    } catch(e) {}
+    } catch(e) { totalStockValue = null; }
     const hasLiveStockValue = totalStockValue !== null;
-    // ยอดสำรองใช้เฉพาะกรณีที่โหลดโมดูลพอร์ตไม่สำเร็จเท่านั้น
+    // ยอดสำรองใช้เฉพาะกรณีที่คำนวณพอร์ตไม่สำเร็จเท่านั้น
     if (!hasLiveStockValue) totalStockValue = 4140768.31;
 
     // ยอดรวมสินทรัพย์ทั้ง 4 เสาหลัก
@@ -1999,7 +1999,7 @@ var CashFlowModule = {
               <span style="background: #e0f2fe; color: #0284c7; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p4Pct}%</span>
             </div>
             <div style="font-size: 24px; font-weight: 900; color: #0284c7; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalStockValue)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม • ${hasLiveStockValue ? 'มูลค่าตลาดปัจจุบัน' : 'ยอดสำรอง'}</div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม • ${hasLiveStockValue ? (totalStockValue > 0 ? 'มูลค่าตลาดปัจจุบัน' : 'ยังไม่มีข้อมูลพอร์ต') : 'ยอดสำรอง'}</div>
           </div>
 
         </div>
