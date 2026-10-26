@@ -324,6 +324,29 @@ const nativeGetItem = Storage.prototype.getItem;
 const nativeSetItem = Storage.prototype.setItem;
 const nativeRemoveItem = Storage.prototype.removeItem;
 
+// เรียงคีย์ใน object ให้เป็นมาตรฐานก่อนเทียบค่า
+function canonicalJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort()
+      .map(k => JSON.stringify(k) + ':' + canonicalJson(value[k]))
+      .join(',') + '}';
+  }
+  return value === undefined ? 'null' : JSON.stringify(value);
+}
+
+// JSONB ของ Supabase ไม่รักษาลำดับคีย์ จึงต้องเทียบ "เนื้อหา" ไม่ใช่เทียบสตริง
+// ไม่งั้น pull รอบถัดไปจะคิดว่าข้อมูลเปลี่ยนทุกครั้ง แล้ววาดหน้าจอทับซ้ำ
+function sameStoredValue(a, b) {
+  if (a === b) return true;
+  if (a === null || a === undefined || b === null || b === undefined) return false;
+  try {
+    return canonicalJson(JSON.parse(a)) === canonicalJson(JSON.parse(b));
+  } catch (e) {
+    return false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   checkUserSession();
   listenToPasswordReset();
@@ -703,7 +726,7 @@ const CloudSync = {
             if (val === null || val === undefined || !belongsHere(key)) return;
             const next = typeof val === 'object' ? JSON.stringify(val) : String(val);
             const physicalKey = DataScope.physical(key);
-            if (nativeGetItem.call(localStorage, physicalKey) === next) return;
+            if (sameStoredValue(nativeGetItem.call(localStorage, physicalKey), next)) return;
             localStorage.setItem(key, next);
             changedKeys.push(physicalKey);
           });
@@ -755,7 +778,7 @@ const CloudSync = {
   // ให้โมดูลที่เปิดอยู่วาดข้อมูลใหม่ หลังมีชุดข้อมูลจาก Cloud เข้ามาระหว่างใช้งาน
   applyLiveRefresh(changedKeys = [], retry = 0) {
     // ถ้ามีฟอร์ม/โมดัลที่เปิดค้างอยู่ อย่าเพิ่งวาดทับข้อมูลบนจอ เลื่อนออกไปก่อน
-    const modalOpen = Array.from(document.querySelectorAll('.modal, [id*="Modal"], dialog'))
+    const modalOpen = Array.from(document.querySelectorAll('.modal, [id*="odal"], dialog'))
       .some(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
     if (modalOpen || document.querySelector('input:focus, textarea:focus, select:focus')) {
       if (retry < 20) setTimeout(() => this.applyLiveRefresh(changedKeys, retry + 1), 3000);
@@ -767,21 +790,36 @@ const CloudSync = {
     if (sharedChanged) this.showSyncToast('อัปเดตข้อมูลร่วมของบ้านแล้ว');
     window.dispatchEvent(new CustomEvent('ff:cloud-updated', { detail: { keys: changedKeys, shared: sharedChanged } }));
 
-    const rerender = [
-      ['SettingsModule', 'render'],
-      ['CashFlowModule', 'render'],
-      ['DashboardModule', 'calculateAndRender'],
-      ['DebtModule', 'render'],
-      ['CreditCardModule', 'render'],
-      ['PortfolioModule', 'render'],
-      ['DividendPlannerModule', 'render']
-    ];
-    rerender.forEach(([name, fn]) => {
+    this.renderCurrentView();
+  },
+
+  // วาดเฉพาะหน้าจอที่ผู้ใช้เปิดอยู่ตอนนี้
+  // โมดูลอื่นบนหน้าเดียวกัน (เช่น หนี้สิน/บัตรเครดิต บน cashflow.html) มี fallback เป็น #content-area
+  // ถ้าเรียกมั่วจะมายึดพื้นที่คอนเทนเนอร์เดียวกัน ทำให้หน้าเดิมหายไปทั้งหน้า
+  renderCurrentView() {
+    const page = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    const hash = (window.location.hash || '').toLowerCase();
+    const call = (name, fn = 'render') => {
       const mod = window[name];
       if (mod && typeof mod[fn] === 'function') {
         try { mod[fn](); } catch (e) { console.warn('[CloudSync] re-render ' + name + ' error:', e); }
       }
-    });
+    };
+
+    if (page === 'index.html') { call('DashboardModule', 'calculateAndRender'); return; }
+    if (page === 'settings.html') { call('SettingsModule'); return; }
+    if (page === 'portfolio.html') { call('PortfolioModule'); call('DividendPlannerModule'); return; }
+
+    if (window.CashFlowModule) {
+      const onDebtPage = hash.includes('debt') || hash.includes('credit-card');
+      const area = document.getElementById('content-area');
+      if (onDebtPage && window.DebtModule && typeof DebtModule.render === 'function') {
+        try { DebtModule.render(area); } catch (e) { console.warn('[CloudSync] re-render DebtModule error:', e); }
+      } else {
+        call('CashFlowModule');
+      }
+      return;
+    }
   },
 
   // ดึงข้อมูลซ้ำระหว่างเปิดหน้าอยู่ (อีกบัญชี/อีกเครื่องเพิ่งแก้) แบบคุมความถี่
