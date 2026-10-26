@@ -64,12 +64,12 @@ window.DividendPlannerModule = {
       );
 
       if (isMemberUser) {
-        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
         return {
           isMember: true,
-          storageKey: `wealthport:dividend-plan-models:member:${cleanName}`,
-          targetKey: `wealthport:dividend-plan-target:member:${cleanName}`,
-          pillarKey: `wealthport:dividend-plan-pillars:member:${cleanName}`
+          // ใช้คีย์มาตรฐานเดียวกับทุกบทบาท DataScope แยกเจ้าของด้วย #u<uid>
+          storageKey: this.STORAGE_KEY,
+          targetKey: this.TARGET_KEY,
+          pillarKey: this.PILLAR_KEY
         };
       }
     } catch (e) {}

@@ -102,11 +102,13 @@ var CashFlowModule = {
         userEmail.includes('member')
       );
 
+      // ทุกบทบาทใช้คีย์มาตรฐานชื่อเดียวกัน (family-finance:cashflow:v2)
+      // การแยกข้อมูลรายคนเกิดจาก DataScope ที่ต่อท้ายคีย์ด้วย #u<uid> ของผู้ที่ล็อกอิน
+      // (isMember ยังใช้อยู่สำหรับตรวจสิทธิ์ import/ข้อมูลร่วมเท่านั้น)
       if (isMemberUser) {
-        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
         return {
           isMember: true,
-          storageKey: `family-finance:cashflow:member:${cleanName}`,
+          storageKey: this.storageKey,
           fallbackKey: null
         };
       }
@@ -337,34 +339,7 @@ var CashFlowModule = {
 
   getState() {
     try {
-      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
-      const userEmail = (sbData?.user?.email || '').toLowerCase();
-
-      const pageText = document.body ? document.body.innerText : '';
-      const isExplicitMember = pageText.includes('(MEMBER)') || pageText.includes('สมาชิก');
-      const isExplicitAdmin = pageText.includes('(ADMIN)') || pageText.includes('ผู้ดูแล');
-
-      const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
-      let currentName = (nameEl ? nameEl.textContent : '').trim();
-      if (!currentName && userEmail) {
-        currentName = userEmail.split('@')[0];
-      }
-
-      const isPloyOrMember = isExplicitMember || 
-                             currentName.includes('พลอย') || 
-                             currentName.toLowerCase().includes('ploy') ||
-                             (userEmail.includes('ploy') || userEmail.includes('member'));
-
-      if (!isExplicitAdmin && isPloyOrMember) {
-        const cleanName = (currentName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
-        const memberKey = `family-finance:cashflow:member:${cleanName}`;
-        const rawMember = localStorage.getItem(memberKey);
-        if (rawMember) return JSON.parse(rawMember);
-
-        return { transactions: [], accounts: [] };
-      }
-
+      // ทุกบทบาทอ่านคีย์มาตรฐานเดียวกัน (DataScope เพิ่ม #u<uid> ของผู้ที่ล็อกอินให้เอง)
       const ctx = this.getUserContext();
       const raw = localStorage.getItem(ctx.storageKey) || (!ctx.isMember && ctx.fallbackKey ? localStorage.getItem(ctx.fallbackKey) : null);
       if (raw) {

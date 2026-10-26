@@ -94,21 +94,13 @@ var SettingsModule = {
     { id: 'm-acc-5', name: 'DIME PLOY', type: 'ดิจิทัล' }
   ],
 
-  // กำหนด Storage Key แบบแยกตามบทบาทและชื่อผู้ใช้
+  // หมวดหมู่และบัญชีหลักเป็นข้อมูลร่วมของบ้าน ทุกบทบาทใช้คีย์เดียวกัน (ใครแก้ทุกบัญชีเห็นตาม)
   getCategoriesStorageKey() {
-    if (this.currentUserRole === 'admin') {
-      return 'family-finance:categories:v1';
-    }
-    const safeUser = (this.currentUserName || 'ploy').toLowerCase().replace(/\s+/g, '_');
-    return `family-finance:categories:member:${safeUser}`;
+    return 'family-finance:categories:v1';
   },
 
   getAccountsStorageKey() {
-    if (this.currentUserRole === 'admin') {
-      return 'family-finance:master-accounts:v1';
-    }
-    const safeUser = (this.currentUserName || 'ploy').toLowerCase().replace(/\s+/g, '_');
-    return `family-finance:master-accounts:member:${safeUser}`;
+    return 'family-finance:master-accounts:v1';
   },
 
   async init() {

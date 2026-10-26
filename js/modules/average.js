@@ -38,11 +38,10 @@ function getAverageUserContext() {
     );
 
     if (isMemberUser) {
-      const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
-      const existingMemberKey = Object.keys(localStorage).find(k => k.startsWith('stock-trading-log:member:'));
       return {
         isMember: true,
-        storageKey: existingMemberKey || `stock-trading-log:member:${cleanName}`
+        // คีย์มาตรฐานชื่อเดียวทุกบทบาท DataScope เป็นผู้แยกเจ้าของด้วย #u<uid>
+        storageKey: 'stock-trading-log:v3'
       };
     }
   } catch (e) {}

@@ -124,15 +124,15 @@
       const isDad = user.isDad;
       const safeUsername = (user.name || 'member').toLowerCase().replace(/\s+/g, '_');
 
-      // 1. ดึง Cashflow
-      const cashflowKey = isDad ? 'family-finance:cashflow:v2' : `family-finance:cashflow:member:${safeUsername}`;
+      // 1. ดึง Cashflow (คีย์มาตรฐานชื่อเดียวทุกบทบาท DataScope แยกเจ้าของให้เอง)
+      const cashflowKey = 'family-finance:cashflow:v2';
       let cashflowData = null;
       try {
         cashflowData = JSON.parse(localStorage.getItem(cashflowKey) || 'null');
       } catch (e) {}
 
       // 2. ดึง Portfolio
-      const portKey = isDad ? 'stock-trading-log:v3' : `stock-trading-log:member:${safeUsername}`;
+      const portKey = 'stock-trading-log:v3';
       let portfolioData = null;
       try {
         portfolioData = JSON.parse(localStorage.getItem(portKey) || 'null');
@@ -144,17 +144,19 @@
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(taxPrefix)) {
+          // เก็บในไฟล์สำรองเฉพาะชื่อคีย์ logical (ไม่เอา #u<uid> ที่ต่อท้ายของเครื่องนี้)
+          const logicalKey = key.split('#u')[0];
           try {
-            taxData[key] = JSON.parse(localStorage.getItem(key));
+            taxData[logicalKey] = JSON.parse(localStorage.getItem(key));
           } catch (e) {
-            taxData[key] = localStorage.getItem(key);
+            taxData[logicalKey] = localStorage.getItem(key);
           }
         }
       }
 
-      // 4. ดึง Categories & Accounts ตามบทบาท
-      const catKey = isDad ? 'family-finance:categories:v1' : `family-finance:categories:member:${safeUsername}`;
-      const accKey = isDad ? 'family-finance:master-accounts:v1' : `family-finance:master-accounts:member:${safeUsername}`;
+      // 4. ดึง Categories & Accounts (ข้อมูลร่วมของบ้าน ใช้คีย์เดียวกันทุกบทบาท)
+      const catKey = 'family-finance:categories:v1';
+      const accKey = 'family-finance:master-accounts:v1';
       let categoriesData = null;
       let accountsData = null;
       try {
@@ -237,14 +239,14 @@
       if (!confirm(confirmMsg)) return;
 
       try {
-        // 1. กู้คืน Cashflow
-        const cashflowKey = currentIsDad ? 'family-finance:cashflow:v2' : `family-finance:cashflow:member:${safeUsername}`;
+        // 1. กู้คืน Cashflow (เขียนลงซองของบัญชีที่ล็อกอินอยู่)
+        const cashflowKey = 'family-finance:cashflow:v2';
         if (data.cashflow) {
           localStorage.setItem(cashflowKey, JSON.stringify(data.cashflow));
         }
 
         // 2. กู้คืน Portfolio
-        const portKey = currentIsDad ? 'stock-trading-log:v3' : `stock-trading-log:member:${safeUsername}`;
+        const portKey = 'stock-trading-log:v3';
         if (data.portfolio) {
           localStorage.setItem(portKey, JSON.stringify(data.portfolio));
         }
@@ -260,22 +262,23 @@
           }
           keysToRemove.forEach(k => localStorage.removeItem(k));
 
-          // เขียน tax ใหม่
-          Object.keys(data.tax).forEach(oldKey => {
+          // เขียน tax ใหม่ (ตัด #u<uid> จากไฟล์เก่าออก แล้วให้ DataScope ใส่อันของผู้ใช้ปัจจุบัน)
+          Object.keys(data.tax).forEach(exportedKey => {
+            const oldKey = exportedKey.split('#u')[0];
             let newKey = oldKey;
             if (oldKey.includes(':DAD:')) {
               newKey = oldKey.replace(':DAD:', currentIsDad ? ':DAD:' : `:member_${safeUsername}:`);
             } else if (oldKey.includes(':member_')) {
               newKey = oldKey.replace(/:member_[^:]+:/, currentIsDad ? ':DAD:' : `:member_${safeUsername}:`);
             }
-            const val = typeof data.tax[oldKey] === 'string' ? data.tax[oldKey] : JSON.stringify(data.tax[oldKey]);
+            const val = typeof data.tax[exportedKey] === 'string' ? data.tax[exportedKey] : JSON.stringify(data.tax[exportedKey]);
             localStorage.setItem(newKey, val);
           });
         }
 
-        // 4. กู้คืน Categories & Accounts ตามบทบาทของผู้ใช้
-        const catKey = currentIsDad ? 'family-finance:categories:v1' : `family-finance:categories:member:${safeUsername}`;
-        const accKey = currentIsDad ? 'family-finance:master-accounts:v1' : `family-finance:master-accounts:member:${safeUsername}`;
+        // 4. กู้คืน Categories & Accounts (ข้อมูลร่วมของบ้าน)
+        const catKey = 'family-finance:categories:v1';
+        const accKey = 'family-finance:master-accounts:v1';
 
         if (data.categories) {
           localStorage.setItem(catKey, JSON.stringify(data.categories));

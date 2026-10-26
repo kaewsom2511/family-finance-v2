@@ -30,12 +30,13 @@ window.DebtModule = {
         userEmail.includes('member')
       );
 
+      // ใช้คีย์มาตรฐานชื่อเดียวกับบัญชีผู้ดูแล
+      // การแยกข้อมูลรายคนเกิดจาก DataScope (#u<uid>) ใน js/supabase.js
       if (isMemberUser) {
-        const cleanName = (rawName || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
         return {
           isMember: true,
-          storageKey: `family-finance:debt-plans:member:${cleanName}`,
-          cashflowKey: `family-finance:cashflow:member:${cleanName}`
+          storageKey: this.storageKey,
+          cashflowKey: 'family-finance:cashflow:v2'
         };
       }
     } catch (e) {}

@@ -7,6 +7,323 @@ const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_U
 // โหมด: 'signin' | 'signup' | 'forgot' | 'reset'
 let authMode = 'signin';
 
+// ==========================================
+// DataScope: ใช้โค้ด/โครงสร้างร่วมกัน แต่ข้อมูลแยกตามบัญชีผู้ใช้
+// โมดูลทุกตัวยังเรียก localStorage ด้วยชื่อคีย์เดิม แต่คีย์ที่เป็นข้อมูลส่วนตัว
+// จะถูกแปลเป็น "คีย์จริง" ที่ต่อท้ายด้วย #u<uid> ของผู้ที่ล็อกอินอยู่
+// ==========================================
+
+const DataScope = {
+  SEP: '#u',
+
+  // โครงสร้างที่ทั้งบ้านใช้ร่วมกัน (ใครแก้ทุกบัญชีเห็นตาม)
+  SHARED: [
+    'family-finance:categories:v1',
+    'family-finance:master-accounts:v1',
+    'family-finance:settings',
+    'family-finance:credit-cards:v1',
+    'family-finance:debts-contracts:v1'
+  ],
+
+  // คีย์ข้อมูลส่วนตัวที่โมดูลเรียกด้วยชื่อตรงตัว → ต่อท้ายด้วย #u<uid> ตามผู้ที่ล็อกอิน
+  // ไม่มีการยุบชื่อข้ามเวอร์ชัน (v1/v2/member) มาอยู่คีย์เดียวกัน เพราะ JSONB บน Cloud
+  // ไม่เก็บลำดับคีย์ ทำให้คีย์ที่ pull มาทีหลังเขียนทับข้อมูลของคนอื่นได้
+  DATA_KEYS: [
+    'family-finance:cashflow:v2',
+    'family-finance:cashflow:v1',
+    'family-finance:portfolio:v1',
+    'family-finance:initial-balances:v1',
+    'family-finance:wealth-extras:v1',
+    'family-finance:pvd:v1',
+    'family-finance:card-limits',
+    'family-finance:debt-plans',
+    'stock-trading-log:v3',
+    'stock-trading-log:quote-cache:v1',
+    'wealthport:latest-usd-thb',
+    'wealthport:avg-cost-ledger:v1',
+    'wealthport:dividend-plan-models:v3',
+    'wealthport:dividend-plan-pillars:v3',
+    'wealthport:dividend-plan-target:v3',
+    'family-finance-db',
+    'transactions'
+  ],
+
+  // กลุ่มคีย์ที่ชื่อเปลี่ยนไดนามิก (ตามเจ้าของ/ตามปี) → ต่อท้าย #u<uid> ทั้งชื่อ
+  DYNAMIC_DATA_PREFIX: [
+    'family-finance:tax-planner:',
+    'family-finance:cashflow:member:',
+    'family-finance:card-limits:member:',
+    'family-finance:debt-plans:member:',
+    'family-finance:categories:member:',
+    'family-finance:master-accounts:member:',
+    'stock-trading-log:member:',
+    'wealthport:dividend-plan-models:member:',
+    'wealthport:dividend-plan-target:member:',
+    'wealthport:dividend-plan-pillars:member:'
+  ],
+
+  // คีย์แบบ "<ฐาน>:member:<ชื่อเจ้าของ>" → ชื่อมาตรฐานที่โมดูลใช้อย่างเดียวในปัจจุบัน
+  MEMBER_TO_CANONICAL: {
+    'family-finance:cashflow': 'family-finance:cashflow:v2',
+    'stock-trading-log': 'stock-trading-log:v3',
+    'family-finance:card-limits': 'family-finance:card-limits',
+    'family-finance:debt-plans': 'family-finance:debt-plans',
+    'wealthport:dividend-plan-models': 'wealthport:dividend-plan-models:v3',
+    'wealthport:dividend-plan-target': 'wealthport:dividend-plan-target:v3',
+    'wealthport:dividend-plan-pillars': 'wealthport:dividend-plan-pillars:v3',
+    'family-finance:categories': 'family-finance:categories:v1',
+    'family-finance:master-accounts': 'family-finance:master-accounts:v1'
+  },
+
+  uid: null,
+  nameSlug: '',
+  emailLocal: '',
+
+  // อ่าน session ที่ supabase-js เก็บไว้แบบ synchronous เพื่อให้แปลคีย์ได้ทันก่อน module อื่นรัน
+  detectUidFromToken() {
+    try {
+      const tokenKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!tokenKey) return null;
+      const raw = nativeGetItem.call(localStorage, tokenKey);
+      return JSON.parse(raw)?.user?.id || null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  stripScope(key) {
+    const i = String(key).indexOf(this.SEP);
+    return i === -1 ? String(key) : String(key).slice(0, i);
+  },
+
+  isUserDataKey(key) {
+    return this.DATA_KEYS.includes(key) ||
+      this.DYNAMIC_DATA_PREFIX.some(p => key.startsWith(p));
+  },
+
+  physical(logicalKey) {
+    const key = String(logicalKey);
+    if (!this.uid || key.includes(this.SEP)) return key;
+    if (this.isSharedKey(key)) return key;
+    return this.isUserDataKey(key) ? key + this.SEP + this.uid : key;
+  },
+
+  isOwnDataKey(key) {
+    return !!this.uid && typeof key === 'string' && key.endsWith(this.SEP + this.uid);
+  },
+
+  isSharedKey(key) {
+    return this.SHARED.includes(key);
+  },
+
+  // ชื่อเจ้าของที่ระบุไว้ในคีย์เก่า (":member:<ชื่อ>", "tax-planner:member_<ชื่อ>:ปี", "tax-planner:<ชื่อ>:ปี")
+  // คืน null เมื่อคีย์ไม่กำกับชื่อเจ้าของ = ข้อมูลเดิมของพ่อ
+  legacyOwnerInKey(key) {
+    const member = key.match(/:member[:_]([^:_#]+)/);
+    const raw = member ? member[1] : (key.match(/^family-finance:tax-planner:([^:_#]+)[:_]/) || [])[1];
+    if (!raw) return null;
+    const owner = String(raw).toLowerCase().replace(/^member[_:]?/, '');
+    return ['dad', 'admin'].includes(owner) ? null : owner;
+  },
+
+  myOwnerNames() {
+    const names = new Set();
+    [this.nameSlug, this.emailLocal, this.displayName].forEach(value => {
+      const s = String(value || '').toLowerCase().trim();
+      if (!s) return;
+      names.add(s);
+      names.add(s.replace(/[^a-z0-9ก-๙]+/g, '_').replace(/^_+|_+$/g, ''));
+    });
+    return names;
+  },
+
+  ownerIsMe(owner) {
+    if (!owner) return false;
+    return this.myOwnerNames().has(String(owner).toLowerCase());
+  },
+
+  // คีย์แบบ "<ฐาน>:member:<ชื่อ>" ที่ชื่อเจ้าของตรงกับบัญชีปัจจุบันหรือไม่
+  memberKeyOwnerMatches(key) {
+    return this.ownerIsMe(this.legacyOwnerInKey(key));
+  },
+
+  // ตัดสินว่าคีย์เก่า (ไม่มี #u) จาก Cloud ควรลงเครื่องนี้ไหม
+  // - คีย์กำกับชื่อคนอื่น → ไม่เอา
+  // - คีย์ไม่กำกับชื่อ = ข้อมูลเดิมของพ่อ ให้เฉพาะบัญชี admin และเมื่อซองของเรายังว่าง
+  //   (กันข้อมูลของพ่อทับข้อมูลของคนที่ล็อกอินเป็นสมาชิก)
+  acceptLegacyKey(key) {
+    if (this.isSharedKey(key)) return true;
+    const owner = this.legacyOwnerInKey(key);
+    if (owner !== null) return this.ownerIsMe(owner);
+    if (this.role !== 'admin') return false;
+    const base = (key.match(/^(.+?):member[:_]/) || [])[1];
+    const logical = base ? (this.MEMBER_TO_CANONICAL[base] || key) : key;
+    return nativeGetItem.call(localStorage, this.physical(logical)) === null;
+  },
+
+  // คีย์ยุคก่อนที่ชื่อถูกยุบเหลือเฉพาะฐาน (ไม่มีโมดูลใดอ่านแล้ว) → ล้างทิ้ง
+  // ถ้าคีย์มาตรฐานยังว่างอยู่ ให้ย้ายค่าออกมาเก็บก่อนลบ กันข้อมูลหาย
+  ALIAS_LEFTOVERS: {
+    'family-finance:cashflow': 'family-finance:cashflow:v2',
+    'family-finance:portfolio': 'family-finance:portfolio:v1',
+    'family-finance:initial-balances': 'family-finance:initial-balances:v1',
+    'family-finance:wealth-extras': 'family-finance:wealth-extras:v1',
+    'family-finance:pvd': 'family-finance:pvd:v1',
+    'stock-trading-log': 'stock-trading-log:v3',
+    'stock-trading-log:quote-cache': 'stock-trading-log:quote-cache:v1',
+    'wealthport:avg-cost-ledger': 'wealthport:avg-cost-ledger:v1',
+    'wealthport:dividend-plan-models': 'wealthport:dividend-plan-models:v3',
+    'wealthport:dividend-plan-pillars': 'wealthport:dividend-plan-pillars:v3',
+    'wealthport:dividend-plan-target': 'wealthport:dividend-plan-target:v3'
+  },
+
+  purgeAliasLeftovers() {
+    if (!this.uid) return 0;
+    let cleaned = 0;
+    Object.entries(this.ALIAS_LEFTOVERS).forEach(([oldName, canonical]) => {
+      const oldKey = oldName + this.SEP + this.uid;
+      const value = nativeGetItem.call(localStorage, oldKey);
+      if (value === null) return;
+      if (nativeGetItem.call(localStorage, this.physical(canonical)) === null) {
+        nativeSetItem.call(localStorage, this.physical(canonical), value);
+      }
+      nativeRemoveItem.call(localStorage, oldKey);
+      cleaned++;
+    });
+    if (cleaned) console.log('[DataScope] ล้างคีย์ยุคก่อนที่เลิกใช้แล้ว', cleaned, 'คีย์');
+    return cleaned;
+  },
+
+  async bindUser(user, profile) {
+    const uid = user?.id || null;
+    const changed = uid !== this.uid;
+    this.uid = uid;
+    this.role = profile?.role || 'member';
+    this.displayName = profile?.full_name || (user?.email ? user.email.split('@')[0] : '');
+    this.nameSlug = String(profile?.full_name || (user?.email || '').split('@')[0])
+      .toLowerCase().replace(/[^a-z0-9ก-๙]/g, '_');
+    this.emailLocal = String(user?.email || '').split('@')[0].toLowerCase();
+
+    if (uid) {
+      try {
+        if (changed) await this.migrateLegacyData(user, profile);
+        this.normalizeMemberKeys();
+        this.purgeAliasLeftovers();
+      } catch (e) {
+        console.warn('[DataScope] migration error:', e);
+      }
+    }
+    return changed;
+  },
+
+  // จัดระเบียบคีย์เก่าของใครของมัน: "<ฐาน>:member:<ชื่อเรา>" → คีย์มาตรฐานในซองของเรา
+  // เรียกทุกครั้งที่ผูกผู้ใช้และหลัง pull จาก Cloud (ข้อมูลเก่าอาจเพิ่งลงมา)
+  // คีย์ shared (หมวดหมู่/บัญชีหลัก) ยุบเข้าคีย์ร่วมของบ้าน ไม่เขียนทับของเดิม
+  normalizeMemberKeys() {
+    if (!this.uid) return 0;
+    const rawKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k) rawKeys.push(k);
+    }
+
+    let moved = 0;
+    rawKeys.forEach(rawKey => {
+      if (!rawKey.includes(':member:')) return;
+      const logical = this.stripScope(rawKey);
+      if (!this.memberKeyOwnerMatches(logical)) return;
+      const base = logical.match(/^(.+):member:/)[1];
+      const canonical = this.MEMBER_TO_CANONICAL[base];
+      if (!canonical) return;
+
+      const target = this.physical(canonical);
+      if (rawKey === target) return;
+      const value = nativeGetItem.call(localStorage, rawKey);
+      const hasTarget = nativeGetItem.call(localStorage, target) !== null;
+      // คีย์มาตรฐานมีข้อมูลอยู่แล้ว = ของใหม่กว่า (มาจาก Cloud หรือผู้ใช้แก้ไว้) ให้เก็บของใหม่ทิ้งคีย์เก่า
+      if (hasTarget) {
+        if (value !== null) nativeRemoveItem.call(localStorage, rawKey);
+        moved++;
+        return;
+      }
+      if (value === null) return;
+      nativeSetItem.call(localStorage, target, value);
+      nativeRemoveItem.call(localStorage, rawKey);
+      moved++;
+    });
+
+    if (moved) console.log('[DataScope] จัดระเบียบคีย์เดิมเข้าคีย์มาตรฐาน', moved, 'คีย์');
+    return moved;
+  },
+
+  // ย้ายข้อมูลเดิม (คีย์ไม่มี #u) เข้าซองของผู้ที่ควรเป็นเจ้าของ
+  // - บัญชี admin = เจ้าของข้อมูลเดิมทั้งชุด ตามที่ผู้ใช้ยืนยัน
+  // - บัญชี member = เอาเฉพาะคีย์ ":member:<ชื่อ>" ที่ชื่อตรงกับผู้ใช้นั้น
+  // ไม่เขียนทับคีย์ที่มีอยู่แล้ว (ข้อมูลจาก Cloud ที่ pull มาก่อนชนะเสมอ)
+  legacyOwnerIsMember(key) {
+    if (key.includes(':member:')) return true;
+    const taxOwner = (key.match(/^family-finance:tax-planner:([^:]+):/) || [])[1];
+    if (taxOwner) return !['dad', 'admin'].includes(taxOwner.toLowerCase());
+    return false;
+  },
+
+  async migrateLegacyData(user, profile) {
+    const doneFlag = 'family:dataScopeMigrated:' + this.uid;
+    if (nativeGetItem.call(localStorage, doneFlag)) return;
+
+    const isAdmin = (profile?.role || 'member') === 'admin';
+
+    const legacyToMove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || key.includes(this.SEP)) continue;
+      if (this.SHARED.includes(key)) continue;
+      if (key.startsWith('sb-')) continue;
+      if (!this.isUserDataKey(key)) continue;
+
+      const owner = this.legacyOwnerInKey(key);
+      if (isAdmin) {
+        // ของพ่อ = คีย์เดิมที่ไม่มีชื่อเจ้าของกำกับ (cashflow:v2, stock-trading-log:v3, tax-planner:DAD:*)
+        // คีย์ที่กำกับชื่อสมาชิกไว้ ปล่อยไว้ให้เป็นของเจ้าของเดิม
+        if (owner !== null) continue;
+        legacyToMove.push(key);
+      } else {
+        // สมาชิก: เอาเฉพาะคีย์ที่กำกับชื่อตรงกับบัญชีนี้
+        if (owner !== null && this.ownerIsMe(owner)) legacyToMove.push(key);
+      }
+    }
+
+    if (legacyToMove.length === 0) {
+      nativeSetItem.call(localStorage, doneFlag, '1');
+      console.log('[DataScope] ไม่มีข้อมูลเดิมต้องย้ายสำหรับบัญชีนี้');
+      return;
+    }
+
+    // ระหว่างย้ายข้อมูลห้าม push ขึ้น Cloud (เดี๋ยวจะ sync เสร็จทีเดียวหลังย้าย)
+    if (typeof CloudSync !== 'undefined') CloudSync._bulkWrite = true;
+    try {
+      legacyToMove.forEach(key => {
+        const target = this.physical(key);
+        if (nativeGetItem.call(localStorage, target) !== null) return;
+        const value = nativeGetItem.call(localStorage, key);
+        if (value === null) return;
+        nativeSetItem.call(localStorage, target, value);
+        nativeRemoveItem.call(localStorage, key);
+      });
+      nativeSetItem.call(localStorage, doneFlag, new Date().toISOString());
+    } finally {
+      if (typeof CloudSync !== 'undefined') CloudSync._bulkWrite = false;
+    }
+    console.log('[DataScope] ย้ายข้อมูลเดิมเข้าซองผู้ใช้แล้ว', legacyToMove.length, 'คีย์');
+    if (typeof window.triggerCloudSync === 'function') window.triggerCloudSync();
+  }
+};
+
+// ติดตั้งก่อนทุกโมดูล: เก็บ method ดั้งไว้ใช้เองภายใน (เขียนอ่านแบบไม่แปลคีย์)
+const nativeGetItem = Storage.prototype.getItem;
+const nativeSetItem = Storage.prototype.setItem;
+const nativeRemoveItem = Storage.prototype.removeItem;
+
 document.addEventListener('DOMContentLoaded', async () => {
   checkUserSession();
   listenToPasswordReset();
@@ -179,6 +496,10 @@ async function applyUserPermissions(user) {
     .eq('id', user.id)
     .single();
 
+  // ผูกซองข้อมูลกับผู้ใช้จริง (และย้ายข้อมูลเดิมเข้าซองถ้ายังไม่เคยทำ)
+  const uidChanged = await DataScope.bindUser(user, profile);
+  if (uidChanged) console.log('[DataScope] ใช้ข้อมูลซองของ ' + (profile?.full_name || user.email));
+
   const role = profile?.role || 'member';
   const displayName = profile?.full_name || user.email;
 
@@ -209,6 +530,9 @@ async function applyUserPermissions(user) {
   if (typeof CashFlowModule !== 'undefined' && typeof CashFlowModule.render === 'function') {
     try { CashFlowModule.render(); } catch (e) {}
   }
+  if (uidChanged && typeof DashboardModule !== 'undefined' && typeof DashboardModule.calculateAndRender === 'function') {
+    try { DashboardModule.calculateAndRender(); } catch (e) {}
+  }
 }
 
 async function handleSignOut() {
@@ -230,44 +554,43 @@ const CloudSync = {
   // ตั้ง false เพื่อให้เครื่องนี้ sync กับ Cloud / iPad
   LOCAL_ONLY: false,
 
-  // คีย์ที่ sync แบบระบุชื่อตรงตัว
-  STORAGE_KEYS: [
-    'family-finance:cashflow:v2',
-    'family-finance:categories:v1',
-    'family-finance:credit-cards:v1',
-    'family-finance:debts-contracts:v1',
-    'family-finance:master-accounts:v1',
-    'family-finance:portfolio:v1',
-    'family-finance:initial-balances:v1',
-    'family-finance:wealth-extras:v1',
-    'family-finance:pvd:v1',
-    'family-finance:settings',
-    'stock-trading-log:v3',
-    'stock-trading-log:quote-cache:v1',
-    'wealthport:latest-usd-thb',
-    'wealthport:avg-cost-ledger:v1',
-    'wealthport:dividend-plan-models:v3',
-    'wealthport:dividend-plan-pillars:v3',
-    'wealthport:dividend-plan-target:v3'
-  ],
-
-  // โมดูลที่ตั้งชื่อคีย์ตามผู้ใช้/ปีอัตโนมัติ (เช่น cashflow:member:ploy, tax-planner:DAD:2569)
-  // จับเป็น prefix แทน เพราะไม่มีทางรู้ชื่อครบทุกค่า
-  STORAGE_PREFIXES: [
-    'family-finance:cashflow:member:',
-    'family-finance:categories:member:',
-    'family-finance:master-accounts:member:',
-    'family-finance:tax-planner:',
-    'stock-trading-log:member:'
-  ],
-
   // ปิด auto-push ชั่วคราวขณะเขียนหลายคีย์ติดกัน (ตอน pull จาก Cloud) กันการยิง push ซ้อน
   _bulkWrite: false,
 
+  // ข้อมูลโครงสร้างร่วมของบ้านเก็บในตาราง family_storage
+  // ถ้ายังไม่ได้รัน SQL สร้างตาราง (familyTableState='missing') จะเก็บไว้ในแถวของบัญชีนั้นไปก่อน
+  FAMILY_TABLE: 'family_storage',
+  familyTableState: 'unknown',
+
+  // มีเฉพาะคีย์ที่เป็นข้อมูลของคนที่ล็อกอินอยู่ (ลงท้าย #u<uid>) กับคีย์โครงสร้างร่วมเท่านั้น
+  // ทำให้บัญชีหนึ่งไม่สามารถดึง/ส่งข้อมูลของอีกบัญชีได้
   isSyncedKey(key) {
     if (!key) return false;
-    return this.STORAGE_KEYS.includes(key) ||
-      this.STORAGE_PREFIXES.some(prefix => key.startsWith(prefix));
+    return DataScope.isOwnDataKey(key) || DataScope.isSharedKey(key);
+  },
+
+  // อ่าน localStorage ทั้งหมดแล้วแยกเป็นซองของตัวเองกับซองข้อมูลร่วมของบ้าน
+  buildBundles() {
+    const own = {}, shared = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!this.isSyncedKey(key)) continue;
+      const raw = localStorage.getItem(key);
+      if (raw === null) continue;
+      let value;
+      try {
+        value = JSON.parse(raw);
+      } catch (e) {
+        value = raw;
+      }
+      (DataScope.isSharedKey(key) ? shared : own)[key] = value;
+    }
+    return { own, shared };
+  },
+
+  isMissingTableError(err) {
+    const msg = (err?.message || '') + (err?.details || '') + (err?.code || '');
+    return /does not exist|42P01|PGRST205|not find the table/i.test(msg);
   },
 
   // กล่องแจ้งเตือนสถานะมุมขวาล่าง
@@ -324,33 +647,71 @@ const CloudSync = {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) return;
 
+      // อย่าให้ข้อมูลของบัญชีอื่นที่ค้างอยู่ในแถว Cloud เข้ามารวมในเครื่องนี้
+      const belongsHere = (key) => {
+        const sep = key.indexOf(DataScope.SEP);
+        if (sep === -1) return DataScope.acceptLegacyKey(key);
+        return key.endsWith(DataScope.SEP + DataScope.uid);
+      };
+
+      const bundleSources = [];
       const { data, error } = await supabaseClient
         .from('user_storage')
         .select('data, updated_at')
         .eq('user_id', session.user.id)
         .maybeSingle();
-
       if (error) throw error;
+      if (data && data.data) bundleSources.push(data.data);
 
-      if (data && data.data) {
-        let hasNewData = false;
+      // ข้อมูลโครงสร้างร่วมของบ้าน (ตาราง family_storage มีเฉพาะตอนรัน SQL แล้ว)
+      if (this.familyTableState !== 'missing') {
+        const { data: fam, error: famErr } = await supabaseClient
+          .from(this.FAMILY_TABLE)
+          .select('data')
+          .eq('id', 'family')
+          .maybeSingle();
+        if (famErr) {
+          if (this.isMissingTableError(famErr)) this.familyTableState = 'missing';
+          else console.warn('[CloudSync] Family table read error:', famErr);
+        } else if (fam && fam.data) {
+          this.familyTableState = 'ok';
+          bundleSources.push(fam.data);
+        }
+      }
+
+      const readIfScoped = (logicalKey) =>
+        DataScope.uid ? nativeGetItem.call(localStorage, DataScope.physical(logicalKey)) : null;
+      const wasEmpty = !readIfScoped('family-finance:cashflow:v2') && !readIfScoped('stock-trading-log:v3');
+      let hasNewData = false;
+
+      bundleSources.forEach(bundleData => {
         this._bulkWrite = true;
         try {
-          Object.entries(data.data).forEach(([key, val]) => {
-            if (val !== null && val !== undefined) {
-              localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
-              hasNewData = true;
-            }
+          Object.entries(bundleData).forEach(([key, val]) => {
+            if (val === null || val === undefined || !belongsHere(key)) return;
+            localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
+            hasNewData = true;
           });
         } finally {
           this._bulkWrite = false;
         }
+      });
 
-        // ถ้าเครื่องปลายทางยังไม่มีข้อมูล แล้วเพิ่งดึงมาจาก Cloud ให้รีโหลด 1 ครั้งเพื่อแสดงผล
-        const isCurrentEmpty = !localStorage.getItem('stock-trading-log:v3') && !localStorage.getItem('family-finance:cashflow:v2');
-        if (hasNewData && isCurrentEmpty) {
-          window.location.reload();
-        }
+      // ข้อมูลเก่าแบบ "<ฐาน>:member:<ชื่อเรา>" ที่เพิ่งลงมาจาก Cloud →ยุบเข้าคีย์มาตรฐานในซองของเรา
+      this._bulkWrite = true;
+      let didNormalize = false;
+      try {
+        didNormalize = (DataScope.normalizeMemberKeys() + DataScope.purgeAliasLeftovers()) > 0;
+      } finally {
+        this._bulkWrite = false;
+      }
+      if (didNormalize) scheduleCloudPush(800);
+
+      // รีโหลดเมื่อเครื่องเพิ่งมีข้อมูลครั้งแรก หรือหลังจัดระเบียบคีย์ (กันวนซ้ำ: ทำทีละครั้งต่อบัญชีใช้งาน)
+      const normalizedThisSession = didNormalize && !sessionStorage.getItem('ff:scopeReloaded');
+      if (normalizedThisSession) sessionStorage.setItem('ff:scopeReloaded', '1');
+      if (hasNewData && (wasEmpty || normalizedThisSession)) {
+        window.location.reload();
       }
     } catch (err) {
       console.warn('[CloudSync] Pull error:', err);
@@ -368,19 +729,27 @@ const CloudSync = {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) return;
 
-      const bundle = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!this.isSyncedKey(key)) continue;
-        const raw = localStorage.getItem(key);
-        if (raw !== null) {
-          try {
-            bundle[key] = JSON.parse(raw);
-          } catch (e) {
-            bundle[key] = raw;
+      const { own, shared } = this.buildBundles();
+
+      // ข้อมูลร่วมของบ้านพยายามเก็บในตาราง family_storage
+      // ถ้าตารางยังไม่มี (ยังไม่ได้รัน SQL) ให้เก็บรวมในแถวของบัญชีนี้ไปก่อน
+      if (this.familyTableState !== 'missing' && Object.keys(shared).length > 0) {
+        const { error: famErr } = await supabaseClient
+          .from(this.FAMILY_TABLE)
+          .upsert({ id: 'family', data: shared, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (famErr) {
+          if (this.isMissingTableError(famErr)) {
+            this.familyTableState = 'missing';
+            console.warn('[CloudSync] ยังไม่มีตาราง ' + this.FAMILY_TABLE + ' จึงเก็บข้อมูลร่วมไว้ในแถวของบัญชีนี้ก่อน');
+          } else {
+            throw famErr;
           }
+        } else {
+          this.familyTableState = 'ok';
         }
       }
+
+      const bundle = this.familyTableState === 'missing' ? { ...own, ...shared } : own;
 
       const { error } = await supabaseClient
         .from('user_storage')
@@ -414,14 +783,27 @@ function scheduleCloudPush(delay = 1500) {
   syncTimeout = setTimeout(() => CloudSync.pushToCloud(), delay);
 }
 
-// ดักที่ Storage.prototype.setItem เพราะทุกโมดูลเรียก localStorage.setItem โดยตรง
-const nativeSetItem = Storage.prototype.setItem;
+// ชั้น แปลงคีย์ + สั่ง sync อัตโนมัติ ตั้งที่ Storage.prototype
+// เพราะทุกโมดูลเรียก localStorage.getItem/setItem/removeItem โดยตรงอยู่แล้ว
 Storage.prototype.setItem = function(key, value) {
-  nativeSetItem.call(this, key, value);
-  if (this === window.localStorage && CloudSync.isSyncedKey(String(key))) {
+  const physicalKey = DataScope.physical(key);
+  nativeSetItem.call(this, physicalKey, value);
+  if (this === window.localStorage && CloudSync.isSyncedKey(physicalKey)) {
     scheduleCloudPush();
   }
 };
+
+Storage.prototype.getItem = function(key) {
+  return nativeGetItem.call(this, DataScope.physical(key));
+};
+
+Storage.prototype.removeItem = function(key) {
+  nativeRemoveItem.call(this, DataScope.physical(key));
+};
+
+// อ่าน uid จาก session ที่เคยล็อกอินไว้ ให้ทันก่อนที่โมดูลแรกจะเรียกอ่านข้อมูล
+DataScope.uid = DataScope.detectUidFromToken();
+if (DataScope.uid) console.log('[DataScope] แยกข้อมูลรายผู้ใช้แล้วที่ uid=' + DataScope.uid.slice(0, 8) + '...');
 
 // กรณีแท็บอื่นเดียวกันเขียนข้อมูล (cross-tab) ก็ต้อง push ต่อ
 window.addEventListener('storage', (e) => {

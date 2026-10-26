@@ -103,7 +103,8 @@ function getPortfolioUserContext() {
       return {
         isMember: true,
         memberName: cleanName,
-        memberKey: `stock-trading-log:member:${cleanName}`
+        // ทุกบทบาทใช้คีย์มาตรฐานเดียวกัน DataScope เป็นผู้เพิ่ม #u<uid> ของผู้ที่ล็อกอิน
+        memberKey: 'stock-trading-log:v3'
       };
     }
   } catch (e) {}
@@ -961,9 +962,11 @@ var PortfolioModule = {
         let portData = null;
         if (json['stock-trading-log:v3']) {
           portData = json['stock-trading-log:v3'];
-        } else if (json['stock-trading-log:member:' + memberName]) {
-          portData = json['stock-trading-log:member:' + memberName];
-        } else if (json.portfolios || json.trades) {
+        } else {
+          const legacyMemberKey = Object.keys(json).find(k => k.startsWith('stock-trading-log:member:'));
+          if (legacyMemberKey) portData = json[legacyMemberKey];
+        }
+        if (!portData && (json.portfolios || json.trades)) {
           portData = json;
         }
 
@@ -995,8 +998,8 @@ var PortfolioModule = {
 
   handleExportJson() {
     try {
-      const { isMember, memberName, memberKey } = getPortfolioUserContext();
-      const currentPortKey = isMember ? memberKey : 'stock-trading-log:v3';
+      const { isMember, memberName } = getPortfolioUserContext();
+      const currentPortKey = 'stock-trading-log:v3';
       const portData = getPortfolioDataHelper();
 
       const exportPayload = {
@@ -2635,19 +2638,13 @@ this.openAssetModal(holding.symbol);
 
     // 2. ดึงปันผลอัตโนมัติจาก "บันทึกรายรับรายจ่าย (Cashflow)"
     try {
-      const { isMember } = getPortfolioUserContext();
+      // ทุกบทบาทอ่านคีย์มาตรฐานเดียวกัน (DataScope จะชี้ไปซองของผู้ที่ล็อกอิน)
       let rawCf = null;
 
-      if (isMember) {
-        const nameEl = document.querySelector('#current-user-name, .user-name, [class*="name"]');
-        const cleanName = ((nameEl ? nameEl.textContent : '').trim() || 'member').replace(/[^a-zA-Z0-9ก-๙]/g, '_');
-        rawCf = localStorage.getItem(`family-finance:cashflow:member:${cleanName}`);
-      } else {
-        rawCf = localStorage.getItem('family-finance:cashflow:v2') 
-             || localStorage.getItem('family-finance:cashflow:v1') 
-             || localStorage.getItem('family-finance-db')
-             || localStorage.getItem('transactions');
-      }
+      rawCf = localStorage.getItem('family-finance:cashflow:v2')
+           || localStorage.getItem('family-finance:cashflow:v1')
+           || localStorage.getItem('family-finance-db')
+           || localStorage.getItem('transactions');
 
       if (rawCf) {
         const parsedCf = JSON.parse(rawCf);

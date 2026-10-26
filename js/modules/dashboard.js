@@ -64,44 +64,22 @@ var DashboardModule = {
   },
 
   async init() {
-    let currentRole = 'admin';
-    let currentUserId = null;
-
+    // รอให้อัปเดต session เสร็จก่อน เพื่อให้ DataScope ผูกซองข้อมูลของผู้ใช้ถูกต้อง
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-      try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-          currentUserId = session.user.id;
-          const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('role, full_name')
-            .eq('id', currentUserId)
-            .single();
-          if (profile?.role) currentRole = profile.role;
-        }
-      } catch (e) {
-        console.warn('Dashboard Auth Check error:', e);
-      }
+      try { await supabaseClient.auth.getSession(); } catch (e) {}
     }
-
-    this.calculateAndRender(currentRole);
+    this.calculateAndRender();
   },
 
-  calculateAndRender(role = 'admin') {
+  calculateAndRender() {
     const tradeData = this.getTradingData();
     const quotes = this.getQuoteCache();
     const trades = tradeData.trades || [];
-    const portfolios = tradeData.portfolios || [];
     const transactions = this.getCashflowTransactions();
 
-    // 1. ระบุพอร์ต Member (น้องพลอย)
-    const ployPortIds = portfolios
-      .filter(p => p.name && p.name.toUpperCase().includes('PLOY'))
-      .map(p => p.id);
-
-    // ถ้าเป็น Admin ดึงทั้งหมด ถ้าเป็น Member ให้ดึงเฉพาะรายการที่เป็นของ user นั้น (ถ้าไม่มี ให้เป็น [])
-const filteredTrades = role === 'admin' ? trades : [];
-  
+    // ข้อมูลที่อ่านถูกแยกเป็นซองของผู้ที่ล็อกอินอยู่แล้ว (DataScope ใน js/supabase.js)
+    // แต่ละบัญชีจึงเห็นพอร์ตและรายรับรายจ่ายของตัวเอง ไม่ต้องกรองตามบทบาทอีก
+    const filteredTrades = trades;
 
     // 2. คำนวณพอร์ตลงทุนแยกตามประเภทสินทรัพย์ (คิดต้นทุนเฉพาะหุ้นที่ยังถือครองอยู่จริงแบบถัวเฉลี่ย)
     const holdings = {};
@@ -200,11 +178,6 @@ const filteredTrades = role === 'admin' ? trades : [];
       // ล็อกเฉพาะบัญชีที่เป็นบัตรเครดิตจริง (ป้องกันคำว่า บัตร อื่นๆ ปนเข้ามา)
       const isCard = acc.includes('บัตรเครดิต') || acc.includes('credit') || acc.includes('bay') || acc.includes('ktc') || acc.includes('ttb');
       const txDate = (tx.date || '').slice(0, 7);
-
-      // กรองเฉพาะบัญชี Member ถ้าไม่ได้เป็น Admin
-      if (role !== 'admin' && !acc.includes('เป๋าตัง') && !acc.includes('ploy')) {
-        return;
-      }
 
       if (isCard) {
         // ดึงเฉพาะยอดใช้จ่ายบัตรเครดิตของรอบบิล/เดือนปัจจุบัน ไม่นำประวัติเก่าทั้งปีมารวมสะสม
