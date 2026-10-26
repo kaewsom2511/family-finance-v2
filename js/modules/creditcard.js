@@ -282,6 +282,8 @@ const CreditCardModule = {
   }
 };
 
+window.CreditCardModule = CreditCardModule;
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => CreditCardModule.init());
 } else {

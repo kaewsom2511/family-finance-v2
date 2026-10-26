@@ -34,6 +34,15 @@ create policy "family_storage_update" on public.family_storage
   using (exists (select 1 from public.profiles p where p.id = auth.uid()))
   with check (id = 'family');
 
+-- (ไม่บังคับ) เปิด Realtime เพื่อให้ทุกเครื่องอัปเดตทันทีที่อีกบัญชีบันทึกข้อมูลร่วม
+-- ถ้าข้ามข้อนี้ แอปยัง sync ข้ามบัญชีอัตโนมัติทุก ~60 วินาที และทุกครั้งที่สลับกลับมาที่แท็บ
+do $$
+begin
+  alter publication supabase_realtime add table public.family_storage;
+exception when duplicate_object then
+  raise notice 'family_storage ถูกเพิ่มใน publication แล้ว';
+end $$;
+
 -- ตรวจสอบ: ต้องได้ 1 แถว id = 'family'
 select id, updated_at, jsonb_object_keys(data) as key_name
 from public.family_storage;

@@ -562,6 +562,13 @@ const CloudSync = {
   FAMILY_TABLE: 'family_storage',
   familyTableState: 'unknown',
 
+  // สถานะรอบ auto-sync (ค่าเริ่มต้นทั้งนี้ เพื่อให้ short-circuit ทำงานถูกตั้งแต่แรก)
+  _pullInFlight: false,
+  _lastPullAt: 0,
+  _autoSyncStarted: false,
+  _rtChannel: null,
+  _familyRetryAt: 0,
+
   // มีเฉพาะคีย์ที่เป็นข้อมูลของคนที่ล็อกอินอยู่ (ลงท้าย #u<uid>) กับคีย์โครงสร้างร่วมเท่านั้น
   // ทำให้บัญชีหนึ่งไม่สามารถดึง/ส่งข้อมูลของอีกบัญชีได้
   isSyncedKey(key) {
@@ -637,12 +644,15 @@ const CloudSync = {
   },
 
   // 1. ดึงข้อมูลจาก Cloud ลงมาใส่ LocalStorage (อัตโนมัติเมื่อเปิดเว็บ)
-  async pullFromCloud() {
+  async pullFromCloud({ background = false } = {}) {
     if (!supabaseClient) return;
     if (this.LOCAL_ONLY) {
       console.log('[CloudSync] โหมด Local: ข้ามการดึงข้อมูลจาก Cloud (ใช้ localStorage เท่านั้น)');
       return;
     }
+    if (this._pullInFlight) return;
+    this._pullInFlight = true;
+    this._lastPullAt = Date.now();
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) return;
@@ -664,6 +674,7 @@ const CloudSync = {
       if (data && data.data) bundleSources.push(data.data);
 
       // ข้อมูลโครงสร้างร่วมของบ้าน (ตาราง family_storage มีเฉพาะตอนรัน SQL แล้ว)
+      let familyBundle = null;
       if (this.familyTableState !== 'missing') {
         const { data: fam, error: famErr } = await supabaseClient
           .from(this.FAMILY_TABLE)
@@ -671,26 +682,30 @@ const CloudSync = {
           .eq('id', 'family')
           .maybeSingle();
         if (famErr) {
-          if (this.isMissingTableError(famErr)) this.familyTableState = 'missing';
+          if (this.isMissingTableError(famErr)) { this.familyTableState = 'missing'; this.notifyMissingFamilyTable(); }
           else console.warn('[CloudSync] Family table read error:', famErr);
         } else if (fam && fam.data) {
           this.familyTableState = 'ok';
-          bundleSources.push(fam.data);
+          familyBundle = fam.data;
+          bundleSources.push(familyBundle);
         }
       }
 
       const readIfScoped = (logicalKey) =>
         DataScope.uid ? nativeGetItem.call(localStorage, DataScope.physical(logicalKey)) : null;
       const wasEmpty = !readIfScoped('family-finance:cashflow:v2') && !readIfScoped('stock-trading-log:v3');
-      let hasNewData = false;
+      const changedKeys = [];
 
       bundleSources.forEach(bundleData => {
         this._bulkWrite = true;
         try {
           Object.entries(bundleData).forEach(([key, val]) => {
             if (val === null || val === undefined || !belongsHere(key)) return;
-            localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
-            hasNewData = true;
+            const next = typeof val === 'object' ? JSON.stringify(val) : String(val);
+            const physicalKey = DataScope.physical(key);
+            if (nativeGetItem.call(localStorage, physicalKey) === next) return;
+            localStorage.setItem(key, next);
+            changedKeys.push(physicalKey);
           });
         } finally {
           this._bulkWrite = false;
@@ -707,15 +722,115 @@ const CloudSync = {
       }
       if (didNormalize) scheduleCloudPush(800);
 
+      // ถ้าตารางข้อมูลร่วมของบ้านยังว่างอยู่ ให้เครื่องนี้ส่งข้อมูลร่วมขึ้นไปเก็บก่อน (ครั้งเดียวต่อ session)
+      if (this.familyTableState === 'ok' && !sessionStorage.getItem('ff:familySeeded')) {
+        const sharedInCloud = familyBundle && Object.keys(familyBundle).some(k => DataScope.isSharedKey(k));
+        const sharedHere = DataScope.SHARED.some(k => nativeGetItem.call(localStorage, k) !== null);
+        if (sharedHere && !sharedInCloud) {
+          sessionStorage.setItem('ff:familySeeded', '1');
+          console.log('[CloudSync] ส่งข้อมูลร่วมของบ้านขึ้นตาราง ' + this.FAMILY_TABLE + ' ครั้งแรก');
+          scheduleCloudPush(1500);
+        }
+      }
+
+      if (background) {
+        // ดึงข้อมูลระหว่างใช้งาน: ห้าม reload ทับงาน ให้เขียนค่าใหม่แล้วสั่งวาดหน้าจอใหม่
+        if (changedKeys.length || didNormalize) this.applyLiveRefresh(changedKeys);
+        return;
+      }
+
       // รีโหลดเมื่อเครื่องเพิ่งมีข้อมูลครั้งแรก หรือหลังจัดระเบียบคีย์ (กันวนซ้ำ: ทำทีละครั้งต่อบัญชีใช้งาน)
       const normalizedThisSession = didNormalize && !sessionStorage.getItem('ff:scopeReloaded');
       if (normalizedThisSession) sessionStorage.setItem('ff:scopeReloaded', '1');
-      if (hasNewData && (wasEmpty || normalizedThisSession)) {
+      if ((changedKeys.length || didNormalize) && (wasEmpty || normalizedThisSession)) {
         window.location.reload();
       }
     } catch (err) {
       console.warn('[CloudSync] Pull error:', err);
+    } finally {
+      this._pullInFlight = false;
     }
+  },
+
+  // ให้โมดูลที่เปิดอยู่วาดข้อมูลใหม่ หลังมีชุดข้อมูลจาก Cloud เข้ามาระหว่างใช้งาน
+  applyLiveRefresh(changedKeys = [], retry = 0) {
+    // ถ้ามีฟอร์ม/โมดัลที่เปิดค้างอยู่ อย่าเพิ่งวาดทับข้อมูลบนจอ เลื่อนออกไปก่อน
+    const modalOpen = Array.from(document.querySelectorAll('.modal, [id*="Modal"], dialog'))
+      .some(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
+    if (modalOpen || document.querySelector('input:focus, textarea:focus, select:focus')) {
+      if (retry < 20) setTimeout(() => this.applyLiveRefresh(changedKeys, retry + 1), 3000);
+      return;
+    }
+
+    const sharedChanged = changedKeys.some(k => DataScope.isSharedKey(k));
+    console.log('[CloudSync] รับข้อมูลจาก Cloud ระหว่างใช้งาน', changedKeys.length, 'คีย์', sharedChanged ? '(รวมข้อมูลร่วมของบ้าน)' : '');
+    if (sharedChanged) this.showSyncToast('อัปเดตข้อมูลร่วมของบ้านแล้ว');
+    window.dispatchEvent(new CustomEvent('ff:cloud-updated', { detail: { keys: changedKeys, shared: sharedChanged } }));
+
+    const rerender = [
+      ['SettingsModule', 'render'],
+      ['CashFlowModule', 'render'],
+      ['DashboardModule', 'calculateAndRender'],
+      ['DebtModule', 'render'],
+      ['CreditCardModule', 'render'],
+      ['PortfolioModule', 'render'],
+      ['DividendPlannerModule', 'render']
+    ];
+    rerender.forEach(([name, fn]) => {
+      const mod = window[name];
+      if (mod && typeof mod[fn] === 'function') {
+        try { mod[fn](); } catch (e) { console.warn('[CloudSync] re-render ' + name + ' error:', e); }
+      }
+    });
+  },
+
+  // ดึงข้อมูลซ้ำระหว่างเปิดหน้าอยู่ (อีกบัญชี/อีกเครื่องเพิ่งแก้) แบบคุมความถี่
+  pullIfStale(minGapMs = 20000) {
+    if (this.LOCAL_ONLY || this._pullInFlight) return;
+    if (Date.now() - (this._lastPullAt || 0) < minGapMs) return;
+    this.pullFromCloud({ background: true });
+  },
+
+  // ถ้าตาราง family_storage ถูกเพิ่มเข้า Realtime publication จะได้ข้อมูลทันทีที่อีกบัญชีบันทึก
+  subscribeToSharedChanges() {
+    if (!supabaseClient || this._rtChannel) return;
+    try {
+      this._rtChannel = supabaseClient
+        .channel('family-shared-data')
+        .on('postgres_changes', { event: '*', schema: 'public', table: this.FAMILY_TABLE },
+          () => this.pullFromCloud({ background: true }))
+        .subscribe((status) => {
+          if (status !== 'SUBSCRIBED') this._rtChannel = null;
+        });
+    } catch (e) {
+      this._rtChannel = null;
+    }
+  },
+
+  startAutoSync() {
+    if (!supabaseClient || this.LOCAL_ONLY || this._autoSyncStarted) return;
+    this._autoSyncStarted = true;
+    this.subscribeToSharedChanges();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.pullIfStale(10000);
+    });
+    window.addEventListener('focus', () => this.pullIfStale(10000));
+    setInterval(() => {
+      // ทดลองใช้ตารางข้อมูลร่วมอีกครั้ง (เผื่อเพิ่งรัน SQL โดยไม่ได้ reload หน้านาน ๆ)
+      if (this.familyTableState === 'missing' && Date.now() - (this._familyRetryAt || 0) > 600000) {
+        this._familyRetryAt = Date.now();
+        this.familyTableState = 'unknown';
+      }
+      this.pullIfStale();
+    }, 60000);
+  },
+
+  // เตือนครั้งเดียวต่อบัญชีใช้งานว่ายังไม่ได้สร้างตารางข้อมูลร่วมของบ้าน
+  notifyMissingFamilyTable() {
+    if (sessionStorage.getItem('ff:familyTableNoticeShown')) return;
+    sessionStorage.setItem('ff:familyTableNoticeShown', '1');
+    this.showSyncToast('ยังไม่มีตาราง family_storage: ข้อมูลร่วมของบ้านยังไม่ sync ข้ามบัญชี', false);
+    console.warn('[CloudSync] ขาดตาราง ' + this.FAMILY_TABLE + ' — รัน sql/family_storage.sql ใน Supabase SQL Editor หนึ่งครั้ง');
   },
 
   // 2. ส่งข้อมูลทั้งหมดจากเครื่องนี้ขึ้นไปเก็บไว้บน Cloud
@@ -770,9 +885,10 @@ const CloudSync = {
   }
 };
 
-// สั่งโหลดข้อมูลจาก Cloud ทันทีเมื่อเปิดหน้าเว็บ
+// สั่งโหลดข้อมูลจาก Cloud ทันทีเมื่อเปิดหน้าเว็บ แล้วต่อรอบอัตโนมัติระหว่างใช้งาน
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => CloudSync.pullFromCloud(), 300);
+  CloudSync.startAutoSync();
 });
 
 // รวมการเขียน localStorage หลายครั้งติดกันให้ push เป็นรอบเดียว (ทุกโมดูล ไม่ต้องเพิ่มโค้ดในโมดูล)
