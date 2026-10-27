@@ -11,6 +11,10 @@ var TechnicalModule = {
   _chartResize: null,
   _lwPromise: null,
   _chartContext: null,
+  _subCharts: [],
+  _subResizes: [],
+  _chartCache: null,
+  chartOverlays: { ema20: true, ema50: true, ema200: false, volume: true, sr: true, fib: false },
 
   formatTradingViewSymbol(rawSymbol, marketType) {
     if (!rawSymbol) return 'AMEX:VOO';
@@ -185,11 +189,25 @@ var TechnicalModule = {
               <span>กำลังแสดงข้อมูล: ${cleanSym}</span>
             </div>
 
-            <div id="chart-viewport-box" style="height: 580px; min-height: 580px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <div id="tradingview_chart_container" style="width: 100%; height: 100%; min-height: 580px;"></div>
+            <div id="chart-overlay-chips" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">${this.overlayChipsHtml()}</div>
+
+            <div id="chart-viewport-box" style="height: 440px; min-height: 440px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <div id="tradingview_chart_container" style="width: 100%; height: 100%; min-height: 440px;"></div>
+            </div>
+
+            <div style="font-size:11px; font-weight:700; color:#64748b; margin:10px 0 4px;">RSI (14)</div>
+            <div id="rsi-viewport-box" style="height: 110px; min-height: 110px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <div id="rsi_chart_container" style="width: 100%; height: 100%; min-height: 110px;"></div>
+            </div>
+
+            <div style="font-size:11px; font-weight:700; color:#64748b; margin:10px 0 4px;">MACD (12, 26, 9)</div>
+            <div id="macd-viewport-box" style="height: 140px; min-height: 140px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <div id="macd_chart_container" style="width: 100%; height: 100%; min-height: 140px;"></div>
             </div>
 
             <div id="chart-data-note" style="margin-top: 10px; font-size: 11.5px; color: #64748b; line-height: 1.6;"></div>
+            <div id="chart-stats-strip" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-top:12px;"></div>
+            <div id="chart-summary-banner" style="margin-top:12px;"></div>
             <div id="chart-links" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;"></div>
           </div>
 
@@ -302,9 +320,12 @@ var TechnicalModule = {
     this._chartContext = {
       chartType,
       currencySign,
+      symbolLabel: cleanSym,
       decimals: isFund ? 4 : 2,
       avgCost: holdingMatch ? Number(isThai || isFund ? holdingMatch.avgCost : (holdingMatch.avgCostUSD || holdingMatch.avgCost)) || 0 : 0
     };
+
+    this.bindOverlayChips(container, cleanSym, chartType);
 
     if (rangeSelect) {
       rangeSelect.onchange = () => {
@@ -331,6 +352,10 @@ var TechnicalModule = {
       try { this._chartInstance.remove(); } catch (e) {}
       this._chartInstance = null;
     }
+    this._subResizes.forEach((r) => { try { r.disconnect(); } catch (e) {} });
+    this._subResizes = [];
+    this._subCharts.forEach((c) => { try { c.remove(); } catch (e) {} });
+    this._subCharts = [];
   },
 
   ensureLightweightCharts() {
@@ -381,6 +406,130 @@ var TechnicalModule = {
     let sum = 0;
     for (let i = closes.length - period; i < closes.length; i++) sum += closes[i];
     return sum / period;
+  },
+
+  // ส่งค่ากลับมาเท่าจำนวนแท่ง (null ในช่วงที่ยังคำนวณไม่ได้) เพื่อวางบนกราฟได้ตรงเวลา
+  emaSeries(values, period) {
+    const out = new Array(values.length).fill(null);
+    if (values.length < period) return out;
+    const k = 2 / (period + 1);
+    let seed = 0;
+    for (let i = 0; i < period; i++) seed += values[i];
+    let prev = seed / period;
+    out[period - 1] = prev;
+    for (let i = period; i < values.length; i++) {
+      prev = values[i] * k + prev * (1 - k);
+      out[i] = prev;
+    }
+    return out;
+  },
+
+  rsiSeries(closes, period = 14) {
+    const out = new Array(closes.length).fill(null);
+    if (closes.length <= period) return out;
+    let gain = 0, loss = 0;
+    for (let i = 1; i <= period; i++) {
+      const d = closes[i] - closes[i - 1];
+      gain += Math.max(d, 0);
+      loss += Math.max(-d, 0);
+    }
+    gain /= period;
+    loss /= period;
+    out[period] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+    for (let i = period + 1; i < closes.length; i++) {
+      const d = closes[i] - closes[i - 1];
+      gain = (gain * (period - 1) + Math.max(d, 0)) / period;
+      loss = (loss * (period - 1) + Math.max(-d, 0)) / period;
+      out[i] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+    }
+    return out;
+  },
+
+  macdSeries(closes, fast = 12, slow = 26, signalPeriod = 9) {
+    const fastEma = this.emaSeries(closes, fast);
+    const slowEma = this.emaSeries(closes, slow);
+    const line = closes.map((_, i) => (fastEma[i] === null || slowEma[i] === null) ? null : fastEma[i] - slowEma[i]);
+    const packed = line.filter((v) => v !== null);
+    const sigPacked = this.emaSeries(packed, signalPeriod);
+    const signal = new Array(closes.length).fill(null);
+    const hist = new Array(closes.length).fill(null);
+    let j = 0;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === null) continue;
+      signal[i] = sigPacked[j];
+      hist[i] = sigPacked[j] === null ? null : line[i] - sigPacked[j];
+      j++;
+    }
+    return { line, signal, hist };
+  },
+
+  fibLevels(high, low) {
+    const gap = high - low;
+    if (!(gap > 0)) return [];
+    return [0.236, 0.382, 0.5, 0.618, 0.786].map((r) => ({ ratio: r, price: high - gap * r }));
+  },
+
+  computeChartStats(points, context) {
+    const isFund = context.chartType === 'FUND';
+    const val = (p) => Number(isFund ? p.value : p.close);
+    const closes = points.map(val).filter(Number.isFinite);
+    if (!closes.length) return null;
+    const last = closes[closes.length - 1];
+    const window = points.slice(-252);
+    const highs = window.map((p) => Number(isFund ? p.value : p.high)).filter(Number.isFinite);
+    const lows = window.map((p) => Number(isFund ? p.value : p.low)).filter(Number.isFinite);
+    const high52 = Math.max(...highs);
+    const low52 = Math.min(...lows);
+
+    const rets = [];
+    for (let i = 1; i < closes.length; i++) {
+      if (closes[i - 1] > 0) rets.push(closes[i] / closes[i - 1] - 1);
+    }
+    let vol = null;
+    if (rets.length > 20) {
+      const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
+      const varSum = rets.reduce((s, r) => s + (r - mean) ** 2, 0) / (rets.length - 1);
+      vol = Math.sqrt(varSum) * Math.sqrt(252) * 100;
+    }
+
+    const volumes = points.map((p) => Number(p.volume)).filter((v) => Number.isFinite(v) && v > 0);
+    const recentVol = volumes.slice(-30);
+    const avgVol = recentVol.length ? recentVol.reduce((s, v) => s + v, 0) / recentVol.length : null;
+    const lastVol = volumes.length ? volumes[volumes.length - 1] : null;
+
+    const ema = (period) => {
+      const s = this.emaSeries(closes, period);
+      return s[s.length - 1];
+    };
+    const rsiArr = this.rsiSeries(closes, 14);
+    const macd = this.macdSeries(closes);
+    const lastIdx = closes.length - 1;
+    const prevHistIdx = (() => {
+      for (let i = lastIdx - 1; i >= 0; i--) if (macd.hist[i] !== null) return i;
+      return null;
+    })();
+
+    return {
+      last,
+      high52,
+      low52,
+      windowLabel: window.length >= 252 ? '52 สัปดาห์' : `${window.length} วันทำการ`,
+      pctFromHigh: high52 > 0 ? ((last - high52) / high52) * 100 : null,
+      pctFromLow: low52 > 0 ? ((last - low52) / low52) * 100 : null,
+      ema20: ema(20),
+      ema50: ema(50),
+      ema200: ema(200),
+      rsi: rsiArr[lastIdx],
+      macdLine: macd.line[lastIdx],
+      macdSignal: macd.signal[lastIdx],
+      macdHist: macd.hist[lastIdx],
+      macdHistPrev: prevHistIdx === null ? null : macd.hist[prevHistIdx],
+      avgVol,
+      avgVolDays: recentVol.length,
+      lastVol,
+      volatility: vol,
+      hasEnoughForEma200: ema(200) !== null
+    };
   },
 
   // คำนวณแนวรับ-แนวต้านจากชุด OHLC ที่โหลดมาจริง เพราะ quote รายวันมักไม่มี High/Low ของ ETF ต่างประเทศ
@@ -464,10 +613,15 @@ var TechnicalModule = {
     host.innerHTML = this.srPanelHtml(info, context);
   },
 
-  drawPriceLevels(LW, series, points, context) {
-    const info = this.computePriceLevels(points, context);
+  drawPriceLevels(LW, series, points, context, precomputed) {
+    const info = precomputed || this.computePriceLevels(points, context);
     if (!info || !series || typeof series.createPriceLine !== 'function') return info;
+    // ระดับที่ชิดกันเกินกว่า 0.2% ป้ายบนแกนราคาจะทับกันจนอ่านไม่ออก จึงเว้นเส้นที่ซ้ำโซนไว้ (แผงขวายังแสดงครบทุกตัว)
+    const MIN_GAP = 0.002;
+    const kept = [];
     info.levels.filter((x) => x.onChart).forEach((x) => {
+      if (kept.some((p) => Math.abs(p - x.price) / Math.max(p, x.price) < MIN_GAP)) return;
+      kept.push(x.price);
       series.createPriceLine({
         price: x.price,
         color: x.color,
@@ -477,7 +631,140 @@ var TechnicalModule = {
         title: x.key
       });
     });
+    info.drawnCount = kept.length;
     return info;
+  },
+
+  overlayChipsHtml() {
+    const defs = [
+      { key: 'ema20', label: 'EMA 20' },
+      { key: 'ema50', label: 'EMA 50' },
+      { key: 'ema200', label: 'EMA 200' },
+      { key: 'volume', label: 'Volume' },
+      { key: 'sr', label: 'แนวรับ-แนวต้าน' },
+      { key: 'fib', label: 'Fibonacci' }
+    ];
+    return defs.map((d) => {
+      const on = !!this.chartOverlays[d.key];
+      return `<button data-overlay="${d.key}" style="padding:5px 11px; border-radius:999px; font-size:11.5px; font-weight:700; cursor:pointer; border:1.5px solid ${on ? '#0f172a' : '#cbd5e1'}; background:${on ? '#0f172a' : '#fff'}; color:${on ? '#fff' : '#64748b'};">${d.label}</button>`;
+    }).join('');
+  },
+
+  bindOverlayChips(container, cleanSym, chartType) {
+    container.querySelectorAll('#chart-overlay-chips button').forEach((btn) => {
+      btn.onclick = () => {
+        const key = btn.getAttribute('data-overlay');
+        this.chartOverlays[key] = !this.chartOverlays[key];
+        const host = container.querySelector('#chart-overlay-chips');
+        if (host) {
+          host.innerHTML = this.overlayChipsHtml();
+          this.bindOverlayChips(container, cleanSym, chartType);
+        }
+        this.loadOwnChart(cleanSym, chartType);
+      };
+    });
+  },
+
+  subChartOptions(LW, host) {
+    return {
+      width: host.clientWidth || 800,
+      height: host.clientHeight || 120,
+      layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#94a3b8', fontSize: 10 },
+      grid: { vertLines: { color: '#f8fafc' }, horzLines: { color: '#f1f5f9' } },
+      rightPriceScale: { borderColor: '#e2e8f0', scaleMargins: { top: 0.15, bottom: 0.12 } },
+      timeScale: { borderColor: '#e2e8f0', rightOffset: 4 },
+      crosshair: { mode: LW.CrosshairMode.Normal },
+      handleScroll: false,
+      handleScale: false,
+      localization: { locale: 'th-TH' }
+    };
+  },
+
+  statsStripHtml(stats, context) {
+    if (!stats) return '';
+    const fmtPrice = (v) => (Number.isFinite(v) ? `${context.currencySign}${v.toFixed(context.decimals)}` : '—');
+    const fmtVol = (v) => {
+      if (!Number.isFinite(v)) return '—';
+      if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+      if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+      if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
+      return String(Math.round(v));
+    };
+    const tile = (label, value, sub, color) => `
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px;">
+        <div style="font-size:10.5px; color:#64748b; margin-bottom:3px;">${label}</div>
+        <div style="font-size:16px; font-weight:900; color:${color || '#0f172a'}; line-height:1.1;">${value}</div>
+        <div style="font-size:10.5px; color:#94a3b8; margin-top:2px;">${sub || ''}</div>
+      </div>`;
+    const trendColor = (v) => (v === null ? '#94a3b8' : v >= 0 ? '#16a34a' : '#dc2626');
+    const rsiColor = (r) => (r === null || r === undefined ? '#94a3b8' : r >= 70 ? '#dc2626' : r <= 30 ? '#16a34a' : '#0f172a');
+    const volRatio = stats.avgVol && stats.lastVol ? stats.lastVol / stats.avgVol : null;
+
+    return [
+      tile(`สูงสุด ${stats.windowLabel}`, fmtPrice(stats.high52), stats.pctFromHigh === null ? '' : `ห่าง ${stats.pctFromHigh.toFixed(2)}%`, trendColor(stats.pctFromHigh)),
+      tile(`ต่ำสุด ${stats.windowLabel}`, fmtPrice(stats.low52), stats.pctFromLow === null ? '' : `ห่าง +${stats.pctFromLow.toFixed(2)}%`, '#16a34a'),
+      tile('RSI 14 วัน', Number.isFinite(stats.rsi) ? stats.rsi.toFixed(1) : '—', stats.rsi === null || stats.rsi === undefined ? 'ข้อมูลไม่พอ' : stats.rsi >= 70 ? 'ซื้อมากเกินไป' : stats.rsi <= 30 ? 'ขายมากเกินไป' : 'กลาง ๆ', rsiColor(stats.rsi)),
+      tile('MACD Hist', Number.isFinite(stats.macdHist) ? stats.macdHist.toFixed(3) : '—', stats.macdHist === null || stats.macdHist === undefined ? 'ข้อมูลไม่พอ' : (stats.macdHist >= 0 ? 'ฝั่งบวก' : 'ฝั่งลบ'), trendColor(stats.macdHist)),
+      tile('ปริมาณซื้อขาย', volRatio === null ? '—' : `${volRatio.toFixed(2)}x`, volRatio === null ? 'ไม่มีข้อมูล Volume' : `เทียบเฉลี่ย ${stats.avgVolDays} วัน (${fmtVol(stats.avgVol)})`, trendColor(volRatio === null ? 0 : volRatio - 1)),
+      tile('ความผันผวนต่อปี', Number.isFinite(stats.volatility) ? `${stats.volatility.toFixed(1)}%` : '—', 'คำนวณจากผลตอบแทนรายวัน', '#0f172a')
+    ].join('');
+  },
+
+  // สรุปแบบกฎตายตัวจากค่าอินดิเคเตอร์ (ไม่มี LLM) — เรียงจากแนวโน้ม โมเมนตัม แล้วถึงระดับราคา
+  summaryBannerHtml(stats, levelInfo, context) {
+    if (!stats) return '';
+    const above = (ref) => (Number.isFinite(ref) ? stats.last >= ref : null);
+    const points = [];
+    let score = 0;
+
+    const e50 = above(stats.ema50);
+    const e200 = above(stats.ema200);
+    if (e50 !== null && e200 !== null) {
+      const gold = stats.ema50 > stats.ema200;
+      points.push({ text: `ราคา${stats.last >= stats.ema50 ? 'ยืนเหนือ' : 'หลุดใต้'} EMA50 และ${gold ? ' EMA50 อยู่เหนือ EMA200 (Golden Zone)' : ' EMA50 อยู่ใต้ EMA200 (Death Zone)'}`, vote: (e50 ? 1 : -1) + (e200 ? 1 : -1) });
+    } else if (e50 !== null) {
+      points.push({ text: `ราคา${e50 ? 'ยืนเหนือ' : 'หลุดใต้'} EMA50`, vote: e50 ? 1 : -1 });
+    }
+
+    if (Number.isFinite(stats.rsi)) {
+      if (stats.rsi >= 70) points.push({ text: `RSI ${stats.rsi.toFixed(1)} เข้าเขตซื้อมากเกินไป มีโอกาสพักฐานระยะสั้น`, vote: -1 });
+      else if (stats.rsi <= 30) points.push({ text: `RSI ${stats.rsi.toFixed(1)} เข้าเขตขายมากเกินไป เริ่มน่าจับตาสำหรับรีบาวด์`, vote: 1 });
+      else points.push({ text: `RSI ${stats.rsi.toFixed(1)} ยังอยู่โซนกลาง ๆ ไม่มีสัญญาณ extremes`, vote: stats.rsi >= 50 ? 1 : -1 });
+    }
+
+    if (Number.isFinite(stats.macdHist) && Number.isFinite(stats.macdHistPrev)) {
+      const rising = stats.macdHist > stats.macdHistPrev;
+      const phrase = stats.macdHist >= 0
+        ? (rising ? 'เป็นบวกและขยายขึ้น โมเมนตัมฝั่งซื้อยังหนุน' : 'เป็นบวกแต่เริ่มอ่อนแรง')
+        : (rising ? 'เป็นลบแต่หดตัวเข้าหาฝั่งบวก แรงขายเริ่มเบาลง' : 'เป็นลบและลึกลง แรงขายยังกดดัน');
+      points.push({ text: `MACD Histogram ${phrase}`, vote: stats.macdHist >= 0 ? 1 : -1 });
+    }
+
+    if (Number.isFinite(stats.pctFromHigh)) {
+      points.push({ text: `ราคายังห่างจุดสูงสุด ${stats.windowLabel} อยู่ ${Math.abs(stats.pctFromHigh).toFixed(2)}%`, vote: stats.pctFromHigh > -5 ? 1 : -1 });
+    }
+
+    const nearest = [];
+    if (levelInfo && levelInfo.nearestResistance) nearest.push(`แนวต้านถัดไป ${context.currencySign}${levelInfo.nearestResistance.price.toFixed(context.decimals)} (${levelInfo.nearestResistance.title})`);
+    if (levelInfo && levelInfo.nearestSupport) nearest.push(`แนวรับถัดไป ${context.currencySign}${levelInfo.nearestSupport.price.toFixed(context.decimals)} (${levelInfo.nearestSupport.title})`);
+
+    const tone = score + points.reduce((s, p) => s + p.vote, 0);
+    const verdict = tone >= 2 ? { label: 'มุมมองเชิงบวก', bg: '#f0fdf4', border: '#bbf7d0', text: '#166534' }
+      : tone <= -2 ? { label: 'มุมมองระวังตัว', bg: '#fef2f2', border: '#fecaca', text: '#991b1b' }
+      : { label: 'ยังแกว่งออกข้าง', bg: '#f8fafc', border: '#cbd5e1', text: '#334155' };
+
+    return `
+      <div style="background:${verdict.bg}; border:1.5px solid ${verdict.border}; border-radius:10px; padding:12px 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:12.5px; font-weight:900; color:${verdict.text};">🧭 สรุปสัญญาณเทคนิค · ${context.symbolLabel || ''}</span>
+          <span style="font-size:11px; color:${verdict.text}; font-weight:700;">${verdict.label}</span>
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:12px; color:#334155; line-height:1.75;">
+          ${points.map((p) => `<li>${p.text}</li>`).join('')}
+          ${nearest.length ? `<li>${nearest.join(' · ')}</li>` : ''}
+        </ul>
+        <div style="margin-top:6px; font-size:10.5px; color:#94a3b8;">คำนวณจากกฎตายตัวบนข้อมูลกราฟนี้เท่านั้น ไม่ใช่คำแนะนำการลงทุน</div>
+      </div>`;
   },
 
   async loadOwnChart(cleanSym, chartType) {
@@ -493,17 +780,29 @@ var TechnicalModule = {
     });
     const noteEl = document.getElementById('chart-data-note');
     const linksEl = document.getElementById('chart-links');
+    const rsiHost = document.getElementById('rsi_chart_container');
+    const macdHost = document.getElementById('macd_chart_container');
+    const statsEl = document.getElementById('chart-stats-strip');
+    const bannerEl = document.getElementById('chart-summary-banner');
     const apiBase = (typeof QuoteSyncService !== 'undefined' && QuoteSyncService.getApiBaseUrl)
       ? QuoteSyncService.getApiBaseUrl()
       : 'https://wealthport.onrender.com';
 
     this.destroyOwnChart();
-    host.innerHTML = '<div style="height:100%; min-height:560px; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13.5px; font-weight:600;">กำลังโหลดกราฟ…</div>';
+    host.innerHTML = '<div style="height:100%; min-height:440px; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13.5px; font-weight:600;">กำลังโหลดกราฟ…</div>';
+    if (rsiHost) rsiHost.innerHTML = '';
+    if (macdHost) macdHost.innerHTML = '';
+    if (statsEl) statsEl.innerHTML = '';
+    if (bannerEl) bannerEl.innerHTML = '';
     if (noteEl) noteEl.textContent = '';
     if (linksEl) linksEl.innerHTML = this.chartLinksHtml(cleanSym, chartType);
 
     const showError = (message) => {
       host.innerHTML = '';
+      if (rsiHost) rsiHost.innerHTML = '';
+      if (macdHost) macdHost.innerHTML = '';
+      if (statsEl) statsEl.innerHTML = '';
+      if (bannerEl) bannerEl.innerHTML = '';
       const box = document.createElement('div');
       box.style.cssText = 'height:100%; min-height:560px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; gap:8px;';
       const icon = document.createElement('div');
@@ -547,20 +846,32 @@ var TechnicalModule = {
           const high = Number(p.high);
           const low = Number(p.low);
           const close = Number(p.close);
-          if ([open, high, low, close].every(Number.isFinite)) byTime.set(time, { time, open, high, low, close });
+          if ([open, high, low, close].every(Number.isFinite)) {
+            byTime.set(time, { time, open, high, low, close, volume: Number(p.volume) || 0 });
+          }
         }
       });
       return Array.from(byTime.values()).sort((a, b) => a.time.localeCompare(b.time));
     };
 
     try {
-      let data = await requestChart();
-      let points = toPoints(data);
-      // Yahoo ตอบ 429 เป็นครั้งคราว ลองซ้ำอีกครั้งก่อนแจ้งผู้ใช้
-      if (!points.length) {
-        await new Promise((r) => setTimeout(r, 1200));
+      // แคชสั้น ๆ เพื่อให้การเปิด/ปิดเส้น overlay หรือเปลี่ยนรูปแบบกราฟ ไม่ไปเรียก Yahoo ซ้ำจนโดน limit
+      const CACHE_MS = 5 * 60 * 1000;
+      let data = null;
+      let points = null;
+      if (this._chartCache && this._chartCache.url === url && Date.now() - this._chartCache.at < CACHE_MS) {
+        data = this._chartCache.data;
+        points = this._chartCache.points;
+      } else {
         data = await requestChart();
         points = toPoints(data);
+        // Yahoo ตอบ 429 เป็นครั้งคราว ลองซ้ำอีกครั้งก่อนแจ้งผู้ใช้
+        if (!points.length) {
+          await new Promise((r) => setTimeout(r, 1200));
+          data = await requestChart();
+          points = toPoints(data);
+        }
+        if (points.length) this._chartCache = { url, at: Date.now(), data, points };
       }
       if (!points.length) {
         const detail = String(data?.detail || '');
@@ -574,16 +885,22 @@ var TechnicalModule = {
       const LW = await this.ensureLightweightCharts();
       host.innerHTML = '';
 
+      const showVolume = this.chartOverlays.volume && !isFund && points.some((p) => Number(p.volume) > 0);
       const chart = LW.createChart(host, {
         width: host.clientWidth || 800,
-        height: host.clientHeight || 560,
+        height: host.clientHeight || 440,
         layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#475569', fontSize: 11 },
         grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
-        rightPriceScale: { borderColor: '#e2e8f0', scaleMargins: { top: 0.08, bottom: 0.08 } },
+        rightPriceScale: { borderColor: '#e2e8f0', scaleMargins: { top: 0.06, bottom: showVolume ? 0.24 : 0.08 } },
+        // อย่าซ่อนแกนเวลาของกราฟหลัก: lightweight-charts v4 จะไม่ยอมทำ fitContent/setVisibleLogicalRange ให้ขณะ visible=false
         timeScale: { borderColor: '#e2e8f0', rightOffset: 4 },
         crosshair: { mode: LW.CrosshairMode.Normal },
         localization: { locale: 'th-TH' }
       });
+
+      const times = points.map((p) => p.time);
+      const closes = points.map((p) => (isFund ? p.value : p.close));
+      const toLine = (arr) => arr.map((v, i) => (Number.isFinite(v) ? { time: times[i], value: v } : null)).filter(Boolean);
 
       const style = (isFund && this.currentChartStyle === 'candles') ? 'area' : this.currentChartStyle;
       let mainSeries = null;
@@ -595,7 +912,6 @@ var TechnicalModule = {
         });
         mainSeries.setData(points);
       } else {
-        const seriesData = points.map((p) => ({ time: p.time, value: isFund ? p.value : p.close }));
         if (style === 'line') {
           mainSeries = chart.addLineSeries({ color: '#0284c7', lineWidth: 2, priceLineVisible: false });
         } else {
@@ -605,19 +921,120 @@ var TechnicalModule = {
             priceLineVisible: false
           });
         }
-        mainSeries.setData(seriesData);
+        mainSeries.setData(toLine(closes));
       }
 
-      const levelInfo = this.drawPriceLevels(LW, mainSeries, points, srContext);
+      const addEma = (period, color, key) => {
+        if (!this.chartOverlays[key] || points.length < period) return;
+        chart.addLineSeries({
+          color, lineWidth: 1.6, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false
+        }).setData(toLine(this.emaSeries(closes, period)));
+      };
+      addEma(20, '#f59e0b', 'ema20');
+      addEma(50, '#0284c7', 'ema50');
+      addEma(200, '#7c3aed', 'ema200');
+
+      if (showVolume) {
+        const volSeries = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'volume-pane' });
+        chart.priceScale('volume-pane').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+        volSeries.setData(points
+          .filter((p) => Number(p.volume) > 0)
+          .map((p) => ({ time: p.time, value: p.volume, color: p.close >= p.open ? 'rgba(22,163,74,0.45)' : 'rgba(220,38,38,0.45)' })));
+      }
+
+      const levelInfo = this.computePriceLevels(points, srContext);
+      if (this.chartOverlays.sr) this.drawPriceLevels(LW, mainSeries, points, srContext, levelInfo);
+      if (this.chartOverlays.fib) {
+        const highs = points.map((p) => Number(isFund ? p.value : p.high)).filter(Number.isFinite);
+        const lows = points.map((p) => Number(isFund ? p.value : p.low)).filter(Number.isFinite);
+        this.fibLevels(Math.max(...highs), Math.min(...lows)).forEach((f) => {
+          mainSeries.createPriceLine({
+            price: f.price,
+            color: '#0ea5e9',
+            lineWidth: 1,
+            lineStyle: LW.LineStyle.Dotted,
+            axisLabelVisible: true,
+            title: `Fib ${(f.ratio * 100).toFixed(1)}%`
+          });
+        });
+      }
       this.renderSrPanel(levelInfo, srContext);
 
-      chart.timeScale().fitContent();
-      this._chartInstance = chart;
-      this._chartResize = new ResizeObserver(() => {
-        if (!host.isConnected) return;
-        chart.applyOptions({ width: host.clientWidth, height: host.clientHeight });
+      const subCharts = [];
+      let rsiChart = null;
+      let macdChart = null;
+      const panelNote = (el, text) => {
+        el.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11.5px; text-align:center; padding:0 12px;">${text}</div>`;
+      };
+      const rsiArr = this.rsiSeries(closes, 14);
+      if (rsiHost) {
+        rsiHost.innerHTML = '';
+        if (rsiArr.filter((v) => Number.isFinite(v)).length < 5) {
+          panelNote(rsiHost, `ช่วงเวลานี้มีข้อมูล ${points.length} วัน ไม่พอสำหรับ RSI 14`);
+        } else {
+          rsiChart = LW.createChart(rsiHost, this.subChartOptions(LW, rsiHost));
+          rsiChart.timeScale().applyOptions({ visible: false });
+          const rsiLine = rsiChart.addLineSeries({ color: '#7c3aed', lineWidth: 1.5, priceLineVisible: false });
+          rsiLine.setData(toLine(rsiArr));
+          [30, 70].forEach((lvl) => rsiLine.createPriceLine({
+            price: lvl, color: '#cbd5e1', lineWidth: 1, lineStyle: LW.LineStyle.Dashed, axisLabelVisible: true, title: String(lvl)
+          }));
+          subCharts.push(rsiChart);
+        }
+      }
+
+      const macdArr = this.macdSeries(closes);
+      if (macdHost) {
+        macdHost.innerHTML = '';
+        if (macdArr.hist.filter((v) => Number.isFinite(v)).length < 5) {
+          panelNote(macdHost, `ช่วงเวลานี้มีข้อมูล ${points.length} วัน ไม่พอสำหรับ MACD (12,26,9) ซึ่งต้องใช้อย่างน้อย 34 วัน`);
+        } else {
+          macdChart = LW.createChart(macdHost, this.subChartOptions(LW, macdHost));
+          macdChart.addHistogramSeries({ priceFormat: { type: 'price', precision: 3, minMove: 0.001 } }).setData(
+            macdArr.hist.map((v, i) => (Number.isFinite(v) ? { time: times[i], value: v, color: v >= 0 ? 'rgba(22,163,74,0.5)' : 'rgba(220,38,38,0.5)' } : null)).filter(Boolean)
+          );
+          const macdLine = macdChart.addLineSeries({ color: '#0284c7', lineWidth: 1.5, priceLineVisible: false });
+          macdLine.setData(toLine(macdArr.line));
+          macdChart.addLineSeries({ color: '#f59e0b', lineWidth: 1.2, priceLineVisible: false }).setData(toLine(macdArr.signal));
+          macdLine.createPriceLine({ price: 0, color: '#e2e8f0', lineWidth: 1, lineStyle: LW.LineStyle.Solid, axisLabelVisible: false, title: '' });
+          subCharts.push(macdChart);
+        }
+      }
+
+      // ซิงก์ด้วย "ช่วงเวลา" ไม่ใช่ logical index เพราะ RSI เริ่มแท่งที่ 15 และ MACD ที่ 35 ถ้าใช้ index จะเหลื่อมกัน
+      let syncing = false;
+      const applyRangeToSubs = () => {
+        const range = chart.timeScale().getVisibleRange();
+        if (!range || !range.from) return;
+        syncing = true;
+        subCharts.forEach((other) => {
+          try { other.timeScale().setVisibleRange(range); } catch (e) {}
+        });
+        syncing = false;
+      };
+      chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+        if (!syncing) applyRangeToSubs();
       });
-      this._chartResize.observe(host);
+
+      chart.timeScale().fitContent();
+      applyRangeToSubs();
+      this._chartInstance = chart;
+      this._subCharts = subCharts;
+      const observe = (el, target) => {
+        const ro = new ResizeObserver(() => {
+          if (!el.isConnected) return;
+          target.applyOptions({ width: el.clientWidth, height: el.clientHeight });
+        });
+        ro.observe(el);
+        return ro;
+      };
+      this._chartResize = observe(host, chart);
+      if (rsiChart) this._subResizes.push(observe(rsiHost, rsiChart));
+      if (macdChart) this._subResizes.push(observe(macdHost, macdChart));
+
+      const stats = this.computeChartStats(points, srContext);
+      if (statsEl) statsEl.innerHTML = this.statsStripHtml(stats, srContext);
+      if (bannerEl) bannerEl.innerHTML = this.summaryBannerHtml(stats, levelInfo, srContext);
 
       const lastPoint = points[points.length - 1];
       if (noteEl) {
@@ -628,7 +1045,8 @@ var TechnicalModule = {
         ];
         if (isFund && this.currentChartStyle === 'candles') parts.push('กองทุนมีเฉพาะ NAV รายวัน จึงแสดงเป็นกราฟพื้นที่');
         if (isFund && data.truncated) parts.push(`แหล่งข้อมูลมีข้อมูลย้อนหลังตั้งแต่ ${data.availableFrom}`);
-        if (levelInfo && levelInfo.levels.length) parts.push(`วาดเส้นแนวรับ-แนวต้าน ${levelInfo.levels.filter((x) => x.onChart).length} ระดับบนกราฟ`);
+        if (levelInfo && levelInfo.drawnCount) parts.push(`วาดเส้นแนวรับ-แนวต้าน ${levelInfo.drawnCount} ระดับบนกราฟ`);
+        if (points.length < 200) parts.push('ข้อมูลน้อยกว่า 200 วัน จึงยังไม่แสดง EMA 200');
         noteEl.textContent = parts.join(' · ');
       }
     } catch (err) {
