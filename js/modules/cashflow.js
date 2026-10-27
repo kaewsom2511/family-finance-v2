@@ -656,6 +656,7 @@ var CashFlowModule = {
 
     const state = this.getState();
     const isEdit = !!txId;
+    this.editingTxId = isEdit ? txId : null;
     const tx = isEdit ? state.transactions.find(t => t.id === txId) : {
       type: 'รายจ่าย',
       date: new Date().toISOString().slice(0, 10),
@@ -689,6 +690,16 @@ var CashFlowModule = {
     `).join('');
 
     const isTransfer = currentTypeKey === 'โอนระหว่างบัญชี';
+
+    // รายการสัญญาผ่อนจากหน้า "ภาระหนี้สิน" (DebtModule) เพื่อให้บันทึกค่างวดแล้วนับงวดต่อให้อัตโนมัติ
+    const debtContracts = this.getDebtContracts();
+    const chosenContractId = tx.contractId || (debtContracts.find(d => !d.isClosed) || {}).id || '';
+    const debtContractOpts = debtContracts.map(d => {
+      const paidM = parseInt(d.paidMonths, 10) || 0;
+      const totM = parseInt(d.totalMonths, 10) || 0;
+      const state = d.isClosed ? ' (ปิดแล้ว)' : ` · งวด ${paidM}/${totM}`;
+      return `<option value="${d.id}" ${d.id === chosenContractId ? 'selected' : ''}>${d.name}${state}</option>`;
+    }).join('');
 
     const modalHtml = `
       <div id="modal-add-transaction" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
@@ -737,14 +748,24 @@ var CashFlowModule = {
               <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">รายละเอียด</label>
               <input type="text" id="modal-tx-desc" value="${this.getItemDetail(tx)}" placeholder="รายละเอียดเพิ่มเติม..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
             </div>
-            <div id="box-debt-terms" style="display: ${currentTypeKey === 'หนี้สิน' ? 'flex' : 'none'}; gap: 10px; background: #fff7ed; padding: 10px 12px; border-radius: 8px; border: 1px solid #fed7aa; align-items: center; margin-top: 10px;">
-              <div style="flex: 1;">
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">จำนวนงวดผ่อน (เดือน)</label>
-                <input type="number" id="modal-debt-terms-input" value="6" min="1" max="60" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 13px; font-weight: 800; color: #9a3412; outline: none; background: #fff;">
+            <div id="box-debt-link" style="display: ${currentTypeKey === 'หนี้สิน' ? 'flex' : 'none'}; flex-direction: column; gap: 8px; background: #fff7ed; padding: 10px 12px; border-radius: 8px; border: 1px solid #fed7aa; margin-top: 10px;">
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">สัญญาที่ชำระ</label>
+                <select id="modal-debt-contract" onchange="CashFlowModule.onDebtContractChange()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 13px; font-weight: 800; color: #9a3412; outline: none; background: #fff;">
+                  ${debtContractOpts}
+                  <option value="__new__" ${debtContractOpts ? '' : 'selected'}>➕ สร้างสัญญาผ่อนใหม่…</option>
+                </select>
               </div>
-              <div style="flex: 1.2;">
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">ผ่อนเฉลี่ยต่องวด</label>
-                <div id="modal-debt-monthly-preview" style="font-size: 14px; font-weight: 900; color: #c2410c; padding-top: 4px;">฿0.00 / เดือน</div>
+              <div id="modal-debt-contract-hint" style="font-size: 12px; font-weight: 700; color: #c2410c; line-height: 1.5;"></div>
+              <div id="box-debt-terms" style="display: none; gap: 10px; align-items: center;">
+                <div style="flex: 1;">
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">จำนวนงวดผ่อน (เดือน)</label>
+                  <input type="number" id="modal-debt-terms-input" value="6" min="1" max="360" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 13px; font-weight: 800; color: #9a3412; outline: none; background: #fff;">
+                </div>
+                <div style="flex: 1.2;">
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">ผ่อนเฉลี่ยต่องวด</label>
+                  <div id="modal-debt-monthly-preview" style="font-size: 14px; font-weight: 900; color: #c2410c; padding-top: 4px;">฿0.00 / เดือน</div>
+                </div>
               </div>
             </div>
 
@@ -791,17 +812,13 @@ var CashFlowModule = {
     document.getElementById('btn-close-tx-modal').onclick = closeModal;
     document.getElementById('btn-cancel-modal-tx').onclick = closeModal;
     const updateMonthlyPreview = () => {
-      const amt = parseFloat(document.getElementById('modal-tx-amount')?.value) || 0;
-      const terms = parseInt(document.getElementById('modal-debt-terms-input')?.value, 10) || 6;
-      const previewEl = document.getElementById('modal-debt-monthly-preview');
-      if (previewEl) {
-        const monthly = terms > 0 ? (amt / terms) : 0;
-        previewEl.textContent = '฿' + monthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / เดือน';
-      }
+      this.updateDebtMonthlyPreview();
+      if (document.getElementById('modal-tx-type')?.value === 'หนี้สิน') this.onDebtContractChange();
     };
     document.getElementById('modal-tx-amount')?.addEventListener('input', updateMonthlyPreview);
     document.getElementById('modal-debt-terms-input')?.addEventListener('input', updateMonthlyPreview);
     updateMonthlyPreview();
+    if (currentTypeKey === 'หนี้สิน') this.onDebtContractChange();
 
     document.getElementById('btn-save-modal-tx').onclick = () => {
       const type = document.getElementById('modal-tx-type').value;
@@ -829,11 +846,50 @@ var CashFlowModule = {
 
       if (!state.transactions) state.transactions = [];
 
+      // ประเภท "หนี้สิน" ผูกกับสัญญาในหน้าภาระหนี้สิน (DebtModule) เท่านั้น
+      // เลือกสัญญาที่มีอยู่ = ชำระงวดถัดไป / เลือก "สร้างสัญญาใหม่" = เปิดสัญญาใหม่
+      let debtContractId = null;
+      let debtPlan = null;
+      if (type === 'หนี้สิน') {
+        const contractSel = document.getElementById('modal-debt-contract');
+        const chosen = contractSel ? contractSel.value : '__new__';
+        const termsInput = document.getElementById('modal-debt-terms-input');
+        const totalTerms = Math.max(1, termsInput ? (parseInt(termsInput.value, 10) || 6) : 6);
+        const startDate = date || new Date().toISOString().slice(0, 10);
+
+        if (chosen === '__new__') {
+          debtContractId = 'debt-' + Date.now();
+          debtPlan = {
+            mode: 'create',
+            contract: {
+              id: debtContractId,
+              name: this.uniqueDebtName(detail || category || 'สัญญาผ่อนใหม่'),
+              accountName,
+              totalDebt: amount,
+              monthlyPayment: Math.round((amount / totalTerms) * 100) / 100,
+              startDate,
+              endDate: this.addMonthsToIso(startDate, totalTerms),
+              paidAmount: 0,
+              paidMonths: 0,
+              totalMonths: totalTerms,
+              isClosed: false,
+              closedDate: null
+            }
+          };
+        } else {
+          debtContractId = chosen;
+          debtPlan = { mode: 'pay', contractId: chosen };
+        }
+      }
+
       const txPayload = {
         type, date, category,
         detail, desc: detail,
         amount,
         accountName, accountId: accountName,
+        contractId: debtContractId || undefined,
+        // รายการที่ "เปิดสัญญา" คือยอดราคาเต็มของสัญญา ไม่ใช่ค่างวด → หน้านี้นับเป็น 0 งวด
+        debtOpening: (debtPlan && debtPlan.mode === 'create') || undefined,
         fromAccount: type === 'โอนระหว่างบัญชี' ? fromAccount : undefined,
         toAccount: type === 'โอนระหว่างบัญชี' ? toAccount : undefined
       };
@@ -850,75 +906,160 @@ var CashFlowModule = {
         });
       }
 
-      if (type === 'หนี้สิน') {
-        const termsInput = document.getElementById('modal-debt-terms-input');
-        const totalTerms = termsInput ? (parseInt(termsInput.value, 10) || 6) : 6;
-        const monthlyAmt = Math.round((amount / totalTerms) * 100) / 100;
-
-        const formatThDate = (dObj) => {
-          const dd = String(dObj.getDate()).padStart(2, '0');
-          const mm = String(dObj.getMonth() + 1).padStart(2, '0');
-          const yyyy = dObj.getFullYear();
-          return `${dd}/${mm}/${yyyy}`;
-        };
-
-        const startDateObj = date ? new Date(date) : new Date();
-        const endDateObj = new Date(startDateObj);
-        endDateObj.setMonth(endDateObj.getMonth() + totalTerms);
-
-        const startDateStr = formatThDate(startDateObj);
-        const endDateStr = formatThDate(endDateObj);
-
-        const debtStorageKey = 'family-finance:debts-contracts:v1';
-        let contracts = [];
-        try {
-          contracts = JSON.parse(localStorage.getItem(debtStorageKey)) || [];
-        } catch (e) {}
-
-        // ถ้าสัญญาในระบบว่างเปล่า ให้ดึงค่าเริ่มต้นมาตรฐาน 5 รายการมาเป็นฐานก่อนเสมอ
-        if (!Array.isArray(contracts) || contracts.length === 0) {
-          contracts = (typeof defaultContracts !== 'undefined') ? [...defaultContracts] : [];
-        }
-
-        const contractId = 'debt_' + (txId || Date.now());
-        const contractName = detail || category || 'สัญญาผ่อนชำระ';
-
-        const existIdx = contracts.findIndex(c => c.id === contractId || c.name === contractName);
-        const newContract = {
-          id: existIdx >= 0 ? contracts[existIdx].id : contractId,
-          name: contractName,
-          totalDebt: amount,
-          monthly: monthlyAmt,
-          startDate: startDateStr,
-          endDate: endDateStr,
-          paid: 0.00,
-          remaining: amount,
-          isClosed: false,
-          closedDate: null
-        };
-
-        if (existIdx >= 0) {
-          contracts[existIdx] = newContract;
-        } else {
-          contracts.unshift(newContract);
-        }
-
-        localStorage.setItem(debtStorageKey, JSON.stringify(contracts));
-
-        this.saveState(state);
-        closeModal();
-
-        window.location.hash = '#debts';
-        this.currentView = 'debts';
-        this.render();
-        return;
-      }
+      if (debtPlan) this.applyDebtPlan(debtPlan);
 
       this.saveState(state);
       closeModal();
+
+      if (debtPlan) {
+        window.location.hash = '#debts';
+        this.currentView = 'debts';
+      }
       this.render();
     };
   },
+
+  uniqueDebtName(base) {
+    const names = this.getDebtContracts().map(d => d.name);
+    if (!names.includes(base)) return base;
+    let i = 2;
+    while (names.includes(`${base} (${i})`)) i++;
+    return `${base} (${i})`;
+  },
+
+  addMonthsToIso(isoDate, months) {
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return '';
+    d.setMonth(d.getMonth() + (parseInt(months, 10) || 0));
+    return d.toISOString().slice(0, 10);
+  },
+
+  // บันทึกรายการ "หนี้สิน" แบบสร้างสัญญาใหม่ → เพิ่มสัญญาเข้าหน้าภาระหนี้สิน
+  // (โหมดจ่ายตามสัญญาเดิมไม่ต้องอัปเดตยอดที่นี่ เพราะ "จ่ายแล้ว" คำนวณจากรายการในบัญชีอยู่แล้ว)
+  applyDebtPlan(plan) {
+    if (typeof DebtModule === 'undefined' || typeof DebtModule.saveDebts !== 'function') {
+      alert('ไม่พบโมดูลหนี้สิน จึงยังไม่ได้อัปเดตยอดสัญญาผ่อน');
+      return;
+    }
+    if (plan.mode !== 'create') return;
+
+    const debts = this.getDebtContracts();
+    if (debts.some(d => d.id === plan.contract.id)) return;
+    debts.unshift(plan.contract);
+    DebtModule.saveDebts(debts);
+  },
+
+  // สแกนรายการที่บันทึกไว้แล้วในบัญชีรายรับรายจ่าย ว่านับเป็นงวดของสัญญาไหนบ้าง
+  // รายการใหม่ผูกด้วย contractId / รายการเก่า (บันทึกเป็นรายจ่ายหรือหนี้สิน) จับคู่ด้วยชื่อสัญญา → นับย้อนหลังได้
+  matchDebtTx(debt, transactions) {
+    const name = (debt.name || '').trim();
+    return transactions.filter(tx => {
+      if (tx.debtOpening) return false;
+      if (tx.contractId) return tx.contractId === debt.id;
+      if (!name) return false;
+      if (tx.type === 'รายรับ' || tx.type === 'โอนระหว่างบัญชี') return false;
+      return (tx.category || '').trim() === name || (tx.detail || '').trim() === name;
+    });
+  },
+
+  // คำนวณ "จ่ายแล้ว / ปิดหนี้" ของสัญญาจากรายการที่บันทึกไว้ในรายรับรายจ่ายจริง
+  // ใช้ตอนหน้าภาระหนี้สินวาดข้อมูล → บันทึกรายการงวดเดียว ตัวเลขขยับทันทีโดยไม่ต้องกดคำนวณซ้ำ
+  // คืน null เมื่อไม่พบรายการที่ผูกกับสัญญา (สัญญาที่ไม่ได้บันทึกรายการผ่อน) → ให้ใช้ยอดที่กรอกไว้ในสัญญา
+  deriveDebtPaid(debt, transactions) {
+    const matched = this.matchDebtTx(debt, transactions);
+    if (!matched.length) return null;
+    const paidMonths = matched.length;
+    const paidAmount = Math.round(matched.reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0) * 100) / 100;
+    const totalDebt = parseFloat(debt.totalDebt) || 0;
+    const totalMonths = parseInt(debt.totalMonths, 10) || 0;
+    const isClosed = (totalDebt > 0 && paidAmount >= totalDebt) || (totalMonths > 0 && paidMonths >= totalMonths);
+    return {
+      paidMonths,
+      paidAmount,
+      isClosed,
+      closedDate: isClosed ? (matched.map(tx => tx.date).filter(Boolean).sort().pop() || null) : null
+    };
+  },
+
+  getDebtContracts() {
+    if (typeof DebtModule === 'undefined' || typeof DebtModule.getDebts !== 'function') return [];
+    try {
+      const list = DebtModule.getDebts();
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  updateDebtMonthlyPreview() {
+    const amt = parseFloat(document.getElementById('modal-tx-amount')?.value) || 0;
+    const terms = parseInt(document.getElementById('modal-debt-terms-input')?.value, 10) || 6;
+    const previewEl = document.getElementById('modal-debt-monthly-preview');
+    if (previewEl) {
+      const monthly = terms > 0 ? (amt / terms) : 0;
+      previewEl.textContent = '฿' + monthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / เดือน';
+    }
+  },
+
+  // คาดการณ์ก่อนบันทึกว่าหน้าภาระหนี้สินจะเป็นเท่าไร (ยอดที่แสดงบนหน้านั้นคำนวณจากรายการจริงอยู่แล้ว)
+  debtSaveProjection(debt) {
+    const fmt = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (this.editingTxId) return 'บันทึกแล้วจะนับงวด/ยอดคงเหลือของสัญญานี้ใหม่จากรายการที่แก้ไข';
+
+    const amount = parseFloat(document.getElementById('modal-tx-amount')?.value) || 0;
+    const totalMonths = parseInt(debt.totalMonths, 10) || 0;
+    const totalDebt = parseFloat(debt.totalDebt) || 0;
+    const paidMonths = (parseInt(debt.paidMonths, 10) || 0) + 1;
+    const paidAmount = Math.round(((parseFloat(debt.paidAmount) || 0) + amount) * 100) / 100;
+    const remaining = Math.max(0, Math.round((totalDebt - paidAmount) * 100) / 100);
+    const done = (totalDebt > 0 && paidAmount >= totalDebt) || (totalMonths > 0 && paidMonths >= totalMonths);
+    return `บันทึกแล้วเป็นงวด ${paidMonths}/${totalMonths || '-'} · คงเหลือ ฿${fmt(remaining)}`
+      + (done ? ' · <span style="color:#059669;">ปิดหนี้ครบสัญญา</span>' : '');
+  },
+
+  // เลือกสัญญาที่มีอยู่ → แสดงค่างวดและงวดที่จ่ายแล้ว (บันทึกรายการแล้วนับงวดต่อให้)
+  // เลือก "สร้างสัญญาใหม่" → ให้กรอกยอดรวมกับจำนวนงวดเอง
+  onDebtContractChange() {
+    const sel = document.getElementById('modal-debt-contract');
+    if (!sel) return;
+    const termsBox = document.getElementById('box-debt-terms');
+    const hint = document.getElementById('modal-debt-contract-hint');
+    const amountEl = document.getElementById('modal-tx-amount');
+    const isNew = sel.value === '__new__';
+
+    if (termsBox) termsBox.style.display = isNew ? 'flex' : 'none';
+    if (!hint) return;
+
+    if (isNew) {
+      hint.textContent = 'รายการนี้จะเริ่มสัญญาผ่อนใหม่ (ยอดรวม ÷ จำนวนงวด = ค่างวด)';
+      this.updateDebtMonthlyPreview();
+      return;
+    }
+
+    const debt = this.getDebtContracts().find(c => c.id === sel.value);
+    if (!debt) {
+      hint.textContent = '';
+      return;
+    }
+    const fmt = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const paidMonths = parseInt(debt.paidMonths, 10) || 0;
+    const totalMonths = parseInt(debt.totalMonths, 10) || 0;
+    const remaining = Math.max(0, (debt.totalDebt || 0) - (debt.paidAmount || 0));
+    hint.innerHTML = `ค่างวดตามสัญญา <b>฿${fmt(debt.monthlyPayment)}</b> · จ่ายแล้ว ${paidMonths}/${totalMonths} งวด · คงเหลือ ฿${fmt(remaining)}`
+      + (debt.isClosed ? ' · <span style="color:#dc2626;">สัญญานี้ปิดแล้ว</span>' : ` · ${this.debtSaveProjection(debt)}`);
+
+    // กรอกค่างวดของสัญญาให้ถ้าช่องจำนวนเงินยังว่าง หรือยังค่าเดิมที่กรอกให้อยู่ (ไม่ทับตัวเลขที่ผู้ใช้พิมพ์เอง)
+    if (amountEl) {
+      const monthly = debt.monthlyPayment || '';
+      const current = String(amountEl.value).trim();
+      if (!current || current === amountEl.dataset.autofilled) {
+        amountEl.value = monthly;
+        amountEl.dataset.autofilled = String(monthly);
+      }
+    }
+    this.updateDebtMonthlyPreview();
+  },
+
   updateModalCategories(selectedType) {
     const isTransfer = selectedType === 'โอนระหว่างบัญชี' || selectedType === 'โอนเงิน';
     const isDebt = selectedType === 'หนี้สิน';
@@ -930,9 +1071,10 @@ var CashFlowModule = {
       transferBox.style.display = isTransfer ? 'flex' : 'none';
     }
 
-    const debtTermsBox = document.getElementById('box-debt-terms');
-    if (debtTermsBox) {
-      debtTermsBox.style.display = isDebt ? 'flex' : 'none';
+    const debtLinkBox = document.getElementById('box-debt-link');
+    if (debtLinkBox) {
+      debtLinkBox.style.display = isDebt ? 'flex' : 'none';
+      if (isDebt) this.onDebtContractChange();
     }
 
     const catSelect = document.getElementById('modal-tx-category');
@@ -2241,13 +2383,19 @@ var CashFlowModule = {
       return;
     }
 
-    if (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) {
-      this.renderCreditCardsView(container);
-      return;
-    }
-
-    if (this.currentView === 'debts' || currentHash.includes('debt')) {
-      this.renderDebtsView(container);
+    const onDebtPage = this.currentView === 'credit-cards' || this.currentView === 'debts'
+                     || currentHash.includes('credit-card') || currentHash.includes('debt');
+    if (onDebtPage) {
+      // หน้าบัตรเครดิต/หนี้สิน มีตัวจริงอยู่ที่ DebtModule (เก็บใน family-finance:debt-plans)
+      // ใช้ตัวเดียวทั้งตอนเข้าหน้าแรกและตอนเปลี่ยน hash จะได้ไม่สลับไปมากันสองเวอร์ชัน
+      if (typeof DebtModule !== 'undefined' && typeof DebtModule.render === 'function') {
+        DebtModule.activeViewTab = (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) ? 'cards' : 'debts';
+        DebtModule.render(container);
+      } else if (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) {
+        this.renderCreditCardsView(container);
+      } else {
+        this.renderDebtsView(container);
+      }
       return;
     }
 

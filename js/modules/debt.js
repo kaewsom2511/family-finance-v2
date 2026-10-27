@@ -130,7 +130,7 @@ window.DebtModule = {
 
   checkHash() {
     const hash = window.location.hash || '';
-    if (hash === '#debts-list' || hash === '#installments') {
+    if (hash === '#debts' || hash === '#debts-list' || hash === '#installments') {
       this.activeViewTab = 'debts';
     } else {
       this.activeViewTab = 'cards';
@@ -143,7 +143,7 @@ window.DebtModule = {
     if (ctx.isMember) {
       try {
         const raw = localStorage.getItem(ctx.storageKey);
-        if (raw) return JSON.parse(raw);
+        if (raw) return this.withLedgerPaid(JSON.parse(raw));
       } catch (e) {}
       return [];
     }
@@ -151,10 +151,29 @@ window.DebtModule = {
     // Admin (พ่อบี): ดึงข้อมูลหนี้และสัญญาผ่อนหลักตามปกติ
     try {
       const raw = localStorage.getItem(ctx.storageKey);
-      if (raw) return JSON.parse(raw);
+      if (raw) return this.withLedgerPaid(JSON.parse(raw));
     } catch (e) {}
     localStorage.setItem(ctx.storageKey, JSON.stringify(this.defaultDebts));
-    return this.defaultDebts;
+    return this.withLedgerPaid(this.defaultDebts);
+  },
+
+  // "จ่ายแล้ว / งวด / ปิดหนี้" ให้คำนวณจากรายการที่บันทึกไว้ในรายรับรายจ่ายก่อน
+  // สัญญาไหนไม่มีรายการผูกเลย (เช่น ผ่อนผ่านบัตรที่ไม่ได้บันทึกงวด) จึงใช้ยอดที่กรอกไว้ในสัญญา
+  withLedgerPaid(debts) {
+    if (!Array.isArray(debts)) return [];
+    if (typeof CashFlowModule === 'undefined' || typeof CashFlowModule.deriveDebtPaid !== 'function') return debts;
+    let transactions = [];
+    try {
+      const state = CashFlowModule.getState();
+      transactions = Array.isArray(state.transactions) ? state.transactions : [];
+    } catch (e) {
+      return debts;
+    }
+    if (!transactions.length) return debts;
+    return debts.map(debt => {
+      const derived = CashFlowModule.deriveDebtPaid(debt, transactions);
+      return derived ? { ...debt, ...derived } : debt;
+    });
   },
 
   saveDebts(debts) {
