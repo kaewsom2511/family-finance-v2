@@ -949,16 +949,20 @@ var CashFlowModule = {
     DebtModule.saveDebts(debts);
   },
 
-  // สแกนรายการที่บันทึกไว้แล้วในบัญชีรายรับรายจ่าย ว่านับเป็นงวดของสัญญาไหนบ้าง
-  // รายการใหม่ผูกด้วย contractId / รายการเก่า (บันทึกเป็นรายจ่ายหรือหนี้สิน) จับคู่ด้วยชื่อสัญญา → นับย้อนหลังได้
+  // สแกนรายการที่บันทึกไว้แล้วในบัญชีรายรับรายจ่าย ว่านับเป็น "ค่างวด" ของสัญญาไหนบ้าง
+  // 1) รายการที่ผูกสัญญาชัดเจน (บันทึกจากประเภท "หนี้สิน" แล้วเลือกสัญญา) = ค่างวดเสมอ
+  // 2) รายการเก่าที่ผูกด้วยชื่อ ต้องมียอดเท่ากับค่างวดของสัญญาเท่านั้น
+  //    เพราะในบัญชีจริงมีทั้ง "ยอดซื้อทั้งก้อน/ยอดดาวน์" ที่ใช้ชื่อเดียวกับสัญญา ถ้านับด้วยจะกลายเป็นปิดหนี้ทันที
   matchDebtTx(debt, transactions) {
     const name = (debt.name || '').trim();
+    const monthly = parseFloat(debt.monthlyPayment) || 0;
     return transactions.filter(tx => {
       if (tx.debtOpening) return false;
       if (tx.contractId) return tx.contractId === debt.id;
-      if (!name) return false;
+      if (!name || monthly <= 0) return false;
       if (tx.type === 'รายรับ' || tx.type === 'โอนระหว่างบัญชี') return false;
-      return (tx.category || '').trim() === name || (tx.detail || '').trim() === name;
+      if ((tx.category || '').trim() !== name && (tx.detail || '').trim() !== name) return false;
+      return Math.abs((parseFloat(tx.amount) || 0) - monthly) <= 1;
     });
   },
 
