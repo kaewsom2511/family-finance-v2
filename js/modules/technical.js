@@ -10,6 +10,7 @@ var TechnicalModule = {
   _chartInstance: null,
   _chartResize: null,
   _lwPromise: null,
+  _chartContext: null,
 
   formatTradingViewSymbol(rawSymbol, marketType) {
     if (!rawSymbol) return 'AMEX:VOO';
@@ -209,6 +210,7 @@ var TechnicalModule = {
 
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
               <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">แนวรับ / แนวต้าน</div>
+              <div id="sr-panel-body">
               ${hasRange ? `
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
                 <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px;">
@@ -225,9 +227,10 @@ var TechnicalModule = {
               <div style="text-align: right; font-size: 11px; color: #64748b;">Pivot Point: ${currencySign}${pivot.toFixed(2)}</div>
               ` : `
               <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; font-size: 11.5px; color: #64748b; text-align: center; line-height: 1.6;">
-                แหล่งข้อมูลไม่ได้ให้ราคา High/Low ของวันนี้<br>จึงยังคำนวณแนวรับ-แนวต้านไม่ได้
+                กำลังคำนวณแนวรับ-แนวต้านจากข้อมูลกราฟ…
               </div>
               `}
+              </div>
             </div>
 
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
@@ -295,6 +298,13 @@ var TechnicalModule = {
     }
 
     const chartType = isFund ? 'FUND' : isThai ? 'TH' : 'US';
+
+    this._chartContext = {
+      chartType,
+      currencySign,
+      decimals: isFund ? 4 : 2,
+      avgCost: holdingMatch ? Number(isThai || isFund ? holdingMatch.avgCost : (holdingMatch.avgCostUSD || holdingMatch.avgCost)) || 0 : 0
+    };
 
     if (rangeSelect) {
       rangeSelect.onchange = () => {
@@ -366,11 +376,121 @@ var TechnicalModule = {
     `;
   },
 
+  sma(closes, period) {
+    if (closes.length < period) return null;
+    let sum = 0;
+    for (let i = closes.length - period; i < closes.length; i++) sum += closes[i];
+    return sum / period;
+  },
+
+  // คำนวณแนวรับ-แนวต้านจากชุด OHLC ที่โหลดมาจริง เพราะ quote รายวันมักไม่มี High/Low ของ ETF ต่างประเทศ
+  computePriceLevels(points, context) {
+    const isFund = context.chartType === 'FUND';
+    const closes = points.map((p) => Number(isFund ? p.value : p.close)).filter((v) => Number.isFinite(v));
+    if (!closes.length) return null;
+    const last = closes[closes.length - 1];
+    const levels = [];
+    // onChart=false แสดงเฉพาะในแผงด้านขวา เพราะเส้นที่ห่างมากจะทำให้สเกลราคาบีบจนแท่งเทียนอ่านยาก
+    const push = (key, title, price, color, dashed, onChart = true) => {
+      if (Number.isFinite(price) && price > 0) levels.push({ key, title, price, color, dashed: !!dashed, onChart });
+    };
+
+    if (!isFund) {
+      const bar = points[points.length - 1];
+      const h = Number(bar.high), l = Number(bar.low), c = Number(bar.close);
+      if ([h, l, c].every(Number.isFinite) && h > 0 && h >= l) {
+        const pivot = (h + l + c) / 3;
+        push('P', `Pivot`, pivot, '#64748b', false);
+        push('R1', 'R1', 2 * pivot - l, '#dc2626', false);
+        push('S1', 'S1', 2 * pivot - h, '#16a34a', false);
+        push('R2', 'R2', pivot + (h - l), '#fca5a5', false, false);
+        push('S2', 'S2', pivot - (h - l), '#86efac', false, false);
+      }
+    }
+
+    const sma20 = this.sma(closes, 20);
+    const sma50 = this.sma(closes, 50);
+    push('SMA20', 'SMA 20', sma20, '#f59e0b', true);
+    push('SMA50', 'SMA 50', sma50, '#7c3aed', true);
+
+    const highs = points.map((p) => Number(isFund ? p.value : p.high)).filter(Number.isFinite);
+    const lows = points.map((p) => Number(isFund ? p.value : p.low)).filter(Number.isFinite);
+    push('RH', `${context.rangeLabel} สูงสุด`, Math.max(...highs), '#0ea5e9', false, false);
+    push('RL', `${context.rangeLabel} ต่ำสุด`, Math.min(...lows), '#0ea5e9', false, false);
+
+    if (context.avgCost > 0) push('COST', 'ทุนเฉลี่ย', context.avgCost, '#0f766e', true);
+
+    const above = levels.filter((x) => x.price > last * 1.0005).sort((a, b) => a.price - b.price);
+    const below = levels.filter((x) => x.price < last * 0.9995).sort((a, b) => b.price - a.price);
+    return { levels, last, nearestResistance: above[0] || null, nearestSupport: below[0] || null };
+  },
+
+  srPanelHtml(info, context) {
+    const fmt = (v) => `${context.currencySign}${v.toFixed(context.decimals)}`;
+    const dist = (price) => ((price - info.last) / info.last) * 100;
+    const row = (x) => {
+      const pct = dist(x.price);
+      const color = x.price >= info.last ? '#dc2626' : '#16a34a';
+      return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:3px 0; border-bottom:1px dashed #f1f5f9;">
+        <span style="color:#475569;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${x.color};margin-right:6px;vertical-align:middle;"></span>${x.title}</span>
+        <span style="text-align:right;"><b style="color:#0f172a;">${fmt(x.price)}</b> <span style="color:${color};">(${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</span></span>
+      </div>`;
+    };
+    const box = (label, x, tone) => `
+      <div style="background:${tone.bg}; border:1px solid ${tone.border}; border-radius:8px; padding:8px 10px;">
+        <div style="font-size:11px; font-weight:700; color:${tone.text}; margin-bottom:2px;">${label}</div>
+        <div style="font-size:16px; font-weight:900; color:#0f172a;">${x ? fmt(x.price) : '—'}</div>
+        <div style="font-size:11px; color:#64748b;">${x ? `${x.title} · ${dist(x.price) >= 0 ? '+' : ''}${dist(x.price).toFixed(2)}%จากราคาล่าสุด` : 'นอกกรอบที่เลือก'}</div>
+      </div>`;
+    const sorted = [...info.levels].sort((a, b) => b.price - a.price).map(row).join('');
+    return `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+        ${box('แนวต้านใกล้สุด', info.nearestResistance, { bg: '#fef2f2', border: '#fecaca', text: '#dc2626' })}
+        ${box('แนวรับใกล้สุด', info.nearestSupport, { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' })}
+      </div>
+      ${sorted}
+      <div style="margin-top:8px; font-size:10.5px; color:#94a3b8; line-height:1.6;">
+        คำนวณจากข้อมูลกราฟ ${context.rangeLabel} · Pivot จากแท่งล่าสุด · SMA 20/50 · เปรียบเทียบราคาล่าสุด ${fmt(info.last)}
+      </div>`;
+  },
+
+  renderSrPanel(info, context) {
+    const host = document.getElementById('sr-panel-body');
+    if (!host) return;
+    if (!info || !info.levels.length) {
+      host.innerHTML = `<div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; padding:12px; font-size:11.5px; color:#64748b; text-align:center; line-height:1.6;">โหลดกราฟไม่สำเร็จ<br>จึงยังคำนวณแนวรับ-แนวต้านไม่ได้</div>`;
+      return;
+    }
+    host.innerHTML = this.srPanelHtml(info, context);
+  },
+
+  drawPriceLevels(LW, series, points, context) {
+    const info = this.computePriceLevels(points, context);
+    if (!info || !series || typeof series.createPriceLine !== 'function') return info;
+    info.levels.filter((x) => x.onChart).forEach((x) => {
+      series.createPriceLine({
+        price: x.price,
+        color: x.color,
+        lineWidth: 1,
+        lineStyle: x.dashed ? LW.LineStyle.Dashed : LW.LineStyle.Solid,
+        axisLabelVisible: true,
+        title: x.key
+      });
+    });
+    return info;
+  },
+
   async loadOwnChart(cleanSym, chartType) {
     const host = document.getElementById('tradingview_chart_container');
     if (!host) return;
     const isFund = chartType === 'FUND';
     const isThai = chartType === 'TH';
+    const srContext = Object.assign({}, this._chartContext, {
+      chartType: chartType || 'US',
+      rangeLabel: this.currentRange,
+      currencySign: (this._chartContext && this._chartContext.currencySign) || (isFund || isThai ? '฿' : '$'),
+      decimals: (this._chartContext && this._chartContext.decimals) || (isFund ? 4 : 2)
+    });
     const noteEl = document.getElementById('chart-data-note');
     const linksEl = document.getElementById('chart-links');
     const apiBase = (typeof QuoteSyncService !== 'undefined' && QuoteSyncService.getApiBaseUrl)
@@ -444,6 +564,7 @@ var TechnicalModule = {
       }
       if (!points.length) {
         const detail = String(data?.detail || '');
+        this.renderSrPanel(null, srContext);
         showError(/429/.test(detail)
           ? 'แหล่งข้อมูลจำกัดจำนวนการเรียก (429) กรุณากด "วิเคราะห์" ซ้ำอีกครั้ง'
           : (data?.error || 'แหล่งข้อมูลไม่ส่งข้อมูลกราฟกลับมา'));
@@ -465,25 +586,30 @@ var TechnicalModule = {
       });
 
       const style = (isFund && this.currentChartStyle === 'candles') ? 'area' : this.currentChartStyle;
+      let mainSeries = null;
       if (style === 'candles') {
-        const series = chart.addCandlestickSeries({
+        mainSeries = chart.addCandlestickSeries({
           upColor: '#16a34a', downColor: '#dc2626',
           wickUpColor: '#16a34a', wickDownColor: '#dc2626',
           borderVisible: false
         });
-        series.setData(points);
+        mainSeries.setData(points);
       } else {
         const seriesData = points.map((p) => ({ time: p.time, value: isFund ? p.value : p.close }));
         if (style === 'line') {
-          chart.addLineSeries({ color: '#0284c7', lineWidth: 2, priceLineVisible: false }).setData(seriesData);
+          mainSeries = chart.addLineSeries({ color: '#0284c7', lineWidth: 2, priceLineVisible: false });
         } else {
-          chart.addAreaSeries({
+          mainSeries = chart.addAreaSeries({
             lineColor: '#0284c7', lineWidth: 2,
             topColor: 'rgba(2,132,199,0.28)', bottomColor: 'rgba(2,132,199,0.02)',
             priceLineVisible: false
-          }).setData(seriesData);
+          });
         }
+        mainSeries.setData(seriesData);
       }
+
+      const levelInfo = this.drawPriceLevels(LW, mainSeries, points, srContext);
+      this.renderSrPanel(levelInfo, srContext);
 
       chart.timeScale().fitContent();
       this._chartInstance = chart;
@@ -502,9 +628,11 @@ var TechnicalModule = {
         ];
         if (isFund && this.currentChartStyle === 'candles') parts.push('กองทุนมีเฉพาะ NAV รายวัน จึงแสดงเป็นกราฟพื้นที่');
         if (isFund && data.truncated) parts.push(`แหล่งข้อมูลมีข้อมูลย้อนหลังตั้งแต่ ${data.availableFrom}`);
+        if (levelInfo && levelInfo.levels.length) parts.push(`วาดเส้นแนวรับ-แนวต้าน ${levelInfo.levels.filter((x) => x.onChart).length} ระดับบนกราฟ`);
         noteEl.textContent = parts.join(' · ');
       }
     } catch (err) {
+      this.renderSrPanel(null, srContext);
       showError(err.name === 'AbortError' ? 'หมดเวลารอข้อมูลกราฟ (15 วินาที)' : err.message);
     }
   }
