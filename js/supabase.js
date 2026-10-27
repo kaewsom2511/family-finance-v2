@@ -592,6 +592,12 @@ const CloudSync = {
   _rtChannel: null,
   _familyRetryAt: 0,
 
+  // เวลาของการเขียนข้อมูลครั้งล่าสุดที่ยังไม่ยืนยันว่าส่งขึ้น Cloud สำเร็จ
+  _dirtySince: 0,
+  hasUnpushedEdits(waitMs = 60000) {
+    return this._dirtySince > 0 && (Date.now() - this._dirtySince) < waitMs;
+  },
+
   // มีเฉพาะคีย์ที่เป็นข้อมูลของคนที่ล็อกอินอยู่ (ลงท้าย #u<uid>) กับคีย์โครงสร้างร่วมเท่านั้น
   // ทำให้บัญชีหนึ่งไม่สามารถดึง/ส่งข้อมูลของอีกบัญชีได้
   isSyncedKey(key) {
@@ -676,6 +682,18 @@ const CloudSync = {
     if (this._pullInFlight) return;
     this._pullInFlight = true;
     this._lastPullAt = Date.now();
+
+    // ระหว่างใช้งาน: ถ้าเครื่องนี้เพิ่งมีการแก้ไขที่ยังไม่ทันส่งขึ้น Cloud อย่าเพิ่งดึงลงมาเขียนทับ
+    // (เคยทำให้รายการที่ผู้ใช้ลบไปแล้ว โผล่กลับมาใหม่ เพราะ Cloud เวอร์ชันเก่ากลับมาตอน push ยังไม่เสร็จ)
+    if (background && this.hasUnpushedEdits()) {
+      this._pullInFlight = false;
+      if ((this._deferredPulls || 0) < 10) {
+        this._deferredPulls = (this._deferredPulls || 0) + 1;
+        setTimeout(() => { this._deferredPulls--; this.pullFromCloud({ background: true }); }, 3000);
+      }
+      return;
+    }
+
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) return;
@@ -883,6 +901,7 @@ const CloudSync = {
       if (!session) return;
 
       const { own, shared } = this.buildBundles();
+      const bundleStartedAt = Date.now();
 
       // ข้อมูลร่วมของบ้านพยายามเก็บในตาราง family_storage
       // ถ้าตารางยังไม่มี (ยังไม่ได้รัน SQL) ให้เก็บรวมในแถวของบัญชีนี้ไปก่อน
@@ -915,6 +934,8 @@ const CloudSync = {
       if (error) throw error;
       
       this.showSyncToast('บันทึกขึ้น Cloud แล้ว', true);
+      // มีคนเขียนข้อมูลต่อระหว่างที่ส่งอยู่ → อย่าล้างสถานะ ให้รอบถัดไปจัดการ
+      if (this._dirtySince <= bundleStartedAt) this._dirtySince = 0;
       console.log('[CloudSync] Synced to cloud successfully');
     } catch (err) {
       this.showSyncToast('บันทึกขึ้น Cloud ไม่สำเร็จ', false);
@@ -933,6 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let syncTimeout = null;
 function scheduleCloudPush(delay = 1500) {
   if (CloudSync.LOCAL_ONLY || CloudSync._bulkWrite) return;
+  CloudSync._dirtySince = Date.now();
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(() => CloudSync.pushToCloud(), delay);
 }
