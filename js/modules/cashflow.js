@@ -2784,6 +2784,14 @@ var CashFlowModule = {
       return '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+    // รายการเก่าเก็บชื่อบัญชีไว้เฉพาะ field "account" จึงต้องใช้ chain เดียวกับตาราง
+    var cardAccName = function(t) {
+      return String(t.accountName || t.accountId || t.bank || t.account || '').trim().toLowerCase();
+    };
+    var isCreditAccountName = function(name) {
+      return /บัตร|เครดิต|credit/.test(name);
+    };
+
     var selectedCardId = window._selectedCreditCardId || 'krungsri';
     var totalLimit = 0;
     var totalDebt = 0;
@@ -2791,20 +2799,31 @@ var CashFlowModule = {
     var processedCards = cards.map(function(card) {
       totalLimit += card.limit;
 
-      var cardTxs = txs.filter(function(t) {
-        var acc = (t.accountName || t.accountId || '') + ' ' + (t.detail || '') + ' ' + (t.category || '');
-        return card.accountKeywords.some(function(k) { return acc.includes(k); });
+      var kw = (card.accountKeywords || []).map(function(k) { return String(k).toLowerCase(); });
+      // "รูดใช้" ต้องเป็นรายการที่ลงบัญชีเป็นบัตรใบนั้นจริง ๆ
+      // ถ้าจับจากข้อความละเอียด/หมวดหมู่ด้วย ยอดของบัญชีเงินฝาก "กรุงไทย" จะกลายเป็นหนี้บัตร KTC
+      var spendTx = txs.filter(function(t) {
+        var name = cardAccName(t);
+        return isCreditAccountName(name) && kw.some(function(k) { return name.includes(k); });
+      });
+      // "-payment" จ่ายจากบัญชีเงินฝาก แต่หมวดยืนยันว่าเป็นการจ่ายบัตร และระบุบัตรในรายละเอียด/ปลายทาง
+      var paymentTx = txs.filter(function(t) {
+        if (isCreditAccountName(cardAccName(t))) return false;
+        if (String(t.category || '').trim() !== 'จ่ายบัตรเครดิต') return false;
+        var text = [t.detail, t.desc, t.toAccount].filter(Boolean).join(' ').toLowerCase();
+        return kw.some(function(k) { return text.includes(k); });
       });
 
       var charges = 0;
-      var payments = 0;
-      cardTxs.forEach(function(t) {
+      var refunds = 0;
+      spendTx.forEach(function(t) {
         var amt = parseFloat(t.amount) || 0;
-        if (t.type === 'รายจ่าย' || t.type === 'บิล') charges += amt;
-        if (t.category === 'จ่ายบัตรเครดิต') payments += amt;
+        if (t.type === 'รายจ่าย' || t.type === 'บิล' || t.type === 'หนี้สิน') charges += amt;
+        if (t.type === 'รายรับ') refunds += amt;
       });
+      var payments = paymentTx.reduce(function(s, t) { return s + (parseFloat(t.amount) || 0); }, 0);
 
-      var currentDebt = (card.id === 'krungsri' && charges === 0) ? 26233.23 : Math.max(0, charges - payments);
+      var currentDebt = (card.id === 'krungsri' && charges === 0) ? 26233.23 : Math.max(0, charges - payments - refunds);
       totalDebt += currentDebt;
 
       var availableCredit = Math.max(0, card.limit - currentDebt);
@@ -2814,7 +2833,7 @@ var CashFlowModule = {
         currentDebt: currentDebt,
         availableCredit: availableCredit,
         utilizationRate: utilizationRate,
-        txList: cardTxs
+        txList: spendTx.concat(paymentTx)
       });
     });
 
