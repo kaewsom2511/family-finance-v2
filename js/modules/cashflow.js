@@ -686,13 +686,17 @@ var CashFlowModule = {
     `).join('');
 
     const allAccounts = this.getAllAccountNames();
-    const currentAcc = tx.accountName || tx.accountId || 'กรุงไทย';
-    const fromAcc = tx.fromAccount || currentAcc;
-    const toAcc = tx.toAccount || 'เงินสด';
+    // ต้องอ่าน field เดียวกับที่ตารางแสดง (getItemAccount) ไม่งั้นรายการเก่าที่เก็บเฉพาะ .account จะเด้งกลับไป "กรุงไทย"
+    const currentAcc = (tx.accountName || tx.accountId || tx.bank || tx.account || '').trim() || 'กรุงไทย';
+    const fromAcc = (tx.fromAccount || '').trim() || currentAcc;
+    const toAcc = (tx.toAccount || '').trim() || 'เงินสด';
 
-    const renderAccOpts = (selected) => allAccounts.map(a => `
-      <option value="${a}" ${selected === a ? 'selected' : ''}>${a}</option>
-    `).join('');
+    const renderAccOpts = (selected) => {
+      const list = allAccounts.includes(selected) ? allAccounts : [selected, ...allAccounts];
+      return list.map(a => `
+        <option value="${a}" ${selected === a ? 'selected' : ''}>${a}</option>
+      `).join('');
+    };
 
     const isTransfer = currentTypeKey === 'โอนระหว่างบัญชี';
 
