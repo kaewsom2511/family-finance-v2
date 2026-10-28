@@ -105,17 +105,29 @@ const BillModule = {
       alertDays: Math.min(30, Math.max(1, parseInt(patchSchedule.alertDays, 10) || this.DEFAULT_ALERT_DAYS)),
       enabled: patchSchedule.enabled !== false,
       source: patchSchedule.source || 'manual',
-      key: patchSchedule.key || null
+      key: patchSchedule.key || this.keyFor(patchSchedule)
     };
     if (idx === -1) list.unshift(clean);
     else list[idx] = { ...list[idx], ...clean };
-    this.saveStore({ schedules: list, dismissed: store.dismissed });
+    // มีบิลชื่อนี้อยู่แล้ว → เลิกซ่อนข้อเสนอที่ตรงกัน (เคยลบ/เคยกด "ไม่ต้องเตือน" ไว้)
+    const dismissed = store.dismissed.filter((k) => k !== clean.key);
+    this.saveStore({ schedules: list, dismissed });
     return clean;
+  },
+
+  // คีย์ใช้จับคู่ "บิลที่ติดตาม" กับ "กลุ่มที่ตรวจจับได้จากประวัติ"
+  // ทุก schedule มีคีย์เสมอ (แม้เพิ่มเอง) ไม่งั้นบิลที่เพิ่มมือจะโผล่ซ้ำเป็นข้อเสนออัตโนมัติอีกใบ
+  keyFor(schedule) {
+    return `${String(schedule.category || '').trim()}|${this.normText(schedule.name)}`;
   },
 
   removeSchedule(id) {
     const store = this.getStore();
-    this.saveStore({ schedules: store.schedules.filter((s) => s.id !== id), dismissed: store.dismissed });
+    const gone = store.schedules.find((s) => s.id === id);
+    const dismissed = store.dismissed.slice();
+    // ลบ = ไม่ต้องการบิลนี้ → ปิดข้อเสนอของบิลเดียวกันที่ตรวจจับจากประวัติด้วย ไม่งั้นมันเด้งกลับมาทันที
+    if (gone && gone.key && !dismissed.includes(gone.key)) dismissed.push(gone.key);
+    this.saveStore({ schedules: store.schedules.filter((s) => s.id !== id), dismissed });
   },
 
   setScheduleEnabled(id, enabled) {
@@ -131,6 +143,14 @@ const BillModule = {
     const dismissed = store.dismissed.slice();
     if (key && !dismissed.includes(key)) dismissed.push(key);
     this.saveStore({ schedules: store.schedules, dismissed });
+  },
+
+  restoreDismissed(key) {
+    const store = this.getStore();
+    this.saveStore({
+      schedules: store.schedules,
+      dismissed: store.dismissed.filter((k) => k !== key)
+    });
   },
 
   // ----------------------------------------------------
@@ -367,6 +387,16 @@ const BillModule = {
   // ----------------------------------------------------
   fmtBaht(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
 
+  // คีย์ตรวจจับมีข้อความที่ผู้ใช้พิมพ์ปนอยู่ → escape ก่อนใส่ใน attribute
+  esc(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  },
+
+  dismissedLabel(key) {
+    const parts = String(key || '').split('|');
+    return parts.length > 1 ? parts.slice(1).join('|') : String(key || '');
+  },
+
   fmtDate(iso) {
     const p = this.parseIso(iso);
     if (!p) return '-';
@@ -442,8 +472,8 @@ const BillModule = {
   rowHtml(item, mode) {
     const st = this.statusStyle(item);
     const actions = mode === 'candidate'
-      ? `<button data-bill-action="confirm" data-id="${item.key}" style="background: #0284c7; color: #fff; border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">ติดตามบิลนี้</button>
-         <button data-bill-action="dismiss" data-id="${item.key}" style="background: #fff; color: #64748b; border: 1px solid #cbd5e1; border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">ไม่ต้องเตือน</button>`
+      ? `<button data-bill-action="confirm" data-id="${this.esc(item.key)}" style="background: #0284c7; color: #fff; border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">ติดตามบิลนี้</button>
+         <button data-bill-action="dismiss" data-id="${this.esc(item.key)}" style="background: #fff; color: #64748b; border: 1px solid #cbd5e1; border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">ไม่ต้องเตือน</button>`
       : `${item.source !== 'card' ? `<button data-bill-action="edit" data-id="${item.id}" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">แก้ไข</button>` : ''}
          <button data-bill-action="pay" data-id="${item.id}" style="background: #0284c7; color: #fff; border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">บันทึกชำระ</button>`;
 
@@ -478,6 +508,7 @@ const BillModule = {
     const host = container || document.getElementById('bills-view-container');
     if (!host) return;
     const today = this.todayIso();
+    const store = this.getStore();
     const items = this.getTrackedItems(today);
     const dueSoon = items.filter((i) => i.days <= this.HORIZON_DAYS);
     const later = items.filter((i) => i.days > this.HORIZON_DAYS);
@@ -516,6 +547,13 @@ const BillModule = {
             <div style="font-size: 11.5px; color: #94a3b8; margin-top: 3px;">เมื่อคุณบันทึกรายการประเภท "บิล" ซ้ำอย่างน้อย ${this.MIN_SAMPLES} ครั้ง ระบบจะเสนอรอบชำระให้อัตโนมัติ</div>
           </div>
         `}
+
+        ${store.dismissed.length ? `
+          <div style="font-size: 11.5px; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span>บิลที่ปิดการเตือนไว้ (กู้คืนเพื่อให้กลับมาเสนอใหม่):</span>
+            ${store.dismissed.map((k) => `<span style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 10px; display: inline-flex; gap: 8px; align-items: center;">${this.esc(this.dismissedLabel(k))}<button data-bill-action="restore" data-id="${this.esc(k)}" style="background: none; border: none; color: #0284c7; font-size: 11.5px; font-weight: 800; cursor: pointer; padding: 0;">กู้คืน</button></span>`).join('')}
+          </div>
+        ` : ''}
       </div>
     `;
   },
@@ -719,6 +757,7 @@ const BillModule = {
       const id = btn.dataset.id;
       if (action === 'confirm') { this.confirmCandidate(id); return; }
       if (action === 'dismiss') { this.dismissCandidate(id); this.refresh(); return; }
+      if (action === 'restore') { this.restoreDismissed(id); this.refresh(); return; }
       if (action === 'edit') { this.openEditModal(id); return; }
       if (action === 'add') { this.openEditModal(null); return; }
       if (action === 'pay') { this.openMarkPaidModal(id); return; }
