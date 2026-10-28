@@ -73,7 +73,7 @@
                 📥 สำรองข้อมูลทั้งหมด (One-Click Backup)
               </div>
               <div style="font-size: 12px; color: #475569; margin-bottom: 12px; line-height: 1.5;">
-                ดาวน์โหลดข้อมูลทุกโมดูล (รายรับรายจ่าย + พอร์ตลงทุน + ภาษี + หมวดหมู่และบัญชี) รวมเป็นไฟล์ JSON ไฟล์เดียว
+                ดาวน์โหลดข้อมูลทุกโมดูล (รายรับรายจ่าย + พอร์ตลงทุน + ภาษี + หมวดหมู่และบัญชี + บิลประจำ) รวมเป็นไฟล์ JSON ไฟล์เดียว
               </div>
               <button onclick="window.BackupModule.exportFullBackup()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 📥 ดาวน์โหลดไฟล์สำรองข้อมูลรวม
@@ -164,6 +164,13 @@
         accountsData = JSON.parse(localStorage.getItem(accKey) || 'null');
       } catch (e) {}
 
+      // 5. ดึง Bill schedules (ข้อมูลส่วนตัวของแต่ละบัญชี)
+      const billKey = 'family-finance:bill-schedules';
+      let billData = null;
+      try {
+        billData = JSON.parse(localStorage.getItem(billKey) || 'null');
+      } catch (e) {}
+
       const backupPayload = {
         _metadata: {
           appName: 'FamilyFinance',
@@ -177,7 +184,8 @@
         portfolio: portfolioData,
         tax: taxData,
         categories: categoriesData,
-        accounts: accountsData
+        accounts: accountsData,
+        billSchedules: billData
       };
 
       const dateStr = new Date().toISOString().split('T')[0];
@@ -285,6 +293,11 @@
         }
         if (data.accounts) {
           localStorage.setItem(accKey, JSON.stringify(data.accounts));
+        }
+
+        // 5. กู้คืน Bill schedules (ไฟล์เก่าที่ยังไม่มีส่วนนี้ = ข้าม ไม่ใช่ล้างค่าที่มีอยู่)
+        if (data.billSchedules) {
+          localStorage.setItem('family-finance:bill-schedules', JSON.stringify(data.billSchedules));
         }
 
         // ดันข้อมูลขึ้น Cloud ก่อน reload เพื่อไม่ให้ pullFromCloud เขียนข้อมูลเก่าทับ
