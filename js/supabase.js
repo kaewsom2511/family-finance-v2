@@ -37,6 +37,7 @@ const DataScope = {
     'family-finance:pvd:v1',
     'family-finance:card-limits',
     'family-finance:debt-plans',
+    'family-finance:bill-schedules',
     'stock-trading-log:v3',
     'stock-trading-log:quote-cache:v1',
     'wealthport:latest-usd-thb',
@@ -824,7 +825,7 @@ const CloudSync = {
       }
     };
 
-    if (page === 'index.html') { call('DashboardModule', 'calculateAndRender'); return; }
+    if (page === 'index.html') { call('DashboardModule', 'calculateAndRender'); call('BillModule', 'renderDashboardBanner'); return; }
     if (page === 'settings.html') { call('SettingsModule'); return; }
     if (page === 'portfolio.html') { call('PortfolioModule'); call('DividendPlannerModule'); return; }
 

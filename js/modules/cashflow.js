@@ -179,6 +179,8 @@ var CashFlowModule = {
       this.currentView = 'annual';
     } else if (hash.includes('dividend')) {
       this.currentView = 'dividend';
+    } else if (hash.includes('bill')) {
+      this.currentView = 'bills';
     } else {
       this.currentView = 'daily';
       if (!this.selectedMonth) {
@@ -305,7 +307,7 @@ var CashFlowModule = {
       activeKey = 'dividend';
     } else if (this.currentView === 'credit-cards' || rawHash.includes('credit-card')) {
       activeKey = 'credit-cards';
-    } else if (this.currentView === 'debts' || rawHash.includes('debt')) {
+    } else if (this.currentView === 'debts' || this.currentView === 'bills' || rawHash.includes('debt') || rawHash.includes('bill')) {
       activeKey = 'debts';
     }
 
@@ -657,7 +659,8 @@ var CashFlowModule = {
     const state = this.getState();
     const isEdit = !!txId;
     this.editingTxId = isEdit ? txId : null;
-    const tx = isEdit ? state.transactions.find(t => t.id === txId) : {
+    // draftPrefill ตั้งโดยโมดูลอื่น (เช่น "บันทึกชำระ" ของ BillModule) → ใช้ครั้งเดียวแล้วล้าง
+    const draft = Object.assign({
       type: 'รายจ่าย',
       date: new Date().toISOString().slice(0, 10),
       category: 'ค่าอาหาร',
@@ -666,7 +669,9 @@ var CashFlowModule = {
       accountName: 'กรุงไทย',
       fromAccount: 'กรุงไทย',
       toAccount: 'เงินสด'
-    };
+    }, (!isEdit && this.draftPrefill) || {});
+    this.draftPrefill = null;
+    const tx = isEdit ? state.transactions.find(t => t.id === txId) : draft;
 
     if (!tx) return;
 
@@ -916,6 +921,8 @@ var CashFlowModule = {
         this.currentView = 'debts';
       }
       this.render();
+      // รอบบิลอ่าน "จ่ายล่าสุด" จากประวัติ → บันทึกรายการเสร็จต้องคำนวณกำหนดรอบใหม่ทันที
+      if (typeof BillModule !== 'undefined') BillModule.refresh();
     };
   },
 
@@ -2387,13 +2394,15 @@ var CashFlowModule = {
       return;
     }
 
-    const onDebtPage = this.currentView === 'credit-cards' || this.currentView === 'debts'
-                     || currentHash.includes('credit-card') || currentHash.includes('debt');
+    const onDebtPage = this.currentView === 'credit-cards' || this.currentView === 'debts' || this.currentView === 'bills'
+                     || currentHash.includes('credit-card') || currentHash.includes('debt') || currentHash.includes('bill');
     if (onDebtPage) {
       // หน้าบัตรเครดิต/หนี้สิน มีตัวจริงอยู่ที่ DebtModule (เก็บใน family-finance:debt-plans)
       // ใช้ตัวเดียวทั้งตอนเข้าหน้าแรกและตอนเปลี่ยน hash จะได้ไม่สลับไปมากันสองเวอร์ชัน
       if (typeof DebtModule !== 'undefined' && typeof DebtModule.render === 'function') {
-        DebtModule.activeViewTab = (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) ? 'cards' : 'debts';
+        if (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) DebtModule.activeViewTab = 'cards';
+        else if (this.currentView === 'bills' || currentHash.includes('bill')) DebtModule.activeViewTab = 'bills';
+        else DebtModule.activeViewTab = 'debts';
         DebtModule.render(container);
       } else if (this.currentView === 'credit-cards' || currentHash.includes('credit-card')) {
         this.renderCreditCardsView(container);

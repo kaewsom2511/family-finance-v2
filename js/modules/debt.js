@@ -437,6 +437,14 @@ window.DebtModule = {
     // ฟังก์ชันจัดรูปแบบตัวเลข (ประกาศครั้งเดียวใช้ได้ทั้งฟังก์ชัน)
     const fmt = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+    // จำนวนบิลที่เกินกำหนด/จะครบใน 7 วัน → ใช้ติดป้ายเตือนบนแท็บ
+    let billAlertCount = 0;
+    if (typeof BillModule !== 'undefined') {
+      try {
+        billAlertCount = BillModule.getTrackedItems().filter((i) => i.days <= BillModule.BANNER_DAYS).length;
+      } catch (e) {}
+    }
+
     const renderTopTabs = () => `
       <div style="display: flex; gap: 8px; margin-bottom: 20px;">
         <button class="debt-main-tab" data-view="cards" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'cards' ? '#0284c7' : '#f1f5f9'}; color: ${this.activeViewTab === 'cards' ? '#fff' : '#475569'}; box-shadow: ${this.activeViewTab === 'cards' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
@@ -445,8 +453,36 @@ window.DebtModule = {
         <button class="debt-main-tab" data-view="debts" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'debts' ? '#0284c7' : '#f1f5f9'}; color: ${this.activeViewTab === 'debts' ? '#fff' : '#475569'}; box-shadow: ${this.activeViewTab === 'debts' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
           <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน
         </button>
+        <button class="debt-main-tab" data-view="bills" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'bills' ? '#0284c7' : '#f1f5f9'}; color: ${this.activeViewTab === 'bills' ? '#fff' : '#475569'}; box-shadow: ${this.activeViewTab === 'bills' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
+          <span>🧾</span> บิลครบกำหนด & รอบชำระ
+          ${billAlertCount ? `<span style="background: ${this.activeViewTab === 'bills' ? 'rgba(255,255,255,0.3)' : '#dc2626'}; color: #fff; border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 800;">${billAlertCount}</span>` : ''}
+        </button>
       </div>
     `;
+
+    // ----------------------------------------------------
+    // โหมด 3: บิลครบกำหนด & รอบชำระ (BillModule วาดรายการเอง)
+    // ----------------------------------------------------
+    if (this.activeViewTab === 'bills') {
+      container.innerHTML = `
+        <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="background: #fffbeb; color: #b45309; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🧾</div>
+            <div style="text-align: left;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">RECURRING BILL SCHEDULE</div>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">บิลครบกำหนด &amp; รอบชำระ</h1>
+              <div style="font-size: 11.5px; color: #64748b; font-weight: 600; margin-top: 2px;">นับรอบจากประวัติการจ่ายอัตโนมัติ · ไม่มีบริการภายนอก</div>
+            </div>
+          </div>
+          ${renderTopTabs()}
+          <div id="bills-view-container"></div>
+        </div>
+      `;
+      const host = document.getElementById('bills-view-container');
+      if (typeof BillModule !== 'undefined') BillModule.renderBillsView(host);
+      else if (host) host.innerHTML = '<div style="color: #dc2626; font-size: 13px; font-weight: 700;">ไม่พบโมดูลบิล (js/modules/bill.js) ในหน้านี้</div>';
+      return;
+    }
 
     // ----------------------------------------------------
     // โหมด 1: รอบบิลบัตรเครดิต & รูดใช้จ่าย

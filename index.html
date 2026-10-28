@@ -224,6 +224,9 @@
           </div>
         </div>
 
+        <!-- แถบเตือนรอบบิลประจำ (BillModule ซ่อนเองเมื่อไม่มีบิลใกล้ครบ) -->
+        <div id="bill-dashboard-banner" style="margin-bottom: 20px; display: none;"></div>
+
         <!-- กล่องใหญ่บนสุด: Grand Total Net Worth -->
         <div id="grand-total-net-worth" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
@@ -363,6 +366,7 @@
   <script src="js/supabase.js"></script>
   <script src="js/modules/creditcard.js"></script>
   <script src="js/modules/debt.js"></script>
+  <script src="js/modules/bill.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/modules/dashboard.js"></script>
   <script src="js/modules/backup.js"></script>
