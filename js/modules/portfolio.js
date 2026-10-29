@@ -792,7 +792,9 @@ var PortfolioModule = {
           totalCostUSD: 0,
           assetType: inferredType,
           fxRate: parseFloat(t.fxRate) || (isForeign ? liveFxRate : 1),
-          trades: []
+          trades: [],
+          openLots: [],
+          lastSellMs: 0
         };
       }
 
@@ -813,6 +815,12 @@ var PortfolioModule = {
           holdings[symKey].totalCostUSD += rawTradeUSD;
           if (t.fxRate) holdings[symKey].fxRate = parseFloat(t.fxRate);
         }
+        holdings[symKey].openLots.push({
+          date: t.tradeDate || t.date || '',
+          qty: qty,
+          price: price,
+          cost: isForeign ? (rawTradeUSD * effectiveFx) : rawTradeUSD
+        });
       } else if (side === 'sell') {
         if (holdings[symKey].shares > 0) {
           const avgCostPerShare = holdings[symKey].totalCost / holdings[symKey].shares;
@@ -823,6 +831,22 @@ var PortfolioModule = {
 
           realizedPLTHB += gainLoss;
 
+          const sellMs = new Date(t.tradeDate || t.date || 0).getTime() || 0;
+          const tradeMs = (x) => new Date(x.tradeDate || x.date || 0).getTime() || 0;
+          const lotMs = (x) => new Date(x.date || 0).getTime() || 0;
+          // ไม้ซื้อที่ยังค้างอยู่ในพอร์ต ณ วันขาย = ฐานของต้นทุนถัวเฉลี่ยที่ใช้นับงวดนี้
+          const buyLegs = holdings[symKey].openLots.filter(l => lotMs(l) <= sellMs);
+          // ปันผลที่รับระหว่างรอบ (หลังการขายครั้งก่อนหน้าเป็นต้นมา) นับเฉพาะของสถานะนี้เพื่อไม่ให้ซ้ำกับแถวอื่น
+          const divLegs = holdings[symKey].trades.filter(x =>
+            String(x.side || x.type || '').toLowerCase() === 'dividend' &&
+            tradeMs(x) > holdings[symKey].lastSellMs && tradeMs(x) <= sellMs);
+          const dividendTHB = divLegs.reduce((sum, d) => {
+            const net = parseFloat(d.netAmount ?? d.amount ?? 0) ||
+                        ((parseFloat(d.quantity ?? d.shares ?? 0) || 0) * (parseFloat(d.price ?? 0) || 0));
+            return sum + (net * effectiveFx);
+          }, 0);
+          const totalReturn = gainLoss + dividendTHB;
+
           closedPositions.push({
             id: t.id || 'sell-' + Math.random(),
             date: t.tradeDate || t.date || '',
@@ -831,11 +855,23 @@ var PortfolioModule = {
             portName: portMap[t.portfolioId] || 'พอร์ต',
             shares: sellQty,
             costBasis: costOfSold,
+            sellPrice: price,
+            sellFee: fee,
             sellValue: sellRevenueTHB,
             realizedGain: gainLoss,
-            gainPct: costOfSold > 0 ? (gainLoss / costOfSold) * 100 : 0
+            gainPct: costOfSold > 0 ? (gainLoss / costOfSold) * 100 : 0,
+            buyLegs: buyLegs,
+            divLegs: divLegs.map(d => ({
+              date: d.tradeDate || d.date || '',
+              amount: (parseFloat(d.netAmount ?? d.amount ?? 0) ||
+                       ((parseFloat(d.quantity ?? d.shares ?? 0) || 0) * (parseFloat(d.price ?? 0) || 0))) * effectiveFx
+            })),
+            dividendTotal: dividendTHB,
+            totalReturn: totalReturn,
+            totalReturnPct: costOfSold > 0 ? (totalReturn / costOfSold) * 100 : 0
           });
 
+          holdings[symKey].lastSellMs = sellMs;
           holdings[symKey].shares -= qty;
           holdings[symKey].totalCost -= costOfSold;
 
@@ -848,6 +884,7 @@ var PortfolioModule = {
           holdings[symKey].shares = 0;
           holdings[symKey].totalCost = 0;
           holdings[symKey].totalCostUSD = 0;
+          holdings[symKey].openLots = [];
         }
       } else if (side === 'dividend') {
         totalDividendsTHB += (parseFloat(t.netAmount || (qty * price) || 0) * effectiveFx);
@@ -1310,6 +1347,17 @@ var PortfolioModule = {
       if (exportBtn) {
         e.preventDefault();
         this.handleExportJson();
+        return;
+      }
+
+      const perfDetailBtn = e.target.closest('.btn-perf-detail');
+      if (perfDetailBtn) {
+        e.preventDefault();
+        const detailRow = document.getElementById(perfDetailBtn.dataset.target);
+        if (!detailRow) return;
+        const isOpen = detailRow.style.display !== 'none';
+        detailRow.style.display = isOpen ? 'none' : 'table-row';
+        perfDetailBtn.textContent = isOpen ? '▸ รายละเอียด' : '▾ ซ่อนรายละเอียด';
         return;
       }
 
@@ -2677,12 +2725,40 @@ this.openAssetModal(holding.symbol);
       perfPortOptions += `<option value="${id}" ${this.selectedPerfPortId === id ? 'selected' : ''}>💼 พอร์ต ${name}</option>`;
     });
 
-    const rowsHtml = filteredClosed.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).map(c => {
+    const rowsHtml = filteredClosed.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).map((c, idx) => {
       const isPos = c.realizedGain >= 0;
+      const legs = Array.isArray(c.buyLegs) ? c.buyLegs : [];
+      const divs = Array.isArray(c.divLegs) ? c.divLegs : [];
+      const qtyFmt = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 4 });
+      const legRows = legs.map(l => `
+        <tr>
+          <td style="padding: 3px 8px; color: #475569;">${l.date || '-'}</td>
+          <td class="text-right" style="padding: 3px 8px;">${qtyFmt(l.qty)}</td>
+          <td class="text-right" style="padding: 3px 8px;">${formatBaht(l.price)}</td>
+          <td class="text-right" style="padding: 3px 8px;">${formatBaht(l.cost)}</td>
+        </tr>`).join('');
+      const divRows = divs.map(d => `
+        <tr>
+          <td style="padding: 3px 8px; color: #475569;">${d.date || '-'}</td>
+          <td class="text-right" style="padding: 3px 8px; color: #16a34a;">+${formatBaht(d.amount)}</td>
+        </tr>`).join('');
+      const totalReturn = (c.totalReturn !== undefined) ? c.totalReturn : c.realizedGain;
+      const totalReturnPct = (c.totalReturnPct !== undefined) ? c.totalReturnPct : c.gainPct;
+      const isTotalPos = totalReturn >= 0;
+
+      const summaryLine = (label, value, color) => `
+        <div style="display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; font-size: 12px;">
+          <span style="color: #64748b;">${label}</span>
+          <strong style="color: ${color || '#0f172a'}; font-variant-numeric: tabular-nums;">${value}</strong>
+        </div>`;
+
       return `
         <tr style="border-bottom: 1px solid #f1f5f9;">
           <td style="padding: 10px 12px; white-space: nowrap; font-variant-numeric: tabular-nums;">${c.date || '-'}</td>
-          <td style="padding: 10px 12px;"><strong style="color: #0f172a;">${c.symbol}</strong></td>
+          <td style="padding: 10px 12px;">
+            <strong style="color: #0f172a;">${c.symbol}</strong>
+            <button type="button" class="btn-perf-detail" data-target="perf-detail-${idx}" style="margin-left: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #0369a1; border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">▸ รายละเอียด</button>
+          </td>
           <td style="padding: 10px 12px; color: #475569;">${c.portName}</td>
           <td class="text-right" style="padding: 10px 12px; font-variant-numeric: tabular-nums;">${c.shares.toLocaleString('en-US', { maximumFractionDigits: 4 })}</td>
           <td class="text-right" style="padding: 10px 12px; font-variant-numeric: tabular-nums;">${formatBaht(c.costBasis)}</td>
@@ -2692,6 +2768,34 @@ this.openAssetModal(holding.symbol);
           </td>
           <td class="text-center" style="padding: 10px 12px; white-space: nowrap;">
             <button class="btn-delete-sell-order" data-id="${c.id}" data-symbol="${c.symbol}" title="ลบรายการขายนี้ (คืนหุ้นกลับเข้าพอร์ต)" style="background: none; border: 1px solid #fecaca; color: #dc2626; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">🗑️ ลบ</button>
+          </td>
+        </tr>
+        <tr id="perf-detail-${idx}" style="display: none; background: #f8fafc;">
+          <td colspan="8" style="padding: 12px 16px 16px 16px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; text-align: left;">
+              <div style="min-width: 300px; flex: 1;">
+                <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">🧾 ไม้ซื้อที่เป็นฐานต้นทุนถัวเฉลี่ย</div>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <thead><tr style="color: #64748b; font-size: 11px; text-align: left;"><th style="padding: 2px 8px;">วันที่ซื้อ</th><th class="text-right" style="padding: 2px 8px;">จำนวน</th><th class="text-right" style="padding: 2px 8px;">ราคา/หุ้น</th><th class="text-right" style="padding: 2px 8px;">ต้นทุน</th></tr></thead>
+                  <tbody style="font-size: 12px;">${legRows || '<tr><td colspan="4" style="padding: 3px 8px; color: #94a3b8;">ไม่มีประวัติไม้ซื้อในระบบ (รายการนำเข้าที่ไม่มีวันซื้อ)</td></tr>'}</tbody>
+                </table>
+              </div>
+              <div style="min-width: 200px;">
+                <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">💵 เงินปันผลระหว่างถือ</div>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <thead><tr style="color: #64748b; font-size: 11px; text-align: left;"><th style="padding: 2px 8px;">วันที่รับ</th><th class="text-right" style="padding: 2px 8px;">จำนวนรับสุทธิ</th></tr></thead>
+                  <tbody style="font-size: 12px;">${divRows || '<tr><td colspan="2" style="padding: 3px 8px; color: #94a3b8;">ยังไม่มีการบันทึกเงินปันผล</td></tr>'}</tbody>
+                </table>
+              </div>
+              <div style="min-width: 250px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">📊 สรุปสถานะนี้ทั้งรอบ</div>
+                ${summaryLine('ต้นทุนถัวเฉลี่ยรวม', formatBaht(c.costBasis))}
+                ${summaryLine(`ขายสุทธิ ${qtyFmt(c.shares)} หน่วย @ ${formatBaht(c.sellPrice || (c.sellValue / (c.shares || 1)))}`, formatBaht(c.sellValue))}
+                ${summaryLine('กำไร/ขาดทุนจากราคา', `${c.realizedGain >= 0 ? '+' : ''}${formatBaht(c.realizedGain)}`, c.realizedGain >= 0 ? '#16a34a' : '#dc2626')}
+                ${summaryLine('เงินปันผลรับ', `+${formatBaht(c.dividendTotal || 0)}`, '#16a34a')}
+                ${summaryLine('ผลตอบแทนรวม', `${isTotalPos ? '+' : ''}${formatBaht(totalReturn)} (${isTotalPos ? '+' : ''}${totalReturnPct.toFixed(2)}%)`, isTotalPos ? '#16a34a' : '#dc2626')}
+              </div>
+            </div>
           </td>
         </tr>
       `;
