@@ -1664,11 +1664,18 @@ if (settingsBtn) {
       this.render();
     };
   },
-  openAssetModal(symbol) {
+  openAssetModal(symbol, opts) {
+    // reopen = เรียกซ้ำหลังบันทึก/ลบรายการ ถ้าสถานะปิดไปแล้วให้เงียบไว้ (ไม่ใช่ความผิดพลาดของผู้ใช้)
+    const isReopen = !!(opts && opts.reopen);
     const data = getPortfolioDataHelper();
     const summary = this.calculatePortfolioDetail(data);
     const holding = summary.activeHoldings.find(h => h.symbol.toUpperCase() === symbol.toUpperCase());
     if (!holding) {
+      if (isReopen) {
+        const stale = document.getElementById('wealthport-asset-modal');
+        if (stale) stale.remove();
+        return;
+      }
       alert(`ไม่พบรายการสินทรัพย์ ${symbol} ในพอร์ตปัจจุบัน`);
       return;
     }
@@ -1960,9 +1967,14 @@ if (settingsBtn) {
       });
 
       savePortfolioDataHelper(data);
-      alert(`บันทึกการขาย ${holding.symbol} สำเร็จ`);
+      const leftAfterSell = holding.shares - sellQty;
+      if (leftAfterSell <= 0.001) {
+        alert(`ปิดสถานะ ${holding.symbol} ครบทุกหน่วยแล้ว\nดูรายละเอียดย้อนหลัง (ไม้ซื้อ + ปันผล + กำไรจริง) ได้ที่แท็บผลตอบแทน`);
+      } else {
+        alert(`บันทึกการขาย ${holding.symbol} สำเร็จ เหลือถือครอง ${leftAfterSell.toLocaleString()} หน่วย`);
+      }
       this.render();
-    this.openAssetModal(holding.symbol);
+      if (leftAfterSell > 0.001) this.openAssetModal(holding.symbol, { reopen: true });
     });
 
     document.getElementById('btn-submit-split')?.addEventListener('click', () => {
@@ -1986,7 +1998,7 @@ if (settingsBtn) {
       savePortfolioDataHelper(data);
       alert(`คำนวณแตกพาร์อัตราส่วน ${oldRatio}:${newRatio} เรียบร้อยแล้ว`);
       this.render();
-this.openAssetModal(holding.symbol);
+this.openAssetModal(holding.symbol, { reopen: true });
     });
 
     document.getElementById('btn-submit-dividend')?.addEventListener('click', () => {
@@ -2017,7 +2029,7 @@ this.openAssetModal(holding.symbol);
       savePortfolioDataHelper(data);
       alert(`บันทึกเงินปันผล ${holding.symbol} สำเร็จ`);
       this.render();
-this.openAssetModal(holding.symbol);
+this.openAssetModal(holding.symbol, { reopen: true });
     });
 
     document.querySelectorAll('.btn-trigger-inline-edit').forEach(btn => {
@@ -2068,7 +2080,7 @@ this.openAssetModal(holding.symbol);
         savePortfolioDataHelper(data);
         alert('บันทึกการแก้ไขไม้เรียบร้อย');
         this.render();
-this.openAssetModal(holding.symbol);
+this.openAssetModal(holding.symbol, { reopen: true });
       });
     });
 
@@ -2116,7 +2128,7 @@ this.openAssetModal(holding.symbol);
       savePortfolioDataHelper(data);
       alert(`เพิ่มไม้ซื้อใหม่ ${holding.symbol} สำเร็จ`);
       this.render();
-this.openAssetModal(holding.symbol);
+this.openAssetModal(holding.symbol, { reopen: true });
     });
 
     document.querySelectorAll('.btn-delete-single-trade').forEach(btn => {
@@ -2126,7 +2138,7 @@ this.openAssetModal(holding.symbol);
           data.trades = (data.trades || []).filter(t => t.id !== tradeId);
           savePortfolioDataHelper(data);
           this.render();
-this.openAssetModal(holding.symbol);
+this.openAssetModal(holding.symbol, { reopen: true });
         }
       });
     });
