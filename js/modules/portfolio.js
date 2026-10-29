@@ -774,6 +774,30 @@ var PortfolioModule = {
     let realizedPLTHB = 0;
     const closedPositions = [];
 
+    // ปันผลที่บันทึกไว้เฉพาะใน "บันทึกรายรับรายจ่าย" (บางสัญลักษณ์ไม่มี side:'dividend' ในประวัติเทรดพอร์ต)
+    const cashDivsBySym = (() => {
+      const map = {};
+      try {
+        const rawCf = localStorage.getItem('family-finance:cashflow:v2')
+                   || localStorage.getItem('family-finance:cashflow:v1')
+                   || localStorage.getItem('family-finance-db')
+                   || localStorage.getItem('transactions');
+        if (!rawCf) return map;
+        const parsed = JSON.parse(rawCf);
+        const list = Array.isArray(parsed.transactions) ? parsed.transactions : (Array.isArray(parsed) ? parsed : []);
+        list.forEach(tx => {
+          const type = String(tx.type || '').trim();
+          const cat = String(tx.category || tx.subCategory || '').trim();
+          if ((type !== 'รายรับ' && type !== 'income') || !cat.includes('ปันผล')) return;
+          const sym = normalizeSymbol(String(tx.detail || tx.note || tx.description || '').replace(/\.BK$/i, ''));
+          const amt = parseFloat(tx.amount || 0);
+          if (!sym || !(amt > 0)) return;
+          (map[sym] = map[sym] || []).push({ date: tx.date || '', amount: amt });
+        });
+      } catch (e) {}
+      return map;
+    })();
+
     sortedTrades.forEach(t => {
       const rawSymbol = (t.symbol || t.ticker || '').trim();
       if (!rawSymbol) return;
@@ -836,15 +860,25 @@ var PortfolioModule = {
           const lotMs = (x) => new Date(x.date || 0).getTime() || 0;
           // ไม้ซื้อที่ยังค้างอยู่ในพอร์ต ณ วันขาย = ฐานของต้นทุนถัวเฉลี่ยที่ใช้นับงวดนี้
           const buyLegs = holdings[symKey].openLots.filter(l => lotMs(l) <= sellMs);
-          // ปันผลที่รับระหว่างรอบ (หลังการขายครั้งก่อนหน้าเป็นต้นมา) นับเฉพาะของสถานะนี้เพื่อไม่ให้ซ้ำกับแถวอื่น
+          // รอบปันผล: เริ่มตั้งแต่วันซื้อไม้แรกของการถือครองนี้ และห้ามทับกับสถานะที่ปิดไปแล้ว
+          const firstBuyMs = buyLegs.length ? lotMs(buyLegs[0]) : 0;
+          const inWindow = (ms) => ms > holdings[symKey].lastSellMs && ms >= firstBuyMs && ms <= sellMs;
           const divLegs = holdings[symKey].trades.filter(x =>
-            String(x.side || x.type || '').toLowerCase() === 'dividend' &&
-            tradeMs(x) > holdings[symKey].lastSellMs && tradeMs(x) <= sellMs);
-          const dividendTHB = divLegs.reduce((sum, d) => {
-            const net = parseFloat(d.netAmount ?? d.amount ?? 0) ||
-                        ((parseFloat(d.quantity ?? d.shares ?? 0) || 0) * (parseFloat(d.price ?? 0) || 0));
-            return sum + (net * effectiveFx);
-          }, 0);
+            String(x.side || x.type || '').toLowerCase() === 'dividend' && inWindow(tradeMs(x)));
+          const portDivAmts = divLegs.map(d => ({
+            date: d.tradeDate || d.date || '',
+            amount: (parseFloat(d.netAmount ?? d.amount ?? 0) ||
+                     ((parseFloat(d.quantity ?? d.shares ?? 0) || 0) * (parseFloat(d.price ?? 0) || 0))) * effectiveFx
+          }));
+          // ตัวเลขเดียวกันอาจถูกบันทึกทั้งในประวัติเทรดพอร์ตและในบันทึกรายรับรายจ่าย → กันนับซ้ำ
+          const cfDivAmts = (cashDivsBySym[normalizeSymbol(rawSymbol)] || []).filter(d => {
+            const ms = new Date(d.date || 0).getTime() || 0;
+            if (!inWindow(ms)) return false;
+            return !portDivAmts.some(p =>
+              p.date === d.date || Math.abs(p.amount - d.amount) < 0.5 && p.date.slice(0, 7) === d.date.slice(0, 7));
+          }).map(d => ({ date: d.date, amount: d.amount }));
+          const allDivAmts = portDivAmts.concat(cfDivAmts);
+          const dividendTHB = allDivAmts.reduce((sum, d) => sum + d.amount, 0);
           const totalReturn = gainLoss + dividendTHB;
 
           closedPositions.push({
@@ -861,11 +895,7 @@ var PortfolioModule = {
             realizedGain: gainLoss,
             gainPct: costOfSold > 0 ? (gainLoss / costOfSold) * 100 : 0,
             buyLegs: buyLegs,
-            divLegs: divLegs.map(d => ({
-              date: d.tradeDate || d.date || '',
-              amount: (parseFloat(d.netAmount ?? d.amount ?? 0) ||
-                       ((parseFloat(d.quantity ?? d.shares ?? 0) || 0) * (parseFloat(d.price ?? 0) || 0))) * effectiveFx
-            })),
+            divLegs: allDivAmts,
             dividendTotal: dividendTHB,
             totalReturn: totalReturn,
             totalReturnPct: costOfSold > 0 ? (totalReturn / costOfSold) * 100 : 0
