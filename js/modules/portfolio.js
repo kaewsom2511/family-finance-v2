@@ -3143,7 +3143,12 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const matchedHolding = (summary.activeHoldings || []).find(
       h => normalizeCleanSymbol(h.symbol) === normalizeCleanSymbol(item.symbol)
     );
-    const currentCostBasis = matchedHolding ? matchedHolding.totalCost : 0;
+    // หุ้นที่ขายหมดแล้วไม่มีต้นทุนคงเหลือ ใช้ต้นทุนของสถานะที่ปิดไปแล้วเป็นฐานแทน ไม่งั้นคอลัมน์นี้ขึ้น "-" ทั้งที่รับปันผลจริง
+    const closedCostBasis = (summary.closedPositions || [])
+      .filter(c => normalizeCleanSymbol(c.symbol) === normalizeCleanSymbol(item.symbol))
+      .reduce((s, c) => s + (parseFloat(c.costBasis) || 0), 0);
+    const isClosedPosition = !matchedHolding && closedCostBasis > 0;
+    const currentCostBasis = matchedHolding ? matchedHolding.totalCost : closedCostBasis;
 
     // คำนวณแบบต้นทุนปัจจุบัน
     const currentYieldVal = currentCostBasis > 0 ? ((item.totalAmount / 0.9) / currentCostBasis) * 100 : -1;
@@ -3159,6 +3164,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
       ...item,
       cleanSymbol: item.symbol.replace(/\.BK$/i, ''),
       costBasis: currentCostBasis,
+      isClosedPosition,
       currentYieldVal,
       lotYieldVal,
       costYieldVal: activeCostYieldVal
@@ -3181,7 +3187,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     // 3. สร้างแถวแสดงผลตาราง
     const assetTableRows = enrichedAssets.map((item, idx) => {
-      const costYieldText = item.costYieldVal >= 0 ? item.costYieldVal.toFixed(2) + '%' : '-';
+      const costYieldText = item.costYieldVal >= 0
+        ? item.costYieldVal.toFixed(2) + '%' + (item.isClosedPosition ? '<span title="ปิดสถานะไปแล้ว คำนวณจากต้นทุนของสถานะที่ปิด">†</span>' : '')
+        : '-';
       return `
         <tr>
           <td style="text-align: center; padding: 8px 6px;"><strong>${idx + 1}</strong></td>
@@ -3292,6 +3300,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
                   </thead>
                 <tbody>${assetTableRows || '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #94a3b8;">ไม่พบข้อมูลปันผลในเงื่อนไขที่เลือก</td></tr>'}</tbody>
               </table>
+              <div style="padding: 6px 8px 0; font-size: 11px; color: #94a3b8;">† สถานะนี้ปิดไปแล้ว (ขายหมดพอร์ต) Cost Yield จึงคิดจากต้นทุนของสถานะที่ปิด</div>
             </div>
           </div>
           <div class="holdings-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
