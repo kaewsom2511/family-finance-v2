@@ -15,6 +15,54 @@ function parseNum(val) {
   return isNaN(num) ? 0 : num;
 }
 
+function tradeDateOf(t) {
+  return t.tradeDate || t.date || t.timestamp || '';
+}
+
+const CURRENCY_SIGNS = { THB: '฿', USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥', HKD: 'HK$', SGD: 'S$' };
+
+function currencySign(cur) {
+  const c = String(cur || 'THB').toUpperCase();
+  return CURRENCY_SIGNS[c] || c;
+}
+
+function money(v, cur) {
+  return `${(Number(v) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currencySign(cur)}`;
+}
+
+function pickAssetType(list) {
+  const tally = {};
+  list.forEach(t => { if (t.assetType) tally[t.assetType] = (tally[t.assetType] || 0) + 1; });
+  return Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0] || '';
+}
+
+function getLiveUsdThb() {
+  try {
+    return parseNum(JSON.parse(localStorage.getItem('wealthport:latest-usd-thb') || '{}').rate);
+  } catch (e) {
+    return 0;
+  }
+}
+
+// ป้ายบอกสกุลเงินในช่องกรอกคำนวณ ให้ตรงกับสกุลเงินจริงของสินทรัพย์ที่เลือก
+function applyCurrencyLabels(cur) {
+  const sign = currencySign(cur);
+  const pairs = [
+    ['lbl-input-price', `ราคาซื้อเพิ่ม (${sign})`],
+    ['lbl-goal-input-price', `ราคาซื้อเพิ่ม (${sign})`],
+    ['lbl-goal-target-avg', `ต้นทุนเฉลี่ยที่ต้องการ (${sign})`],
+    ['res-target-money-unit', `${sign} (ตามราคาซื้อเพิ่ม)`],
+  ];
+  pairs.forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+  });
+  if (document.getElementById('select-calc-mode')?.value !== 'shares') {
+    const lbl = document.getElementById('lbl-sim-value');
+    if (lbl) lbl.innerText = `จำนวนเงินที่จะซื้อเพิ่ม (${sign})`;
+  }
+}
+
 function getAverageUserContext() {
   try {
     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -59,7 +107,10 @@ window.currentHolding = {
   totalCost: 0,
   txCount: 0,
   marketPrice: 0,
-  symbol: ''
+  symbol: '',
+  currency: 'THB',
+  costFx: 1,
+  marketFx: 1
 };
 
 window.activeCalcTab = 'sim'; // 'sim' | 'goal'
@@ -107,11 +158,12 @@ function handleCalcModeChange() {
   const lbl = document.getElementById('lbl-sim-value');
   const input = document.getElementById('input-buy-budget');
 
+  const cur = window.currentHolding.currency || 'THB';
   if (mode === 'shares') {
     if (lbl) lbl.innerText = 'จำนวนหุ้นที่จะซื้อเพิ่ม (หุ้น)';
     if (input) input.placeholder = 'เช่น 7,500';
   } else {
-    if (lbl) lbl.innerText = 'จำนวนเงินที่จะซื้อเพิ่ม (บาท)';
+    if (lbl) lbl.innerText = `จำนวนเงินที่จะซื้อเพิ่ม (${currencySign(cur)})`;
     if (input) input.placeholder = 'เช่น 7,500';
   }
 
@@ -243,10 +295,14 @@ function loadFromPortfolio() {
 
     if (matchedTrades.length === 0) return;
 
-    matchedTrades.sort((a, b) => new Date(a.date || a.timestamp || 0) - new Date(b.date || b.timestamp || 0));
+    matchedTrades.sort((a, b) => new Date(tradeDateOf(a) || 0) - new Date(tradeDateOf(b) || 0));
+
+    const assetType = pickAssetType(matchedTrades);
 
     let totalShares = 0;
     let totalCost = 0;
+    let fxBase = 0;
+    let fxThbCost = 0;
 
     matchedTrades.forEach(t => {
       const qty = parseNum(t.shares || t.quantity || t.qty || t.amount);
@@ -257,6 +313,11 @@ function loadFromPortfolio() {
       if (type.includes('BUY')) {
         totalCost += (qty * price) + fee;
         totalShares += qty;
+        const fx = parseNum(t.fxRate);
+        if (fx > 0 && qty * price > 0) {
+          fxBase += qty * price;
+          fxThbCost += qty * price * fx;
+        }
       } else if (type.includes('SELL')) {
         if (totalShares > 0) {
           const avg = totalCost / totalShares;
@@ -269,25 +330,38 @@ function loadFromPortfolio() {
     const avgPrice = totalShares > 0 ? (totalCost / totalShares) : 0;
 
     let marketPrice = avgPrice;
+    let quoteCurrency = '';
     const rawQuote = localStorage.getItem('stock-trading-log:quote-cache:v1');
     if (rawQuote) {
       try {
         const quotes = JSON.parse(rawQuote);
         const base = String(targetSymbol || '').toUpperCase();
-        const candidates = [
-          `thai-stock|${base}`, `thai-stock|${base}.BK`, `thai-stock|${base.replace(/\.BK$/, '')}`,
-          `foreign-stock|${base}`, `mutual-fund|${base}`, `mutual-fund|${base}-A`,
-          base, `${base}.BK`
+        const typedKey = {
+          'foreign-stock': `foreign-stock|${base}`,
+          'thai-stock': `thai-stock|${base}.BK`,
+          'mutual-fund': `mutual-fund|${base}`
+        }[assetType] || null;
+        const fallbacks = [
+          `foreign-stock|${base}`, `thai-stock|${base}.BK`, `thai-stock|${base}`,
+          `mutual-fund|${base}`, `mutual-fund|${base}-A`, base, `${base}.BK`
         ];
+        const candidates = [typedKey].concat(fallbacks).filter((k, i, arr) => k && arr.indexOf(k) === i);
         for (const key of candidates) {
           const q = quotes[key];
           if (q && (q.price || q.close) && parseNum(q.price || q.close) > 0) {
             marketPrice = parseNum(q.price || q.close);
+            quoteCurrency = String(q.currency || '').toUpperCase();
             break;
           }
         }
       } catch (e) {}
     }
+
+    // ราคาที่บันทึกไว้เป็นสกุลเงินของสินทรัพย์นั้น (หุ้น/ETF ต่างประเทศ = USD) ไม่ใช่บาท
+    const currency = quoteCurrency || (assetType === 'foreign-stock' ? 'USD' : 'THB');
+    const liveFx = currency === 'USD' ? getLiveUsdThb() : 0;
+    const costFx = currency === 'THB' ? 1 : (fxBase > 0 ? fxThbCost / fxBase : liveFx);
+    const marketFx = currency === 'THB' ? 1 : (liveFx > 0 ? liveFx : costFx);
 
     window.currentHolding = {
       shares: totalShares,
@@ -295,7 +369,10 @@ function loadFromPortfolio() {
       totalCost: totalCost,
       txCount: matchedTrades.length,
       marketPrice: marketPrice,
-      symbol: targetSymbol
+      symbol: targetSymbol,
+      currency: currency,
+      costFx: costFx,
+      marketFx: marketFx
     };
 
     // อัปเดตการ์ดสรุป 4 กล่องบนสุด
@@ -305,8 +382,8 @@ function loadFromPortfolio() {
     const elCount = document.getElementById('disp-count');
 
     if (elShares) elShares.textContent = totalShares.toLocaleString();
-    if (elAvg) elAvg.textContent = avgPrice.toFixed(2);
-    if (elTotal) elTotal.textContent = totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (elAvg) elAvg.textContent = money(avgPrice, currency);
+    if (elTotal) elTotal.textContent = money(totalCost, currency);
     if (elCount) elCount.textContent = matchedTrades.length;
 
     // อัปเดตตารางสรุปด้านล่างตารางซื้อขาย
@@ -315,30 +392,34 @@ function loadFromPortfolio() {
     const tblRunShares = document.getElementById('tbl-running-shares');
     const tblFinalAvg = document.getElementById('tbl-final-avg');
     if (tblShares) tblShares.textContent = totalShares.toLocaleString();
-    if (tblCost) tblCost.textContent = totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (tblCost) tblCost.textContent = money(totalCost, currency);
     if (tblRunShares) tblRunShares.textContent = totalShares.toLocaleString();
-    if (tblFinalAvg) tblFinalAvg.textContent = avgPrice.toFixed(2);
+    if (tblFinalAvg) tblFinalAvg.textContent = money(avgPrice, currency);
 
     // อัปเดต Badge ราคาตลาด
     const elCurrAvg = document.getElementById('lbl-curr-avg');
     const elMktPrice = document.getElementById('lbl-mkt-price');
     const elMktDiff = document.getElementById('lbl-mkt-diff');
 
-    if (elCurrAvg) elCurrAvg.textContent = `${avgPrice.toFixed(2)} ฿`;
-    if (elMktPrice) elMktPrice.textContent = `${marketPrice.toFixed(2)} ฿`;
+    const mktThbHint = currency !== 'THB' && marketFx > 0 ? ` ≈ ${money(marketPrice * marketFx, 'THB')}` : '';
+    if (elCurrAvg) elCurrAvg.textContent = money(avgPrice, currency);
+    if (elMktPrice) elMktPrice.textContent = `${money(marketPrice, currency)}${mktThbHint}`;
     if (elMktDiff) {
       const diffPct = avgPrice > 0 ? ((marketPrice - avgPrice) / avgPrice) * 100 : 0;
       elMktDiff.textContent = `(${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%)`;
       elMktDiff.style.color = diffPct >= 0 ? '#10b981' : '#ef4444';
     }
 
-    renderTradesTable(matchedTrades);
+    renderTradesTable(matchedTrades, currency);
 
     const banner = document.getElementById('banner-port-status');
     if (banner) {
-      banner.textContent = `✓ ดึงรายการสำเร็จ ${matchedTrades.length} รายการ (${totalShares.toLocaleString()} หุ้น)`;
+      const fxNote = currency === 'THB' ? ''
+        : (costFx > 0 ? ` · ราคาเป็น ${currency} (เรทถัวเฉลี่ย ฿${costFx.toFixed(2)}/${currency})` : ` · ราคาเป็น ${currency}`);
+      banner.textContent = `✓ ดึงรายการสำเร็จ ${matchedTrades.length} รายการ (${totalShares.toLocaleString()} หุ้น)${fxNote}`;
     }
 
+    applyCurrencyLabels(currency);
     updateTargetComparison();
   } catch (err) {
     console.error('loadFromPortfolio error:', err);
@@ -348,7 +429,8 @@ function loadFromPortfolio() {
 // ==========================================
 // 4. วาดตารางบันทึกการซื้อ/ขาย
 // ==========================================
-function renderTradesTable(tradesList) {
+function renderTradesTable(tradesList, cur) {
+  const currency = cur || window.currentHolding.currency || 'THB';
   const tbody = document.getElementById('avgCostRows');
   if (!tbody) return;
 
@@ -360,18 +442,20 @@ function renderTradesTable(tradesList) {
     const qty = parseNum(t.shares || t.quantity || t.qty || t.amount);
     const price = parseNum(t.price || t.cost || t.unitPrice);
     const subtotal = qty * price;
-    const type = (t.type || t.action || t.side || 'BUY').toUpperCase().includes('SELL') ? 'SELL' : 'BUY';
+    const rawType = (t.type || t.action || t.side || 'BUY').toUpperCase();
+    const type = rawType.includes('SELL') ? 'SELL' : rawType.includes('BUY') ? 'BUY' : 'OTHER';
 
+    const rawDate = tradeDateOf(t);
     let dateStr = '-';
-    if (t.date) {
-      const d = new Date(t.date);
-      dateStr = !isNaN(d) ? d.toLocaleDateString('th-TH') : t.date;
+    if (rawDate) {
+      const d = new Date(rawDate);
+      dateStr = !isNaN(d) ? d.toLocaleDateString('th-TH') : rawDate;
     }
 
     if (type === 'BUY') {
       runningCost += subtotal;
       runningShares += qty;
-    } else {
+    } else if (type === 'SELL') {
       const curAvg = runningShares > 0 ? (runningCost / runningShares) : 0;
       runningShares = Math.max(0, runningShares - qty);
       runningCost = runningShares * curAvg;
@@ -379,23 +463,24 @@ function renderTradesTable(tradesList) {
     const curAvg = runningShares > 0 ? (runningCost / runningShares) : 0;
 
     const tr = document.createElement('tr');
-    const isBuy = type === 'BUY';
-    const bg = isBuy ? '#e6f4ea' : '#fee2e2';
-    const col = isBuy ? '#137333' : '#b91c1c';
+    const OTHER_LABELS = { DIVIDEND: 'ปันผล', SPLIT: 'ปรับหุ้น (Split)' };
+    const badgeText = type === 'BUY' ? 'ซื้อ' : type === 'SELL' ? 'ขาย' : (OTHER_LABELS[rawType] || rawType);
+    const bg = type === 'BUY' ? '#e6f4ea' : type === 'SELL' ? '#fee2e2' : '#e2e8f0';
+    const col = type === 'BUY' ? '#137333' : type === 'SELL' ? '#b91c1c' : '#475569';
 
     tr.innerHTML = `
       <td style="padding: 10px; text-align: center; color: #64748b;">${idx + 1}</td>
       <td style="padding: 8px 10px; text-align: center;">
         <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; background-color: ${bg}; color: ${col};">
-          ${isBuy ? 'ซื้อ' : 'ขาย'}
+          ${badgeText}
         </span>
       </td>
       <td style="padding: 10px; text-align: center; color: #334155;">${dateStr}</td>
       <td style="padding: 10px; text-align: right; font-weight: 600;">${qty.toLocaleString()}</td>
-      <td style="padding: 10px; text-align: right;">${price.toFixed(2)}</td>
-      <td style="padding: 10px; text-align: right; color: #137333; font-weight: 600;">${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+      <td style="padding: 10px; text-align: right;">${money(price, currency)}</td>
+      <td style="padding: 10px; text-align: right; color: #137333; font-weight: 600;">${type === 'OTHER' ? '-' : money(subtotal, currency)}</td>
       <td style="padding: 10px; text-align: right; font-weight: 600;">${runningShares.toLocaleString()}</td>
-      <td style="padding: 10px; text-align: right; font-weight: 700; color: #0284c7;">${curAvg.toFixed(2)}</td>
+      <td style="padding: 10px; text-align: right; font-weight: 700; color: #0284c7;">${money(curAvg, currency)}</td>
       <td style="padding: 10px; text-align: center;">
         <button type="button" style="color: #ef4444; background: none; border: none; cursor: pointer; font-weight: 700;" onclick="removeTradeItem(${idx})">✕</button>
       </td>
@@ -418,6 +503,7 @@ function updateTargetComparison() {
   const currentShares = window.currentHolding.shares || 0;
   const currentAvg = window.currentHolding.avgCost || 0;
   const currentTotalCost = window.currentHolding.totalCost || (currentShares * currentAvg);
+  const currency = window.currentHolding.currency || 'THB';
 
   // ----------------------------------------
   // ทำงานตามโหมดที่กำลังเลือก
@@ -454,11 +540,11 @@ function updateTargetComparison() {
         const needShares = Math.round(required); // ปัดเศษเป็นหุ้นจำนวนเต็ม
         const needMoney = needShares * buyPrice;
 
-        if (elHeading) elHeading.innerText = `🎯 สรุปสิ่งที่ต้องทำเพื่อให้ได้ต้นทุนเฉลี่ย ${targetAvg.toFixed(2)} ฿:`;
+        if (elHeading) elHeading.innerText = `🎯 สรุปสิ่งที่ต้องทำเพื่อให้ได้ต้นทุนเฉลี่ย ${money(targetAvg, currency)}:`;
         if (elNeedShares) elNeedShares.textContent = needShares.toLocaleString();
-        if (elNeedMoney) elNeedMoney.textContent = needMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (elNeedMoney) elNeedMoney.textContent = money(needMoney, currency);
         if (elNote) {
-          elNote.innerHTML = `💡 ซื้อเพิ่ม <b>${needShares.toLocaleString()} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> จะทำให้มีหุ้นรวม <b>${(currentShares + needShares).toLocaleString()} หุ้น</b> และได้ต้นทุนเฉลี่ย <b>${targetAvg.toFixed(2)} ฿</b>`;
+          elNote.innerHTML = `💡 ซื้อเพิ่ม <b>${needShares.toLocaleString()} หุ้น</b> ที่ราคา <b>${money(buyPrice, currency)}</b> จะทำให้มีหุ้นรวม <b>${(currentShares + needShares).toLocaleString()} หุ้น</b> และได้ต้นทุนเฉลี่ย <b>${money(targetAvg, currency)}</b>`;
         }
       } else {
         if (elNeedShares) elNeedShares.textContent = '-';
@@ -502,8 +588,8 @@ function updateTargetComparison() {
     const elBeforeAvg = document.getElementById('cmpBeforeAvg');
     const elBeforeTotal = document.getElementById('cmpBeforeTotal');
     if (elBeforeShares) elBeforeShares.textContent = `${currentShares.toLocaleString()} หุ้น`;
-    if (elBeforeAvg) elBeforeAvg.textContent = `${currentAvg.toFixed(2)} ฿`;
-    if (elBeforeTotal) elBeforeTotal.textContent = `${currentTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
+    if (elBeforeAvg) elBeforeAvg.textContent = money(currentAvg, currency);
+    if (elBeforeTotal) elBeforeTotal.textContent = money(currentTotalCost, currency);
 
     // อัปเดตกล่องสถานะใหม่
     const elAfterShares = document.getElementById('cmpAfterShares');
@@ -514,22 +600,22 @@ function updateTargetComparison() {
 
     if (addShares > 0) {
       if (elAfterShares) elAfterShares.textContent = `${newTotalShares.toLocaleString()} หุ้น (+${addShares.toLocaleString()})`;
-      if (elAfterAvg) elAfterAvg.textContent = `${newAvg.toFixed(2)} ฿ (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%)`;
-      if (elAfterTotal) elAfterTotal.textContent = `${newTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
+      if (elAfterAvg) elAfterAvg.textContent = `${money(newAvg, currency)} (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%)`;
+      if (elAfterTotal) elAfterTotal.textContent = money(newTotalCost, currency);
 
       if (elBadge) {
         elBadge.textContent = isCostDown ? `📉 ถัวลดต้นทุน ลง ${Math.abs(diffPct).toFixed(2)}%` : `📈 ซื้อเฉลี่ยขาขึ้น +${diffPct.toFixed(2)}%`;
         elBadge.style.color = isCostDown ? '#16a34a' : '#d97706';
       }
 
-      const remainder = (mode === 'money' && inputVal > addMoney) ? ` (เหลืองบ ${(inputVal - addMoney).toFixed(2)} ฿)` : '';
+      const remainder = (mode === 'money' && inputVal > addMoney) ? ` (เหลืองบ ${money(inputVal - addMoney, currency)})` : '';
       if (elDynamicText) {
-        elDynamicText.innerHTML = `💡 หากซื้อเพิ่ม <b>${addShares.toLocaleString()} หุ้น</b> ที่ราคา <b>${buyPrice.toFixed(2)} ฿</b> (ใช้เงิน <b>${addMoney.toLocaleString(undefined, {minimumFractionDigits: 2})} ฿</b>${remainder}) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>${currentAvg.toFixed(2)} ฿</b> เป็น <b>${newAvg.toFixed(2)} ฿</b>`;
+        elDynamicText.innerHTML = `💡 หากซื้อเพิ่ม <b>${addShares.toLocaleString()} หุ้น</b> ที่ราคา <b>${money(buyPrice, currency)}</b> (ใช้เงิน <b>${money(addMoney, currency)}</b>${remainder}) จะทำให้ต้นทุนเฉลี่ยเปลี่ยนจาก <b>${money(currentAvg, currency)}</b> เป็น <b>${money(newAvg, currency)}</b>`;
       }
     } else {
       if (elAfterShares) elAfterShares.textContent = `${currentShares.toLocaleString()} หุ้น`;
-      if (elAfterAvg) elAfterAvg.textContent = `${currentAvg.toFixed(2)} ฿`;
-      if (elAfterTotal) elAfterTotal.textContent = `${currentTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
+      if (elAfterAvg) elAfterAvg.textContent = money(currentAvg, currency);
+      if (elAfterTotal) elAfterTotal.textContent = money(currentTotalCost, currency);
       if (elDynamicText) elDynamicText.innerHTML = '💡 กรอกราคาและจำนวนเงิน/หุ้น เพื่อเริ่มจำลองการถัวเฉลี่ย';
     }
   }
@@ -537,7 +623,8 @@ function updateTargetComparison() {
 
 function clearSim() {
   if (confirm('คุณต้องการล้างข้อมูลจำลองการคำนวณทั้งหมดหรือไม่?')) {
-    window.currentHolding = { shares: 0, avgCost: 0, totalCost: 0, txCount: 0, marketPrice: 0, symbol: '' };
+    window.currentHolding = { shares: 0, avgCost: 0, totalCost: 0, txCount: 0, marketPrice: 0, symbol: '', currency: 'THB', costFx: 1, marketFx: 1 };
+    applyCurrencyLabels('THB');
     loadFromPortfolio();
   }
 }
