@@ -322,7 +322,9 @@ var TechnicalModule = {
       currencySign,
       symbolLabel: cleanSym,
       decimals: isFund ? 4 : 2,
-      avgCost: holdingMatch ? Number(isThai || isFund ? holdingMatch.avgCost : (holdingMatch.avgCostUSD || holdingMatch.avgCost)) || 0 : 0
+      avgCost: holdingMatch ? Number(isThai || isFund ? holdingMatch.avgCost : (holdingMatch.avgCostUSD || holdingMatch.avgCost)) || 0 : 0,
+      // กราฟกับราคาหัวเรื่องมาจากคนละแหล่ง (chart API กับ cache ราคา) จึงส่งราคาสดมาให้ชั้นกราฟใช้ปิดแท่งที่ยังไม่ปิดตลาด
+      liveQuote: hasPrice ? { price, prevClose: prevClose > 0 ? prevClose : 0, at: q.updatedAt || '' } : null
     };
 
     this.bindOverlayChips(container, cleanSym, chartType);
@@ -833,6 +835,12 @@ var TechnicalModule = {
       }
     };
 
+    // ผู้ใช้กดวิเคราะห์/เปลี่ยนช่วงซ้ำได้ก่อนคำขอเดิมตอบ ถ้ามีรอบใหม่เริ่มแล้วให้ทิ้งผลรอบเก่า
+    // ไม่งั้นกราฟของรอบเก่าจะทับพื้นที่แต่ตัวเลข (Pivot/SMA/สถิติ) เป็นของรอบใหม่ คนละชุดข้อมูลกัน
+    const renderSeq = (this._renderSeq = (this._renderSeq || 0) + 1);
+    const isStaleRender = () => renderSeq !== this._renderSeq;
+
+    let repairedDay = null;
     const toPoints = (data) => {
       const byTime = new Map();
       (Array.isArray(data?.points) ? data.points : []).forEach((p) => {
@@ -851,7 +859,25 @@ var TechnicalModule = {
           }
         }
       });
-      return Array.from(byTime.values()).sort((a, b) => a.time.localeCompare(b.time));
+      const out = Array.from(byTime.values()).sort((a, b) => a.time.localeCompare(b.time));
+      if (isFund) return out;
+
+      // ระหว่างตลาดยังเปิดอยู่ Yahoo ส่งแท่งของวันนี้กลับมาแบบ close:0 ทำให้แท่งสุดท้ายของกราฟหลุดลงศูนย์
+      // ถ้ามีราคาสดที่ยังใหม่พอ (ไม่เกิน 4 วันทำการ) ให้ปิดแท่งนั้นด้วยราคาสด มิฉะนั้นทิ้งแท่งเสียไป
+      const tail = out[out.length - 1];
+      repairedDay = null;
+      if (tail && !(Number(tail.close) > 0)) {
+        const live = (srContext && srContext.liveQuote) || null;
+        const fresh = live && live.at && (Date.now() - new Date(live.at).getTime()) < 4 * 864e5;
+        if (live && Number(live.price) > 0 && fresh) {
+          tail.close = Number(live.price);
+          tail.high = Math.max(Number(tail.high) || 0, tail.close);
+          tail.low = Number(tail.low) > 0 ? Math.min(Number(tail.low), tail.close) : tail.close;
+          if (!(Number(tail.open) > 0)) tail.open = Number(live.prevClose) > 0 ? Number(live.prevClose) : tail.close;
+          repairedDay = tail.time;
+        }
+      }
+      return out.filter((p) => Number(p.close) > 0);
     };
 
     try {
@@ -862,6 +888,7 @@ var TechnicalModule = {
       if (this._chartCache && this._chartCache.url === url && Date.now() - this._chartCache.at < CACHE_MS) {
         data = this._chartCache.data;
         points = this._chartCache.points;
+        repairedDay = this._chartCache.repairedDay || null;
       } else {
         data = await requestChart();
         points = toPoints(data);
@@ -871,9 +898,10 @@ var TechnicalModule = {
           data = await requestChart();
           points = toPoints(data);
         }
-        if (points.length) this._chartCache = { url, at: Date.now(), data, points };
+        if (points.length) this._chartCache = { url, at: Date.now(), data, points, repairedDay };
       }
       if (!points.length) {
+        if (isStaleRender()) return;
         const detail = String(data?.detail || '');
         this.renderSrPanel(null, srContext);
         showError(/429/.test(detail)
@@ -883,6 +911,7 @@ var TechnicalModule = {
       }
 
       const LW = await this.ensureLightweightCharts();
+      if (isStaleRender()) return;
       host.innerHTML = '';
 
       const showVolume = this.chartOverlays.volume && !isFund && points.some((p) => Number(p.volume) > 0);
@@ -944,6 +973,22 @@ var TechnicalModule = {
 
       const levelInfo = this.computePriceLevels(points, srContext);
       if (this.chartOverlays.sr) this.drawPriceLevels(LW, mainSeries, points, srContext, levelInfo);
+
+      // แหล่งข้อมูลกราฟกับแหล่งราคาสดไม่ตรงกันเสมอ (บางรอบกราฟหยุดที่วันทำการก่อนหน้า)
+      // ถ้าราคาล่าสุดต่างจากแท่งปิดจริง ให้ลากเส้นประบอกบนกราฟแทนการแต่งแท่งปลอมขึ้นมา
+      const lastBar = points[points.length - 1];
+      const live = srContext.liveQuote;
+      const livePrice = live ? Number(live.price) : 0;
+      const liveDay = live && live.at ? String(new Date(live.at).toISOString()).slice(0, 10) : '';
+      const showLiveLine = livePrice > 0 && Number(lastBar.close) > 0 && liveDay > String(lastBar.time)
+        && Math.abs(livePrice - Number(lastBar.close)) / Number(lastBar.close) > 0.0005;
+      if (showLiveLine) {
+        mainSeries.createPriceLine({
+          price: livePrice, color: '#0f172a', lineWidth: 2, lineStyle: LW.LineStyle.Dashed,
+          axisLabelVisible: true, title: 'ราคาล่าสุด'
+        });
+      }
+
       if (this.chartOverlays.fib) {
         const highs = points.map((p) => Number(isFund ? p.value : p.high)).filter(Number.isFinite);
         const lows = points.map((p) => Number(isFund ? p.value : p.low)).filter(Number.isFinite);
@@ -1045,6 +1090,8 @@ var TechnicalModule = {
         ];
         if (isFund && this.currentChartStyle === 'candles') parts.push('กองทุนมีเฉพาะ NAV รายวัน จึงแสดงเป็นกราฟพื้นที่');
         if (isFund && data.truncated) parts.push(`แหล่งข้อมูลมีข้อมูลย้อนหลังตั้งแต่ ${data.availableFrom}`);
+        if (repairedDay) parts.push(`แท่ง ${repairedDay} ตลาดยังไม่ปิด ใช้ราคาสดเป็นราคาปิด`);
+        if (showLiveLine) parts.push(`ราคาสด ${srContext.currencySign}${livePrice.toFixed(srContext.decimals)} ยังไม่มีในแท่งกราฟ (แท่งปิดล่าสุด ${lastBar.time})`);
         if (levelInfo && levelInfo.drawnCount) parts.push(`วาดเส้นแนวรับ-แนวต้าน ${levelInfo.drawnCount} ระดับบนกราฟ`);
         if (points.length < 200) parts.push('ข้อมูลน้อยกว่า 200 วัน จึงยังไม่แสดง EMA 200');
         noteEl.textContent = parts.join(' · ');
