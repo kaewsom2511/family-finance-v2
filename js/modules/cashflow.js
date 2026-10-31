@@ -401,9 +401,12 @@ var CashFlowModule = {
       if (rawAdmin) {
         const parsed = JSON.parse(rawAdmin);
         if (parsed && parsed['เงินออมและลงทุน'] && parsed['เงินออมและลงทุน'].length > 0) {
-          if (!parsed['เงินออมและลงทุน'].includes('test')) {
-            return parsed;
+          // ข้อมูลร่วมเคยถูกบัญชีทดสอบเขียนทับ ถ้าเจอรายการ 'test' ให้กรองออก
+          // แทนการทิ้งไปใช้ fallbackCategories (จะทำให้รายการที่ลบใน settings กลับมา)
+          if (parsed['เงินออมและลงทุน'].includes('test')) {
+            parsed['เงินออมและลงทุน'] = parsed['เงินออมและลงทุน'].filter(c => c !== 'test');
           }
+          return parsed;
         }
       }
     } catch (e) {
