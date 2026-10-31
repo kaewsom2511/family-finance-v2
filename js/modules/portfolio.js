@@ -1536,6 +1536,17 @@ if (settingsBtn) {
     if (existingModal) existingModal.remove();
 
     const todayStr = new Date().toISOString().split('T')[0];
+
+    // ถ้ายังไม่มีพอร์ตเลย สร้างพอร์ตหลักให้อัตโนมัติ เพื่อให้รายการซื้อมีพอร์ตปลายทางเสมอ
+    if (!Array.isArray(data.portfolios) || data.portfolios.length === 0) {
+      data.portfolios = [{
+        id: 'port-' + Date.now(),
+        name: 'พอร์ตหลัก',
+        targetAmount: 0,
+        createdAt: new Date().toISOString()
+      }];
+      savePortfolioDataHelper(data);
+    }
     const sortedPortfolios = this.getSortedPortfolios(data);
     let defaultPortId = this.selectedPortfolioId === 'ALL' ? (sortedPortfolios[0]?.id || '') : this.selectedPortfolioId;
 
