@@ -121,6 +121,22 @@ var CashFlowModule = {
     };
   },
 
+  // บทบาทจริงจาก profiles.role ที่ supabase.js cache ไว้ตอนระบุตัวตน
+  // อ่านแบบ synchronous ได้ทันที ไม่ต้องเดาจากข้อความในหน้า (หน้า wealth มีคำว่า "สมาชิก"
+  // ในรายละเอียด PVD ทำให้เดาจาก innerText แล้วผิดได้)
+  // คืน 'member' | 'admin' | null (null = ระบุตัวตนยังไม่เสร็จ ห้ามเดา default/seed ข้อมูล)
+  getDataRole() {
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const sbData = sbKey ? JSON.parse(localStorage.getItem(sbKey)) : null;
+      const uid = sbData && sbData.user && sbData.user.id;
+      if (!uid) return null;
+      // รูปแบบ ":" ไม่ลงท้าย #u<uid> เพื่อไม่ให้ถูก sync ขึ้น cloud (ดู supabase.js)
+      const role = localStorage.getItem('family-finance:session-role:' + uid);
+      return role === 'member' || role === 'admin' ? role : null;
+    } catch (e) { return null; }
+  },
+
   init() {
     const now = new Date();
     this.selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -1676,6 +1692,8 @@ var CashFlowModule = {
     const formatBaht = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const state = this.getState();
     const allTxs = state.transactions || [];
+    // member เห็นโครงสร้างบัญชีครบแต่ยอดเริ่มต้นเป็น 0 (default ที่ฝังมาเป็นของผู้ดูแล)
+    const isMember = this.getDataRole() === 'member';
 
     const dynamicBalances = {};
     allTxs.forEach(t => {
@@ -1724,6 +1742,7 @@ var CashFlowModule = {
       { id: 'acc_truemoney', name: 'Truemoney', bank: 'Truemoney', code: 'TMN', color: '#f97316', initial: 146.89, purpose: 'วอลเล็ตซื้อของ 7-11 / บริการออนไลน์', interestRate: 0.00, sub: 'WALLET' },
       { id: 'acc_coop', name: 'ออมทรัพย์ สอท', bank: 'ออมทรัพย์ สอท', code: 'COOP', color: '#0d9488', initial: 202191.42, purpose: 'สหกรณ์ออมทรัพย์ สอท.', interestRate: 2.50, sub: 'สหกรณ์ สอท.' }
     ];
+    if (isMember) accountsMaster.forEach(a => { a.initial = 0; });
 
     // 2. กลุ่ม 7 บัญชีดิจิทัลดอกเบี้ยสูง
     const digitalAccountsMaster = [
@@ -1736,8 +1755,8 @@ var CashFlowModule = {
       { id: 'acc_ktb_next', name: 'กรุงไทย (Next Saving)', bank: 'กรุงไทย', code: 'KTB', color: '#0284c7', initial: 0.00, purpose: 'Krungthai Next Saving', interestRate: 1.50, sub: '066-0-14649-5' }
     ];
 
-    // 3. กลุ่ม 3 บัตรเครดิต
-    const creditCardsMaster = [
+    // 3. กลุ่ม 3 บัตรเครดิต (เป็นของผู้ดูแล สมาชิกเริ่มจากบัตรเปล่า)
+    const creditCardsMaster = isMember ? [] : [
       { id: 'card_bay', name: 'บัตรเครดิตกรุงศรี', bank: 'กรุงศรี', code: 'BAY', color: '#d97706', debt: 11723.28, billed: true, cutOff: 'ตัดรอบทุกวันที่ 10', note: 'บัตรเครดิต กรุงศรี (ตัดรอบวันที่ 10)', charged: 162267.71, paid: 171339.13 },
       { id: 'card_ktc', name: 'บัตรเครดิตกรุงไทย', bank: 'KTC', code: 'KTC', color: '#0284c7', debt: 0.00, billed: false, cutOff: 'ตัดรอบทุกวันที่ 7', note: 'บัตรเครดิต KTC (ตัดรอบวันที่ 15)', charged: 1530.00, paid: 1544.67 },
       { id: 'card_ttb', name: 'บัตรเครดิตทีทีบี', bank: 'TTB', code: 'TTB', color: '#1e3a8a', debt: 0.00, billed: false, cutOff: 'ตัดรอบทุกวันที่ 2', note: 'บัตรเครดิต ttb', charged: 0.00, paid: 2086.16 }
@@ -1800,7 +1819,7 @@ var CashFlowModule = {
     const cardsHtml1 = accountsMaster.map(renderCard).join('');
     const cardsHtml2 = digitalAccountsMaster.map(renderCard).join('');
 
-    const cardsHtml3 = creditCardsMaster.map(c => `
+    const cardsHtml3 = creditCardsMaster.length ? creditCardsMaster.map(c => `
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
@@ -1841,9 +1860,11 @@ var CashFlowModule = {
           <span>✏️</span> แก้ไขวันตัดยอด
         </button>
       </div>
-    `).join('');
+    `).join('') : '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; font-size: 13px; font-weight: 600; padding: 26px; border: 1.5px dashed #e2e8f0; border-radius: 12px;">ยังไม่มีบัตรเครดิตในระบบ — เริ่มเพิ่มบัตรได้ที่หน้า "รอบบิลบัตรเครดิต & รูดใช้จ่าย"</div>';
 
-    const netLiquidity = 1208437.31;
+    // สมาชิกคำนวณจากยอดจริงของตัวเอง ส่วนยอดคงที่ด้านล่างเป็นของผู้ดูแล
+    const totalCardDebt = creditCardsMaster.reduce((s, c) => s + (parseFloat(c.debt) || 0), 0);
+    const netLiquidity = isMember ? (totalBankBalance - totalCardDebt) : 1208437.31;
     const coopAcc = accountsMaster.find(a => a.name === 'ออมทรัพย์ สอท');
     const coopBase = storedInitials['ออมทรัพย์ สอท'] !== undefined ? storedInitials['ออมทรัพย์ สอท'] : (coopAcc ? coopAcc.initial : 202191.42);
     const coopBuffer = coopBase + (dynamicBalances['ออมทรัพย์ สอท'] || 0);
@@ -1863,8 +1884,8 @@ var CashFlowModule = {
             <div>
               <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CASH & EMERGENCY FUND</div>
               <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สมุดบัญชีเงินฝาก พ่อ</h1>
-                <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">รวม 21 บัญชี</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สมุดบัญชีเงินฝาก${isMember ? '' : ' พ่อ'}</h1>
+                <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">รวม ${18 + creditCardsMaster.length} บัญชี</span>
               </div>
             </div>
           </div>
@@ -1883,7 +1904,7 @@ var CashFlowModule = {
               ฿${formatBaht(netLiquidity)}
             </div>
             <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
-              เงินฝาก: ฿421,257.31 • บิลบัตร: ฿11,723.28
+              เงินฝาก: ฿${isMember ? formatBaht(totalBankBalance) : '421,257.31'} • บิลบัตร: ฿${isMember ? formatBaht(totalCardDebt) : '11,723.28'}
             </div>
           </div>
 
@@ -1892,7 +1913,7 @@ var CashFlowModule = {
               <div style="font-size: 12px; font-weight: 700; color: #0284c7; display: flex; align-items: center; gap: 6px;">
                 <span>🛡️</span> เงินสำรองฉุกเฉิน (Emergency Buffer)
               </div>
-              <span style="font-size: 11px; color: #16a34a; font-weight: 700; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>
+              ${isMember ? '' : '<span style="font-size: 11px; color: #16a34a; font-weight: 700; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>'}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 6px 0;">
               <div style="font-size: 26px; font-weight: 900; color: #0284c7;">${bufferMonths} <span style="font-size: 14px; font-weight: 700; color: #64748b;">/ 12 เดือน</span></div>
@@ -1905,9 +1926,9 @@ var CashFlowModule = {
               <span>สอท. ฿${formatBaht(coopBuffer)}</span>
               <span>เป้าหมาย ฿${formatBaht(targetBuffer)}</span>
             </div>
-            <div style="font-size: 11px; color: #ea580c; font-weight: 700; margin-top: 4px;">
+            ${isMember ? '' : `<div style="font-size: 11px; color: #ea580c; font-weight: 700; margin-top: 4px;">
               ⚡ 33 เดือนเต็มเป้า (ทันก่อนเกษียณ 3 เดือน)
-            </div>
+            </div>`}
           </div>
 
           <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1915,10 +1936,10 @@ var CashFlowModule = {
               <span>🎁</span> ดอกเบี้ยรับสะสม/ปี (Est. Interest)
             </div>
             <div style="font-size: 28px; font-weight: 900; color: #16a34a; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
-              +฿8,029.73
+              +฿${isMember ? formatBaht(totalEstAnnualInterest) : '8,029.73'}
             </div>
             <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
-              เฉลี่ยเดือนละ +฿669.14
+              เฉลี่ยเดือนละ +฿${isMember ? formatBaht(totalEstAnnualInterest / 12) : '669.14'}
             </div>
           </div>
 
@@ -1927,10 +1948,10 @@ var CashFlowModule = {
               <span>📁</span> บัญชีในระบบ
             </div>
             <div style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 10px 0 6px 0;">
-              21 บัญชี
+              ${18 + creditCardsMaster.length} บัญชี
             </div>
             <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
-              เงินฝาก & ดิจิทัล 18 บัญชี • บัตรเครดิต 3 ใบ
+              เงินฝาก & ดิจิทัล 18 บัญชี • บัตรเครดิต ${creditCardsMaster.length} ใบ
             </div>
           </div>
         </div>
@@ -1954,7 +1975,7 @@ var CashFlowModule = {
 
         <!-- ตอนที่ 3: 3 บัตรเครดิต -->
         <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <span>💳</span> บัตรเครดิตและวงเงินรอชำระรอบนี้ (3 บัญชี)
+          <span>💳</span> บัตรเครดิตและวงเงินรอชำระรอบนี้ (${creditCardsMaster.length} บัญชี)
           <span style="font-size: 12px; color: #64748b; font-weight: normal;">ติดตามยอดรูดและวันตัดรอบบิล</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
@@ -1974,6 +1995,9 @@ var CashFlowModule = {
                    || document.querySelector('.content-area')
                    || document.getElementById('main-content');
     if (!container) return;
+
+    // member เห็นโครงสร้าง 4 เสาหลักครบแต่ยอดเริ่มต้นเป็น 0 (ค่าที่ฝังไว้เป็นของผู้ดูแล)
+    const isMember = this.getDataRole() === 'member';
 
     const formatBaht = (n) => '฿' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -2009,6 +2033,7 @@ var CashFlowModule = {
       'LH (B-You Max)': 0, 'เกียรตินาคินภัทร (Dime)': 0, 'ทหารไทย (TTB ME Save)': 0,
       'กรุงไทย (Next Saving)': 0
     };
+    if (isMember) Object.keys(defaultInitials).forEach(k => { defaultInitials[k] = 0; });
 
     let storedInitials = {};
     try { storedInitials = JSON.parse(localStorage.getItem('family-finance:initial-balances:v1')) || {}; } catch (e) {}
@@ -2027,8 +2052,16 @@ var CashFlowModule = {
       }
     });
 
-    // 2. ดึงข้อมูลสินทรัพย์ PVD, RMF และ ทุนเรือนหุ้น สอท. (อัปเดตเป็น 1,352,400 บาท)
-    let wealthExtras = {
+    // 2. ดึงข้อมูลสินทรัพย์ PVD, RMF และ ทุนเรือนหุ้น สอท. (ค่าที่ฝังไว้เป็นของผู้ดูแล สมาชิกเริ่มจาก 0)
+    let wealthExtras = isMember ? {
+      memberAccum: 0,
+      employerMatch: 0,
+      earnings: 0,
+      totalPvd: 0,
+      rmfVal: 0,
+      coopShareVal: 0,
+      updatedDate: ''
+    } : {
       memberAccum: 2043963.45,
       employerMatch: 2099909.75,
       earnings: 1063753.44,
@@ -2079,8 +2112,8 @@ var CashFlowModule = {
       }
     } catch(e) { totalStockValue = null; }
     const hasLiveStockValue = totalStockValue !== null;
-    // ยอดสำรองใช้เฉพาะกรณีที่คำนวณพอร์ตไม่สำเร็จเท่านั้น
-    if (!hasLiveStockValue) totalStockValue = 4140768.31;
+    // ยอดสำรองใช้เฉพาะกรณีที่คำนวณพอร์ตไม่สำเร็จเท่านั้น (เป็นของผู้ดูแล สมาชิกใช้ 0)
+    if (!hasLiveStockValue) totalStockValue = isMember ? 0 : 4140768.31;
 
     // ยอดรวมสินทรัพย์ทั้ง 4 เสาหลัก
     const totalAssets = totalBankCash + totalCoop + totalRetirement + totalStockValue;
@@ -2251,7 +2284,16 @@ var CashFlowModule = {
     let oldModal = document.getElementById('modal-edit-pvd');
     if (oldModal) oldModal.remove();
 
-    let extras = {
+    // ค่าเริ่มต้นในฟอร์มเป็นของผู้ดูแล สมาชิกเริ่มจาก 0
+    const isMember = this.getDataRole() === 'member';
+    let extras = isMember ? {
+      memberAccum: 0,
+      employerMatch: 0,
+      earnings: 0,
+      rmfVal: 0,
+      coopShareVal: 0,
+      updatedDate: new Date().toISOString().slice(0, 10)
+    } : {
       memberAccum: 2043963.45,
       employerMatch: 2099909.75,
       earnings: 1063753.44,
@@ -3120,6 +3162,8 @@ var CashFlowModule = {
 
     var self = this;
     var storageKey = 'family-finance:debts-contracts:v1';
+    // บทบาทจาก profiles.role (cache ไว้ตอน login) — กำหนดว่าจะ seed สัญญาเริ่มต้นหรือไม่
+    var dataRole = this.getDataRole();
 
     var defaultContracts = [
       {
@@ -3188,10 +3232,29 @@ var CashFlowModule = {
     try {
       contracts = JSON.parse(localStorage.getItem(storageKey));
     } catch(e) {}
-    if (!contracts || !Array.isArray(contracts) || contracts.length < 5) {
-  contracts = defaultContracts;
-  localStorage.setItem(storageKey, JSON.stringify(contracts));
-}
+
+    if (dataRole === 'member') {
+      // สมาชิกเริ่มจากกระดาษเปล่า ไม่สืบทอดสัญญาของผู้ดูแล
+      if (!Array.isArray(contracts)) {
+        contracts = [];
+        localStorage.setItem(storageKey, JSON.stringify(contracts));
+      }
+    } else if (dataRole === 'admin') {
+      // ผู้ดูแล: ย้ายข้อมูลจากคีย์กลางเดิม (ตอนเคยเป็น SHARED) เข้าซองรายคนก่อน
+      // เพื่อไม่ให้ยอดที่เคยบันทึกไว้ถูก seed ค่าเริ่มต้นทับ
+      if (typeof DataScope !== 'undefined' && typeof DataScope.adoptLegacyIfAbsent === 'function') {
+        try {
+          DataScope.adoptLegacyIfAbsent(storageKey);
+          contracts = JSON.parse(localStorage.getItem(storageKey));
+        } catch (e) {}
+      }
+      if (!contracts || !Array.isArray(contracts) || contracts.length < 5) {
+        contracts = defaultContracts;
+        localStorage.setItem(storageKey, JSON.stringify(contracts));
+      }
+    }
+    // dataRole เป็น null (login ยังไม่เสร็จ): ไม่ seed/ไม่เขียนอะไร รอ re-render หลังระบุตัวตน
+    if (!Array.isArray(contracts)) contracts = [];
 
     var formatNum = function(num) {
       return Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

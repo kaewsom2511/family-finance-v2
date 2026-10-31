@@ -105,14 +105,30 @@ const CreditCardModule = {
 
   getCardConfigs() {
     const ctx = this.getUserContext();
+    // บทบาทจาก profiles.role (cache ตอน login) เชื่อถือได้กว่าอ่านข้อความในหน้า
+    // เพราะ render ครั้งแรกเกิดก่อน badge แสดง ทำให้เดาจากหน้าแล้ว member ถูกมองเป็น admin
+    const dataRole = (typeof CashFlowModule !== 'undefined' && typeof CashFlowModule.getDataRole === 'function')
+      ? CashFlowModule.getDataRole()
+      : null;
     // ถ้าเป็น Member เริ่มต้นที่ 0 บัตร (ไม่ดึง 3 ใบของพ่อ)
-    if (ctx.isMember) {
+    if (dataRole === 'member' || (dataRole === null && ctx.isMember)) {
       try {
         const raw = localStorage.getItem(ctx.cardLimitsKey);
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            // กู้ข้อมูลสมาชิกที่เคยถูก seed บัตร default ของผู้ดูแลเข้าไปโดยผิดพลาด (เวอร์ชันเก่า)
+            const defaultIds = this.defaultCardConfigs.map(c => c.id);
+            const isLegacySeed = parsed.length > 0 && parsed.length === defaultIds.length && parsed.every(c => defaultIds.includes(c.id));
+            if (!isLegacySeed) return parsed;
+          }
+        }
       } catch (e) {}
       return [];
     }
+
+    // ยังไม่ทราบบทบาท (login ยังไม่เสร็จ): อย่าโชว์บัตรของผู้ดูแล รอ re-render หลังระบุตัวตน
+    if (dataRole === null) return [];
 
     try {
       const raw = localStorage.getItem(ctx.cardLimitsKey);

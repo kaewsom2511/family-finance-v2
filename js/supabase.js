@@ -17,12 +17,13 @@ const DataScope = {
   SEP: '#u',
 
   // โครงสร้างที่ทั้งบ้านใช้ร่วมกัน (ใครแก้ทุกบัญชีเห็นตาม)
+  // หมายเหตุ: debts-contracts เคยอยู่กลุ่มนี้ แต่ย้ายเป็น per-user แล้ว
+  // เพราะสัญญาผ่อนเป็นหนี้ส่วนบุคคล สมาชิกคนอื่นไม่ควรเห็น
   SHARED: [
     'family-finance:categories:v1',
     'family-finance:master-accounts:v1',
     'family-finance:settings',
-    'family-finance:credit-cards:v1',
-    'family-finance:debts-contracts:v1'
+    'family-finance:credit-cards:v1'
   ],
 
   // คีย์ข้อมูลส่วนตัวที่โมดูลเรียกด้วยชื่อตรงตัว → ต่อท้ายด้วย #u<uid> ตามผู้ที่ล็อกอิน
@@ -38,6 +39,7 @@ const DataScope = {
     'family-finance:card-limits',
     'family-finance:debt-plans',
     'family-finance:bill-schedules',
+    'family-finance:debts-contracts:v1',
     'stock-trading-log:v3',
     'stock-trading-log:quote-cache:v1',
     'wealthport:latest-usd-thb',
@@ -115,6 +117,17 @@ const DataScope = {
 
   isSharedKey(key) {
     return this.SHARED.includes(key);
+  },
+
+  // ย้ายข้อมูลจากคีย์กลางเดิม (ตอนเคยเป็น SHARED) เข้าซองรายผู้ใช้ครั้งแรก
+  // ต้องเรียกก่อนอ่าน/seed คีย์นั้น เพื่อไม่ให้ข้อมูลเดิมหายไปตอนเปลี่ยน scope
+  adoptLegacyIfAbsent(logicalKey) {
+    if (!this.uid) return;
+    const physical = this.physical(logicalKey);
+    if (physical === logicalKey) return;
+    if (nativeGetItem.call(localStorage, physical) !== null) return;
+    const legacy = nativeGetItem.call(localStorage, logicalKey);
+    if (legacy !== null) nativeSetItem.call(localStorage, physical, legacy);
   },
 
   // ชื่อเจ้าของที่ระบุไว้ในคีย์เก่า (":member:<ชื่อ>", "tax-planner:member_<ชื่อ>:ปี", "tax-planner:<ชื่อ>:ปี")
@@ -526,6 +539,10 @@ async function applyUserPermissions(user) {
 
   const role = profile?.role || 'member';
   const displayName = profile?.full_name || user.email;
+
+  // cache บทบาทไว้อ่านแบบ synchronous (โมดูลอ่านก่อน auth เสร็จได้)
+  // ใช้ ":" แทน "#u" เพื่อไม่ให้ถูก isSyncedKey จับไป sync ขึ้น cloud
+  try { nativeSetItem.call(localStorage, 'family-finance:session-role:' + user.id, role); } catch (e) {}
 
   const profileNav = document.getElementById('userProfileNav');
   const emailText = document.getElementById('navUserEmail');

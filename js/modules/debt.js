@@ -139,14 +139,31 @@ window.DebtModule = {
 
   getDebts() {
     const ctx = this.getUserContext();
+    // บทบาทจาก profiles.role (cache ตอน login) เชื่อถือได้กว่าอ่านข้อความในหน้า
+    // เพราะ render ครั้งแรกเกิดก่อน badge แสดง ทำให้เดาจากหน้าแล้ว member ถูกมองเป็น admin
+    const dataRole = (typeof CashFlowModule !== 'undefined' && typeof CashFlowModule.getDataRole === 'function')
+      ? CashFlowModule.getDataRole()
+      : null;
+
     // ถ้าเป็น Member เริ่มต้นที่ 0 สัญญาผ่อน (ไม่ดึงหนี้ของพ่อบี)
-    if (ctx.isMember) {
+    if (dataRole === 'member' || (dataRole === null && ctx.isMember)) {
       try {
         const raw = localStorage.getItem(ctx.storageKey);
-        if (raw) return this.withLedgerPaid(JSON.parse(raw));
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            // กู้ข้อมูลสมาชิกที่เคยถูก seed สัญญา default ของผู้ดูแลเข้าไปโดยผิดพลาด (เวอร์ชันเก่า)
+            const defaultIds = this.defaultDebts.map(d => d.id);
+            const isLegacySeed = parsed.length === defaultIds.length && parsed.every(d => defaultIds.includes(d.id));
+            if (!isLegacySeed) return this.withLedgerPaid(parsed);
+          }
+        }
       } catch (e) {}
       return [];
     }
+
+    // ยังไม่ทราบบทบาท (login ยังไม่เสร็จ): อย่า seed อะไร รอ re-render หลังระบุตัวตน
+    if (dataRole === null) return [];
 
     // Admin (พ่อบี): ดึงข้อมูลหนี้และสัญญาผ่อนหลักตามปกติ
     try {
