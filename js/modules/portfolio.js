@@ -1472,16 +1472,16 @@ var PortfolioModule = {
           refreshBtn.disabled = false;
 
           if (res && res.price > 0 && !res.stale && !res.isEstimate) {
-            refreshBtn.style.background = '#0284c7';
+            refreshBtn.style.background = 'var(--accent)';
             this.render();
           } else {
-            refreshBtn.style.background = '#dc2626';
+            refreshBtn.style.background = 'var(--down)';
             alert(`ไม่สามารถดึงราคาล่าสุดของ ${symbol} ได้`);
           }
         } catch (err) {
           refreshBtn.textContent = '🔄';
           refreshBtn.disabled = false;
-          refreshBtn.style.background = '#dc2626';
+          refreshBtn.style.background = 'var(--down)';
         }
         return;
       }
@@ -1625,56 +1625,56 @@ if (settingsBtn) {
     }).join('');
 
     const modalHtml = `
-      <div id="wealthport-buy-asset-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background: #fff; border-radius: 14px; width: 480px; max-width: 95vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">🛒 บันทึกรายการซื้อสินทรัพย์ (Buy Order)</h3>
-            <button id="btn-close-buy-modal" style="background:none; border:none; font-size: 22px; color:#94a3b8; cursor:pointer;">&times;</button>
+      <div id="wealthport-buy-asset-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--overlay); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
+        <div style="background: var(--panel); border-radius: 14px; width: 480px; max-width: 95vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--line-soft); padding-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--txt-strong);">🛒 บันทึกรายการซื้อสินทรัพย์ (Buy Order)</h3>
+            <button id="btn-close-buy-modal" style="background:none; border:none; font-size: 22px; color:var(--txt-faint); cursor:pointer;">&times;</button>
           </div>
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div>
-              <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">เลือกพอร์ตการลงทุน</label>
-              <select id="buy-input-port" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; background: #fff;">
+              <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">เลือกพอร์ตการลงทุน</label>
+              <select id="buy-input-port" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px; background: var(--panel);">
                 ${pOptions}
               </select>
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1.2;">
-                <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ประเภทสินทรัพย์</label>
-                <select id="buy-input-type" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; background: #fff;">
+                <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ประเภทสินทรัพย์</label>
+                <select id="buy-input-type" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px; background: var(--panel);">
                   <option value="thai-stock">🇹🇭 หุ้นไทย (SET)</option>
                   <option value="foreign-stock">🇺🇸 หุ้นต่างประเทศ (US)</option>
                   <option value="mutual-fund">🌱 กองทุนรวม (Fund)</option>
                 </select>
               </div>
               <div style="flex: 1.5;">
-                <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ชื่อย่อ (Symbol / Ticker)</label>
-                <input type="text" id="buy-input-symbol" placeholder="เช่น PTT, NVDA, SCBGOLDH" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; text-transform: uppercase; font-weight: 700;">
+                <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ชื่อย่อ (Symbol / Ticker)</label>
+                <input type="text" id="buy-input-symbol" placeholder="เช่น PTT, NVDA, SCBGOLDH" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px; text-transform: uppercase; font-weight: 700;">
               </div>
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">จำนวนหน่วย / หุ้น</label>
-                <input type="number" id="buy-input-shares" placeholder="0.00" step="any" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
+                <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">จำนวนหน่วย / หุ้น</label>
+                <input type="number" id="buy-input-shares" placeholder="0.00" step="any" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
               </div>
               <div style="flex: 1;">
-                <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ราคาซื้อต่อหน่วย</label>
-                <input type="number" id="buy-input-price" placeholder="0.00" step="any" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
+                <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ราคาซื้อต่อหน่วย</label>
+                <input type="number" id="buy-input-price" placeholder="0.00" step="any" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
               </div>
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ค่าคอมมิชชั่น / Fee (บาท)</label>
-                <input type="number" id="buy-input-fee" value="0" step="any" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
+                <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ค่าคอมมิชชั่น / Fee (บาท)</label>
+                <input type="number" id="buy-input-fee" value="0" step="any" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
               </div>
               <div style="flex: 1;">
-                <label style="display:block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่ซื้อ</label>
-                <input type="date" id="buy-input-date" value="${todayStr}" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
+                <label style="display:block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันที่ซื้อ</label>
+                <input type="date" id="buy-input-date" value="${todayStr}" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
               </div>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-              <button id="btn-cancel-buy-modal" style="background: #fff; border: 1px solid #cbd5e1; padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-              <button id="btn-confirm-submit-buy" style="background: #0284c7; color: #fff; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">บันทึกการซื้อ</button>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; border-top: 1px solid var(--line-soft); padding-top: 12px;">
+              <button id="btn-cancel-buy-modal" style="background: var(--panel); border: 1px solid var(--line-2); padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+              <button id="btn-confirm-submit-buy" style="background: var(--accent); color: var(--on-accent); border: none; padding: 9px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">บันทึกการซื้อ</button>
             </div>
           </div>
         </div>
@@ -1771,11 +1771,11 @@ if (settingsBtn) {
 
     let badgeHtml = '';
     if (isFund) {
-      badgeHtml = `<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;">🌱 FUND</span>`;
+      badgeHtml = `<span style="background: rgba(16, 185, 129, 0.15); color: var(--up-3); font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;">🌱 FUND</span>`;
     } else if (isForeign) {
-      badgeHtml = `<span style="background: rgba(14, 165, 233, 0.15); color: #0284c7; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;">🇺🇸 US</span>`;
+      badgeHtml = `<span style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;">🇺🇸 US</span>`;
     } else {
-      badgeHtml = `<span style="background: rgba(99, 102, 241, 0.15); color: #6366f1; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;">🇹🇭 TH</span>`;
+      badgeHtml = `<span style="background: rgba(99, 102, 241, 0.15); color: var(--indigo); font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700;">🇹🇭 TH</span>`;
     }
 
     const buyTrades = (holding.trades || []).filter(t => String(t.side || t.type || '').toLowerCase() === 'buy');
@@ -1787,50 +1787,50 @@ if (settingsBtn) {
       const tDate = t.tradeDate || t.date || '';
 
       return `
-        <div class="trade-row-container" id="trade-row-${t.id}" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;">
+        <div class="trade-row-container" id="trade-row-${t.id}" style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;">
           <div class="trade-view-mode" id="trade-view-${t.id}" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                <span style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">#${idx + 1}</span>
-                <span style="background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">BUY</span>
+                <span style="background: var(--inset); color: var(--txt-soft); font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">#${idx + 1}</span>
+                <span style="background: var(--up-soft-3); color: var(--up-5); font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">BUY</span>
                 <strong style="font-size: 13.5px;">${shares.toLocaleString('en-US', { maximumFractionDigits: 4 })} หน่วย @ ${currencySign}${price.toFixed(isFund ? 4 : 2)}</strong>
               </div>
-              <div style="font-size: 12px; color: #64748b;">
+              <div style="font-size: 12px; color: var(--txt-muted);">
                 วันที่: ${tDate} | มูลค่า: ${currencySign}${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
             <div style="display: flex; gap: 6px;">
-              <button class="btn-trigger-inline-edit" data-id="${t.id}" style="padding: 5px 10px; font-size: 12px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;">
+              <button class="btn-trigger-inline-edit" data-id="${t.id}" style="padding: 5px 10px; font-size: 12px; border: 1px solid var(--line-2); background: var(--panel); border-radius: 6px; cursor: pointer;">
                 ✏️ แก้ไข
               </button>
-              <button class="btn-delete-single-trade" data-id="${t.id}" style="padding: 5px 10px; font-size: 12px; border: 1px solid #fecaca; background: #fff; color: #dc2626; border-radius: 6px; cursor: pointer;">
+              <button class="btn-delete-single-trade" data-id="${t.id}" style="padding: 5px 10px; font-size: 12px; border: 1px solid var(--down-line); background: var(--panel); color: var(--down); border-radius: 6px; cursor: pointer;">
                 🗑️ ลบ
               </button>
             </div>
           </div>
 
-          <div class="trade-edit-mode" id="trade-edit-${t.id}" style="display: none; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px;">
-            <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+          <div class="trade-edit-mode" id="trade-edit-${t.id}" style="display: none; background: var(--panel-2); border: 1px dashed var(--line-2); border-radius: 6px; padding: 10px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--txt-mid); margin-bottom: 8px;">
               ✏️ แก้ไขข้อมูลไม้ที่ #${idx + 1}
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
               <div style="flex: 1; min-width: 100px;">
-                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">จำนวนหน่วย</label>
-                <input type="number" id="inline-shares-${t.id}" value="${shares}" step="any" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+                <label style="display: block; font-size: 11px; color: var(--txt-muted); margin-bottom: 2px;">จำนวนหน่วย</label>
+                <input type="number" id="inline-shares-${t.id}" value="${shares}" step="any" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 4px; font-size: 13px;">
               </div>
               <div style="flex: 1; min-width: 100px;">
-                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">ราคาซื้อต่อหน่วย (${currencySign})</label>
-                <input type="number" id="inline-price-${t.id}" value="${price}" step="any" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+                <label style="display: block; font-size: 11px; color: var(--txt-muted); margin-bottom: 2px;">ราคาซื้อต่อหน่วย (${currencySign})</label>
+                <input type="number" id="inline-price-${t.id}" value="${price}" step="any" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 4px; font-size: 13px;">
               </div>
               <div style="flex: 1; min-width: 120px;">
-                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">วันที่ซื้อ</label>
-                <input type="date" id="inline-date-${t.id}" value="${tDate || todayStr}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+                <label style="display: block; font-size: 11px; color: var(--txt-muted); margin-bottom: 2px;">วันที่ซื้อ</label>
+                <input type="date" id="inline-date-${t.id}" value="${tDate || todayStr}" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 4px; font-size: 13px;">
               </div>
               <div style="display: flex; gap: 6px; margin-top: 16px;">
-                <button class="btn-save-inline-edit" data-id="${t.id}" style="background: #10b981; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer;">
+                <button class="btn-save-inline-edit" data-id="${t.id}" style="background: var(--up-3); color: var(--on-accent); border: none; padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer;">
                   💾 บันทึก
                 </button>
-                <button class="btn-cancel-inline-edit" data-id="${t.id}" style="background: #fff; border: 1px solid #cbd5e1; color: #475569; padding: 7px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                <button class="btn-cancel-inline-edit" data-id="${t.id}" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-soft); padding: 7px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;">
                   ยกเลิก
                 </button>
               </div>
@@ -1841,108 +1841,108 @@ if (settingsBtn) {
     }).join('');
 
     const modalHtml = `
-      <div id="wealthport-asset-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-        <div style="background: #fff; border-radius: 16px; width: 680px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
+      <div id="wealthport-asset-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--overlay); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: var(--panel); border-radius: 16px; width: 680px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
           
-          <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="padding: 20px 24px; border-bottom: 1px solid var(--line-soft); display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">จัดการรายการ <span style="color: #0f172a;">${holding.symbol}</span></h2>
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--txt-strong);">จัดการรายการ <span style="color: var(--txt-strong);">${holding.symbol}</span></h2>
                 ${badgeHtml}
               </div>
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+              <div style="font-size: 13px; color: var(--txt-muted); margin-top: 4px;">
                 ถือครองปัจจุบัน: <strong>${holding.shares.toLocaleString('en-US', { maximumFractionDigits: 4 })} หน่วย</strong> · พอร์ต: <strong>${summary.portName || 'ทั่วไป'}</strong>
               </div>
             </div>
-            <button id="btn-close-modal-x" style="background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer; line-height: 1;">&times;</button>
+            <button id="btn-close-modal-x" style="background: none; border: none; font-size: 22px; color: var(--txt-faint); cursor: pointer; line-height: 1;">&times;</button>
           </div>
 
           <div style="padding: 20px 24px; flex: 1;">
             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-              <button class="modal-tab-btn" id="tab-btn-sell" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: none; background: #ef4444; color: #fff; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <button class="modal-tab-btn" id="tab-btn-sell" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: none; background: var(--down-3); color: var(--on-accent); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 🔴 บันทึกการขาย (Sell)
               </button>
-              <button class="modal-tab-btn" id="tab-btn-split" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <button class="modal-tab-btn" id="tab-btn-split" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--txt-soft); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 🔀 แตกพาร์ / รวมพาร์
               </button>
-              <button class="modal-tab-btn" id="tab-btn-dividend" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <button class="modal-tab-btn" id="tab-btn-dividend" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--txt-soft); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 🎁 บันทึกปันผล (Dividend)
               </button>
             </div>
 
-            <div id="panel-sell" style="display: block; background: #fffaf0; border: 1px solid #fbd38d; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-              <div style="color: #c05621; font-weight: 600; font-size: 13px; margin-bottom: 12px;">
+            <div id="panel-sell" style="display: block; background: var(--warn-soft-2); border: 1px solid var(--orange-line); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+              <div style="color: var(--orange); font-weight: 600; font-size: 13px; margin-bottom: 12px;">
                 บันทึกการขาย (ระบบจะคำนวณกำไร/ขาดทุนรับจริงทันที)
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <input type="number" id="sell-shares" value="${holding.shares}" max="${holding.shares}" step="any" placeholder="จำนวนหน่วย" style="flex: 1; min-width: 100px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
-                <input type="number" id="sell-price" value="${currentPrice.toFixed(isFund ? 4 : 2)}" step="any" placeholder="ราคาขายต่อหน่วย" style="flex: 1; min-width: 100px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
-                <input type="date" id="sell-date" value="${todayStr}" style="flex: 1; min-width: 120px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
-                <button id="btn-submit-sell" style="background: #ea580c; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                <input type="number" id="sell-shares" value="${holding.shares}" max="${holding.shares}" step="any" placeholder="จำนวนหน่วย" style="flex: 1; min-width: 100px; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
+                <input type="number" id="sell-price" value="${currentPrice.toFixed(isFund ? 4 : 2)}" step="any" placeholder="ราคาขายต่อหน่วย" style="flex: 1; min-width: 100px; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
+                <input type="date" id="sell-date" value="${todayStr}" style="flex: 1; min-width: 120px; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
+                <button id="btn-submit-sell" style="background: var(--orange); color: var(--on-accent); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; white-space: nowrap;">
                   ยืนยันขาย
                 </button>
               </div>
             </div>
 
-            <div id="panel-split" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-              <div style="color: #15803d; font-weight: 600; font-size: 13px; margin-bottom: 12px;">
+            <div id="panel-split" style="display: none; background: var(--up-soft-2); border: 1px solid var(--up-line); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+              <div style="color: var(--up-4); font-weight: 600; font-size: 13px; margin-bottom: 12px;">
                 อัตราส่วนแตกพาร์/รวมพาร์ (เช่น แตกพาร์ 10:1 ใส่ หุ้นเดิม 1 หุ้นใหม่ 10)
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <span style="font-size: 13px; color: #475569;">หุ้นเดิม:</span>
-                <input type="number" id="split-old" value="1" step="any" style="width: 70px; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                <span style="font-size: 13px; color: #475569;">กลายเป็นหุ้นใหม่:</span>
-                <input type="number" id="split-new" value="2" step="any" style="width: 70px; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                <button id="btn-submit-split" style="background: #16a34a; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                <span style="font-size: 13px; color: var(--txt-soft);">หุ้นเดิม:</span>
+                <input type="number" id="split-old" value="1" step="any" style="width: 70px; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 6px;">
+                <span style="font-size: 13px; color: var(--txt-soft);">กลายเป็นหุ้นใหม่:</span>
+                <input type="number" id="split-new" value="2" step="any" style="width: 70px; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 6px;">
+                <button id="btn-submit-split" style="background: var(--up); color: var(--on-accent); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; white-space: nowrap;">
                   คำนวณพาร์ใหม่
                 </button>
               </div>
             </div>
 
-            <div id="panel-dividend" style="display: none; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-              <div style="color: #7e22ce; font-weight: 600; font-size: 13px; margin-bottom: 12px;">
+            <div id="panel-dividend" style="display: none; background: var(--purple-soft); border: 1px solid var(--purple-line); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+              <div style="color: var(--purple-2); font-weight: 600; font-size: 13px; margin-bottom: 12px;">
                 บันทึกเงินปันผลที่ได้รับ (Net Dividend Received)
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <input type="number" id="div-amount" step="any" placeholder="ยอดเงินสุทธิ (${currencySign})" style="flex: 1; min-width: 110px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                <input type="date" id="div-date" value="${todayStr}" style="flex: 1; min-width: 120px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                <button id="btn-submit-dividend" style="background: #9333ea; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                <input type="number" id="div-amount" step="any" placeholder="ยอดเงินสุทธิ (${currencySign})" style="flex: 1; min-width: 110px; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px;">
+                <input type="date" id="div-date" value="${todayStr}" style="flex: 1; min-width: 120px; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 6px;">
+                <button id="btn-submit-dividend" style="background: var(--purple-2); color: var(--on-accent); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; white-space: nowrap;">
                   บันทึกปันผล
                 </button>
               </div>
             </div>
 
             <div>
-              <h4 style="margin: 0 0 10px 0; font-size: 13.5px; font-weight: 700; color: #334155;">
+              <h4 style="margin: 0 0 10px 0; font-size: 13.5px; font-weight: 700; color: var(--txt-mid);">
                 ประวัติไม้ที่เคยซื้อ (${buyTrades.length} รายการ):
               </h4>
               <div style="max-height: 220px; overflow-y: auto; padding-right: 4px;">
-                ${tradeRowsHtml || '<div style="text-align: center; color: #94a3b8; padding: 16px;">ไม่พบประวัติไม้ซื้อ</div>'}
+                ${tradeRowsHtml || '<div style="text-align: center; color: var(--txt-faint); padding: 16px;">ไม่พบประวัติไม้ซื้อ</div>'}
               </div>
             </div>
 
-            <div id="panel-add-new-lot" style="display: none; background: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 12px; margin-top: 14px;">
-              <div style="font-size: 13px; font-weight: 700; color: #065f46; margin-bottom: 8px;">
+            <div id="panel-add-new-lot" style="display: none; background: var(--up-soft); border: 1px dashed var(--up-3); border-radius: 8px; padding: 12px; margin-top: 14px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--up-6); margin-bottom: 8px;">
                 ➕ เพิ่มไม้ซื้อใหม่สำหรับ ${holding.symbol}
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <div style="flex: 1; min-width: 100px;">
-                  <label style="display: block; font-size: 11px; color: #047857; margin-bottom: 2px;">จำนวนหน่วย</label>
-                  <input type="number" id="new-lot-shares" placeholder="0.00" step="any" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #a7f3d0; border-radius: 6px; font-size: 13.5px;">
+                  <label style="display: block; font-size: 11px; color: var(--up-4); margin-bottom: 2px;">จำนวนหน่วย</label>
+                  <input type="number" id="new-lot-shares" placeholder="0.00" step="any" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--up-line-2); border-radius: 6px; font-size: 13.5px;">
                 </div>
                 <div style="flex: 1; min-width: 100px;">
-                  <label style="display: block; font-size: 11px; color: #047857; margin-bottom: 2px;">ราคาซื้อต่อหน่วย (${currencySign})</label>
-                  <input type="number" id="new-lot-price" value="${currentPrice.toFixed(isFund ? 4 : 2)}" step="any" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #a7f3d0; border-radius: 6px; font-size: 13.5px;">
+                  <label style="display: block; font-size: 11px; color: var(--up-4); margin-bottom: 2px;">ราคาซื้อต่อหน่วย (${currencySign})</label>
+                  <input type="number" id="new-lot-price" value="${currentPrice.toFixed(isFund ? 4 : 2)}" step="any" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--up-line-2); border-radius: 6px; font-size: 13.5px;">
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                  <label style="display: block; font-size: 11px; color: #047857; margin-bottom: 2px;">วันที่ซื้อ</label>
-                  <input type="date" id="new-lot-date" value="${todayStr}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #a7f3d0; border-radius: 6px; font-size: 13.5px;">
+                  <label style="display: block; font-size: 11px; color: var(--up-4); margin-bottom: 2px;">วันที่ซื้อ</label>
+                  <input type="date" id="new-lot-date" value="${todayStr}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--up-line-2); border-radius: 6px; font-size: 13.5px;">
                 </div>
                 <div style="display: flex; gap: 6px; margin-top: 18px;">
-                  <button id="btn-submit-new-lot" style="background: #059669; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;">
+                  <button id="btn-submit-new-lot" style="background: var(--up-2); color: var(--on-accent); border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;">
                     ยืนยันเพิ่มไม้
                   </button>
-                  <button id="btn-cancel-new-lot" style="background: #fff; border: 1px solid #cbd5e1; color: #475569; padding: 8px 12px; border-radius: 6px; font-size: 12.5px; cursor: pointer;">
+                  <button id="btn-cancel-new-lot" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-soft); padding: 8px 12px; border-radius: 6px; font-size: 12.5px; cursor: pointer;">
                     ยกเลิก
                   </button>
                 </div>
@@ -1951,11 +1951,11 @@ if (settingsBtn) {
 
           </div>
 
-          <div style="padding: 14px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
-            <button id="btn-toggle-add-lot" style="background: #10b981; color: #fff; border: none; padding: 9px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <div style="padding: 14px 24px; border-top: 1px solid var(--line-soft); display: flex; justify-content: space-between; align-items: center; background: var(--panel-flat); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+            <button id="btn-toggle-add-lot" style="background: var(--up-3); color: var(--on-accent); border: none; padding: 9px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
               + เพิ่มครั้งซื้อ
             </button>
-            <button id="btn-close-modal-bottom" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            <button id="btn-close-modal-bottom" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
               ปิดหน้าต่าง
             </button>
           </div>
@@ -1982,33 +1982,33 @@ if (settingsBtn) {
 
     const resetTabs = () => {
       [tabSell, tabSplit, tabDiv].forEach(b => {
-        b.style.background = '#fff';
-        b.style.color = '#475569';
-        b.style.border = '1px solid #e2e8f0';
+        b.style.background = 'var(--panel)';
+        b.style.color = 'var(--txt-soft)';
+        b.style.border = '1px solid var(--line)';
       });
       [pSell, pSplit, pDiv].forEach(p => p.style.display = 'none');
     };
 
     tabSell.onclick = () => {
       resetTabs();
-      tabSell.style.background = '#ef4444';
-      tabSell.style.color = '#fff';
+      tabSell.style.background = 'var(--solid-down)';
+      tabSell.style.color = 'var(--on-accent)';
       tabSell.style.border = 'none';
       pSell.style.display = 'block';
     };
 
     tabSplit.onclick = () => {
       resetTabs();
-      tabSplit.style.background = '#16a34a';
-      tabSplit.style.color = '#fff';
+      tabSplit.style.background = 'var(--solid-up)';
+      tabSplit.style.color = 'var(--on-accent)';
       tabSplit.style.border = 'none';
       pSplit.style.display = 'block';
     };
 
     tabDiv.onclick = () => {
       resetTabs();
-      tabDiv.style.background = '#9333ea';
-      tabDiv.style.color = '#fff';
+      tabDiv.style.background = 'var(--solid-purple)';
+      tabDiv.style.color = 'var(--on-accent)';
       tabDiv.style.border = 'none';
       pDiv.style.display = 'block';
     };
@@ -2235,22 +2235,22 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const target = parseFloat(p.targetAmount || 0);
 
       return `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;">
           <div>
-            <div style="font-weight: 700; font-size: 14px; color: #0f172a;">💼 ${pName}</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              เป้าหมายพอร์ต: <strong style="color: #059669;">฿${target.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+            <div style="font-weight: 700; font-size: 14px; color: var(--txt-strong);">💼 ${pName}</div>
+            <div style="font-size: 12px; color: var(--txt-muted); margin-top: 2px;">
+              เป้าหมายพอร์ต: <strong style="color: var(--up-2);">฿${target.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" onclick="window.WealthPortSettings.selectPortToEdit('${pId}', '${pName}', ${target})" style="padding: 6px 12px; font-size: 12px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;">✏️ แก้ไข</button>
-            <button type="button" onclick="window.WealthPortSettings.deletePort('${pId}', '${pName}')" style="padding: 6px 12px; font-size: 12px; border: 1px solid #fecaca; background: #fff; color: #dc2626; border-radius: 6px; cursor: pointer;">🗑️ ลบ</button>
+            <button type="button" onclick="window.WealthPortSettings.selectPortToEdit('${pId}', '${pName}', ${target})" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--line-2); background: var(--panel); border-radius: 6px; cursor: pointer;">✏️ แก้ไข</button>
+            <button type="button" onclick="window.WealthPortSettings.deletePort('${pId}', '${pName}')" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--down-line); background: var(--panel); color: var(--down); border-radius: 6px; cursor: pointer;">🗑️ ลบ</button>
           </div>
         </div>
       `;
     }).join('');
 
-    container.innerHTML = html || '<div style="text-align: center; color: #94a3b8; padding: 16px;">ยังไม่มีรายชื่อพอร์ต</div>';
+    container.innerHTML = html || '<div style="text-align: center; color: var(--txt-faint); padding: 16px;">ยังไม่มีรายชื่อพอร์ต</div>';
     const countLabel = document.getElementById('label-total-ports-count');
     if (countLabel) countLabel.textContent = `รายชื่อพอร์ตทั้งหมด (${data.portfolios.length} บัญชี):`;
   },
@@ -2271,70 +2271,70 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const target = parseFloat(p.targetAmount || p.cashBalance || 0);
 
       return `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;">
           <div>
-            <div style="font-weight: 700; font-size: 14px; color: #0f172a;">💼 ${pName}</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-              เป้าหมายพอร์ต: <strong style="color: #059669;">฿${target.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+            <div style="font-weight: 700; font-size: 14px; color: var(--txt-strong);">💼 ${pName}</div>
+            <div style="font-size: 12px; color: var(--txt-muted); margin-top: 2px;">
+              เป้าหมายพอร์ต: <strong style="color: var(--up-2);">฿${target.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" onclick="window.WealthPortSettings.selectPortToEdit('${pId}', '${pName}', ${target})" style="padding: 6px 12px; font-size: 12px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;">✏️ แก้ไข</button>
-            <button type="button" onclick="window.WealthPortSettings.deletePort('${pId}', '${pName}')" style="padding: 6px 12px; font-size: 12px; border: 1px solid #fecaca; background: #fff; color: #dc2626; border-radius: 6px; cursor: pointer;">🗑 ลบ</button>
+            <button type="button" onclick="window.WealthPortSettings.selectPortToEdit('${pId}', '${pName}', ${target})" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--line-2); background: var(--panel); border-radius: 6px; cursor: pointer;">✏️ แก้ไข</button>
+            <button type="button" onclick="window.WealthPortSettings.deletePort('${pId}', '${pName}')" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--down-line); background: var(--panel); color: var(--down); border-radius: 6px; cursor: pointer;">🗑 ลบ</button>
           </div>
         </div>
       `;
     }).join('');
 
     const modalHtml = `
-      <div id="wealthport-port-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background: #fff; border-radius: 16px; width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
-          <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">💼 จัดการพอร์ตและเป้าหมาย (Portfolio Settings)</h2>
-            <button type="button" onclick="window.WealthPortSettings.closeModal()" style="background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer;">&times;</button>
+      <div id="wealthport-port-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--overlay); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
+        <div style="background: var(--panel); border-radius: 16px; width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
+          <div style="padding: 20px 24px; border-bottom: 1px solid var(--line-soft); display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--txt-strong);">💼 จัดการพอร์ตและเป้าหมาย (Portfolio Settings)</h2>
+            <button type="button" onclick="window.WealthPortSettings.closeModal()" style="background: none; border: none; font-size: 24px; color: var(--txt-faint); cursor: pointer;">&times;</button>
           </div>
           <div style="padding: 20px 24px; flex: 1;">
             <input type="hidden" id="edit-port-id-hidden" value="${currPortId}">
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-              <div id="label-editing-port-title" style="font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px;">
+            <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+              <div id="label-editing-port-title" style="font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 10px;">
                 🎯 แก้ไขเป้าหมายและชื่อพอร์ต (${currPort.name || 'พอร์ต'})
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 140px;">
-                  <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">ชื่อพอร์ต</label>
-                  <input type="text" id="edit-port-name" value="${currPort.name || ''}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                  <label style="display: block; font-size: 11px; color: var(--txt-muted); margin-bottom: 2px;">ชื่อพอร์ต</label>
+                  <input type="text" id="edit-port-name" value="${currPort.name || ''}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px;">
                 </div>
                 <div style="flex: 1; min-width: 140px;">
-                  <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">เป้าหมายเงินลงทุน (บาท)</label>
-                  <input type="number" id="edit-port-target" value="${parseFloat(currPort.targetAmount || 0)}" step="any" placeholder="เช่น 1000000" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                  <label style="display: block; font-size: 11px; color: var(--txt-muted); margin-bottom: 2px;">เป้าหมายเงินลงทุน (บาท)</label>
+                  <input type="number" id="edit-port-target" value="${parseFloat(currPort.targetAmount || 0)}" step="any" placeholder="เช่น 1000000" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px;">
                 </div>
                 <div style="margin-top: 18px;">
-                  <button type="button" onclick="window.WealthPortSettings.saveCurrentPort()" style="background: #0284c7; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">บันทึกข้อมูลพอร์ต</button>
+                  <button type="button" onclick="window.WealthPortSettings.saveCurrentPort()" style="background: var(--accent); color: var(--on-accent); border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">บันทึกข้อมูลพอร์ต</button>
                 </div>
               </div>
             </div>
             <div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4 id="label-total-ports-count" style="margin: 0; font-size: 13.5px; font-weight: 700; color: #334155;">
+                <h4 id="label-total-ports-count" style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--txt-mid);">
                   รายชื่อพอร์ตทั้งหมด (${data.portfolios.length} บัญชี):
                 </h4>
-                <button type="button" onclick="window.WealthPortSettings.toggleAddPanel()" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">+ สร้างพอร์ตใหม่</button>
+                <button type="button" onclick="window.WealthPortSettings.toggleAddPanel()" style="background: var(--up-soft); color: var(--up-2); border: 1px solid var(--up-line-2); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">+ สร้างพอร์ตใหม่</button>
               </div>
-              <div id="panel-add-port" style="display: none; background: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 8px;">➕ เพิ่มพอร์ตการลงทุนใหม่</div>
+              <div id="panel-add-port" style="display: none; background: var(--up-soft); border: 1px dashed var(--up-3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--up-6); margin-bottom: 8px;">➕ เพิ่มพอร์ตการลงทุนใหม่</div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <input type="text" id="new-port-name" placeholder="ชื่อพอร์ต เช่น พอร์ตเกษียณ" style="flex: 1; min-width: 140px; padding: 7px 10px; border: 1px solid #a7f3d0; border-radius: 6px; font-size: 13px;">
-                  <input type="number" id="new-port-target" placeholder="เป้าหมายเงินลงทุน (บาท)" step="any" style="flex: 1; min-width: 140px; padding: 7px 10px; border: 1px solid #a7f3d0; border-radius: 6px; font-size: 13px;">
-                  <button type="button" onclick="window.WealthPortSettings.submitNewPort()" style="background: #059669; color: #fff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">สร้างพอร์ต</button>
+                  <input type="text" id="new-port-name" placeholder="ชื่อพอร์ต เช่น พอร์ตเกษียณ" style="flex: 1; min-width: 140px; padding: 7px 10px; border: 1px solid var(--up-line-2); border-radius: 6px; font-size: 13px;">
+                  <input type="number" id="new-port-target" placeholder="เป้าหมายเงินลงทุน (บาท)" step="any" style="flex: 1; min-width: 140px; padding: 7px 10px; border: 1px solid var(--up-line-2); border-radius: 6px; font-size: 13px;">
+                  <button type="button" onclick="window.WealthPortSettings.submitNewPort()" style="background: var(--up-2); color: var(--on-accent); border: none; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">สร้างพอร์ต</button>
                 </div>
               </div>
               <div id="portfolio-modal-list-container" style="max-height: 240px; overflow-y: auto;">
-                ${portRowsHtml || '<div style="text-align: center; color: #94a3b8; padding: 16px;">ยังไม่มีรายชื่อพอร์ต</div>'}
+                ${portRowsHtml || '<div style="text-align: center; color: var(--txt-faint); padding: 16px;">ยังไม่มีรายชื่อพอร์ต</div>'}
               </div>
             </div>
           </div>
-          <div style="padding: 14px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; background: #fafafa; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
-            <button type="button" onclick="window.WealthPortSettings.closeModal()" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">ปิดหน้าต่าง</button>
+          <div style="padding: 14px 24px; border-top: 1px solid var(--line-soft); display: flex; justify-content: flex-end; background: var(--panel-flat); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+            <button type="button" onclick="window.WealthPortSettings.closeModal()" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">ปิดหน้าต่าง</button>
           </div>
         </div>
       </div>
@@ -2377,37 +2377,37 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const pProgPct = pTarget > 0 ? Math.min(100, (pNetTotal / pTarget) * 100) : 0;
 
       return `
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
               <div>
-                <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #0f172a;">💼 ${p.name || 'พอร์ต'}</h3>
-                <span style="font-size: 12px; color: #64748b;">${pSummary.activeCount} สินทรัพย์</span>
+                <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--txt-strong);">💼 ${p.name || 'พอร์ต'}</h3>
+                <span style="font-size: 12px; color: var(--txt-muted);">${pSummary.activeCount} สินทรัพย์</span>
               </div>
-              <span style="background: ${pProfit ? '#ecfdf5' : '#fef2f2'}; color: ${pProfit ? '#16a34a' : '#dc2626'}; font-weight: 700; font-size: 12px; padding: 3px 8px; border-radius: 6px;">
+              <span style="background: ${pProfit ? 'var(--up-soft)' : 'var(--down-soft)'}; color: ${pProfit ? 'var(--up)' : 'var(--down)'}; font-weight: 700; font-size: 12px; padding: 3px 8px; border-radius: 6px;">
                 ${pProfit ? '+' : ''}${pSummary.returnPct.toFixed(2)}%
               </span>
             </div>
             <div style="margin-bottom: 14px;">
-              <div style="font-size: 11px; color: #64748b;">มูลค่าตลาดปัจจุบัน</div>
-              <div style="font-size: 20px; font-weight: 800; color: #0f172a;">${formatBaht(pNetTotal)}</div>
+              <div style="font-size: 11px; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
+              <div style="font-size: 20px; font-weight: 800; color: var(--txt-strong);">${formatBaht(pNetTotal)}</div>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+            <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
               <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px;">
-                <span style="color: #64748b;">🎯 เป้าหมาย: <strong>${pTarget > 0 ? formatBaht(pTarget) : 'ยังไม่ตั้งเป้า'}</strong></span>
-                <strong style="color: ${pProgPct >= 100 ? '#10b981' : '#0284c7'}; font-weight: 700;">${pTarget > 0 ? `${pProgPct.toFixed(1)}%` : '-'}</strong>
+                <span style="color: var(--txt-muted);">🎯 เป้าหมาย: <strong>${pTarget > 0 ? formatBaht(pTarget) : 'ยังไม่ตั้งเป้า'}</strong></span>
+                <strong style="color: ${pProgPct >= 100 ? 'var(--up-3)' : 'var(--accent)'}; font-weight: 700;">${pTarget > 0 ? `${pProgPct.toFixed(1)}%` : '-'}</strong>
               </div>
-              <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                <div style="width: ${pProgPct}%; height: 100%; background: ${pProgPct >= 100 ? '#10b981' : 'linear-gradient(90deg, #38bdf8, #0284c7)'}; border-radius: 3px;"></div>
+              <div style="height: 6px; background: var(--line); border-radius: 3px; overflow: hidden;">
+                <div style="width: ${pProgPct}%; height: 100%; background: ${pProgPct >= 100 ? 'var(--up-3)' : 'linear-gradient(90deg, var(--accent-bright), var(--accent))'}; border-radius: 3px;"></div>
               </div>
             </div>
-            <div style="border-top: 1px dashed #e2e8f0; padding-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b;">ต้นทุนรวม:</span><strong>${formatBaht(pSummary.totalCost)}</strong></div>
-              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b;">กำไร/ขาดทุน:</span><strong style="color: ${pProfit ? '#16a34a' : '#dc2626'};">${pProfit ? '+' : ''}${formatBaht(pSummary.unrealizedPL)}</strong></div>
+            <div style="border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--txt-muted);">ต้นทุนรวม:</span><strong>${formatBaht(pSummary.totalCost)}</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--txt-muted);">กำไร/ขาดทุน:</span><strong style="color: ${pProfit ? 'var(--up)' : 'var(--down)'};">${pProfit ? '+' : ''}${formatBaht(pSummary.unrealizedPL)}</strong></div>
             </div>
           </div>
           <div style="margin-top: 16px;">
-            <button class="btn-jump-to-port" data-id="${pId}" style="width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; padding: 7px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            <button class="btn-jump-to-port" data-id="${pId}" style="width: 100%; background: var(--panel-2); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
               🔍 ดูรายการถือครองพอร์ตนี้
             </button>
           </div>
@@ -2421,100 +2421,100 @@ this.openAssetModal(holding.symbol, { reopen: true });
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: nowrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">📁</div>
+            <div style="background: var(--accent-soft); color: var(--accent); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">📁</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH OVERVIEW</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH OVERVIEW</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">พอร์ตการลงทุนทั้งหมด</h1>
-                <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${sortedPortfolios.length} บัญชี · ${overallSummary.activeCount} สินทรัพย์</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">พอร์ตการลงทุนทั้งหมด</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${sortedPortfolios.length} บัญชี · ${overallSummary.activeCount} สินทรัพย์</span>
               </div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
-            <button class="btn-soft" id="btn-edit-port" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">🎯 จัดการพอร์ต & เป้าหมาย</button>
-            <button id="btn-export-json" class="btn-soft" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">📤 ส่งออก JSON</button>
-            <label class="btn-soft" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; margin: 0;">
+            <button class="btn-soft" id="btn-edit-port" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">🎯 จัดการพอร์ต & เป้าหมาย</button>
+            <button id="btn-export-json" class="btn-soft" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">📤 ส่งออก JSON</button>
+            <label class="btn-soft" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; margin: 0;">
               📥 นำเข้า JSON
               <input type="file" id="file-import-json-overview" accept=".json" style="display: none;">
             </label>
           </div>
         </div>
 
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
             <div>
-              <div style="font-size: 11.5px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">ความมั่งคั่งสุทธิรวม (Total Portfolio Net Worth)</div>
+              <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">ความมั่งคั่งสุทธิรวม (Total Portfolio Net Worth)</div>
               <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 32px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; line-height: 1.1;">${formatBaht(netTotal)}</span>
-                <span style="font-size: 15px; font-weight: 700; color: #64748b;">≈ ${formatUSD(totalNetWorthUSD)} USD</span>
+                <span style="font-size: 32px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.5px; line-height: 1.1;">${formatBaht(netTotal)}</span>
+                <span style="font-size: 15px; font-weight: 700; color: var(--txt-muted);">≈ ${formatUSD(totalNetWorthUSD)} USD</span>
               </div>
             </div>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <span style="background: ${isProfit ? '#ecfdf5' : '#fef2f2'}; color: ${isProfit ? '#16a34a' : '#dc2626'}; font-size: 12.5px; font-weight: 800; padding: 6px 12px; border-radius: 20px; border: 1px solid ${isProfit ? '#bbf7d0' : '#fecaca'};">
+              <span style="background: ${isProfit ? 'var(--up-soft)' : 'var(--down-soft)'}; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; font-size: 12.5px; font-weight: 800; padding: 6px 12px; border-radius: 20px; border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'};">
                 ${isProfit ? '▲ +' : '▼ '}${formatBaht(overallSummary.unrealizedPL)} (${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%)
               </span>
-              <span style="background: #f0fdf4; color: #15803d; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1px solid #dcfce7;">${stageBadge}</span>
+              <span style="background: var(--up-soft-2); color: var(--up-4); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--up-soft-3);">${stageBadge}</span>
             </div>
           </div>
-          <div style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 12px 16px;">
+          <div style="background: var(--panel-2); border: 1px solid var(--line-soft); border-radius: 12px; padding: 12px 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; flex-wrap: wrap; gap: 6px;">
-              <span style="color: #475569;">ความคืบหน้าสู่เป้าหมาย: <strong style="color: #0284c7; font-size: 13.5px; font-weight: 800;">${progressPct.toFixed(1)}%</strong> <span style="color: #94a3b8;">${remainingToTarget > 0 ? `(ขาดอีก ${formatBaht(remainingToTarget)})` : '<strong style="color:#16a34a;">(สำเร็จเป้าหมายแล้ว! 🎉)</strong>'}</span></span>
-              <span style="color: #64748b;">เป้าหมายรวม: <strong style="color: #0f172a; font-weight: 700;">${formatBaht(targetAmount)}</strong></span>
+              <span style="color: var(--txt-soft);">ความคืบหน้าสู่เป้าหมาย: <strong style="color: var(--accent); font-size: 13.5px; font-weight: 800;">${progressPct.toFixed(1)}%</strong> <span style="color: var(--txt-faint);">${remainingToTarget > 0 ? `(ขาดอีก ${formatBaht(remainingToTarget)})` : '<strong style="color:var(--up);">(สำเร็จเป้าหมายแล้ว! 🎉)</strong>'}</span></span>
+              <span style="color: var(--txt-muted);">เป้าหมายรวม: <strong style="color: var(--txt-strong); font-weight: 700;">${formatBaht(targetAmount)}</strong></span>
             </div>
-            <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-              <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, #0284c7, #10b981); border-radius: 4px;"></div>
+            <div style="height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;">
+              <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 4px;"></div>
             </div>
           </div>
         </div>
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 20px;">
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">💼 ต้นทุนรวมสะสม (Total Cost)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: #0f172a;">${formatBaht(overallSummary.totalCost)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">≈ ${formatUSD(overallSummary.totalCost / liveFx)} USD</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">💼 ต้นทุนรวมสะสม (Total Cost)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--txt-strong);">${formatBaht(overallSummary.totalCost)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">≈ ${formatUSD(overallSummary.totalCost / liveFx)} USD</div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">📈 กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isProfit ? '#16a34a' : '#dc2626'};">${isProfit ? '+' : ''}${formatBaht(overallSummary.unrealizedPL)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">สถานะ: <strong style="color: ${isProfit ? '#16a34a' : '#dc2626'};">${isProfit ? '🟢 พอร์ตเขียวสุขภาพดี' : '🔴 ติดดอยสะสม'}</strong></div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">📈 กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${formatBaht(overallSummary.unrealizedPL)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">สถานะ: <strong style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '🟢 พอร์ตเขียวสุขภาพดี' : '🔴 ติดดอยสะสม'}</strong></div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🎯 ผลตอบแทนรวม (%)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isProfit ? '#16a34a' : '#dc2626'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">กำไรรับจริงสะสม: <strong style="color: ${overallSummary.realizedPL >= 0 ? '#16a34a' : '#dc2626'};">${overallSummary.realizedPL >= 0 ? '+' : ''}${formatBaht(overallSummary.realizedPL)}</strong></div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🎯 ผลตอบแทนรวม (%)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">กำไรรับจริงสะสม: <strong style="color: ${overallSummary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${overallSummary.realizedPL >= 0 ? '+' : ''}${formatBaht(overallSummary.realizedPL)}</strong></div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">💵 เงินปันผลสะสมทั้งหมด</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: #16a34a;">+${formatBaht(overallSummary.dividends)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #16a34a; margin-top: 6px;">สร้างกระแสเงินสดต่อเนื่อง</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">💵 เงินปันผลสะสมทั้งหมด</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--up);">+${formatBaht(overallSummary.dividends)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--up); margin-top: 6px;">สร้างกระแสเงินสดต่อเนื่อง</div>
           </div>
         </div>
 
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
-          <div style="font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
-          <div style="height: 12px; border-radius: 6px; overflow: hidden; display: flex; background: #e2e8f0; margin-bottom: 12px;">
-            ${alloc.th > 0 ? `<div style="width: ${alloc.th}%; background: #6366f1;" title="หุ้นไทย: ${alloc.th.toFixed(1)}%"></div>` : ''}
-            ${alloc.fund > 0 ? `<div style="width: ${alloc.fund}%; background: #10b981;" title="กองทุนรวม: ${alloc.fund.toFixed(1)}%"></div>` : ''}
-            ${alloc.us > 0 ? `<div style="width: ${alloc.us}%; background: #0284c7;" title="หุ้นสหรัฐฯ: ${alloc.us.toFixed(1)}%"></div>` : ''}
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 10px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
+          <div style="height: 12px; border-radius: 6px; overflow: hidden; display: flex; background: var(--line); margin-bottom: 12px;">
+            ${alloc.th > 0 ? `<div style="width: ${alloc.th}%; background: var(--indigo);" title="หุ้นไทย: ${alloc.th.toFixed(1)}%"></div>` : ''}
+            ${alloc.fund > 0 ? `<div style="width: ${alloc.fund}%; background: var(--up-3);" title="กองทุนรวม: ${alloc.fund.toFixed(1)}%"></div>` : ''}
+            ${alloc.us > 0 ? `<div style="width: ${alloc.us}%; background: var(--accent);" title="หุ้นสหรัฐฯ: ${alloc.us.toFixed(1)}%"></div>` : ''}
           </div>
           <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 12px;">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 9px; height: 9px; background: #6366f1; display: inline-block; border-radius: 2px;"></span>
+              <span style="width: 9px; height: 9px; background: var(--indigo); display: inline-block; border-radius: 2px;"></span>
               <span>🇹🇭 หุ้นไทย & REITs: <strong>${alloc.th.toFixed(1)}%</strong> (${formatBaht(alloc.valTH)})</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 9px; height: 9px; background: #10b981; display: inline-block; border-radius: 2px;"></span>
+              <span style="width: 9px; height: 9px; background: var(--up-3); display: inline-block; border-radius: 2px;"></span>
               <span>🌱 กองทุนรวม (Fund): <strong>${alloc.fund.toFixed(1)}%</strong> (${formatBaht(alloc.valFund)})</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 9px; height: 9px; background: #0284c7; display: inline-block; border-radius: 2px;"></span>
+              <span style="width: 9px; height: 9px; background: var(--accent); display: inline-block; border-radius: 2px;"></span>
               <span>🇺🇸 หุ้นสหรัฐฯ (US): <strong>${alloc.us.toFixed(1)}%</strong> (${formatBaht(alloc.valUS)})</span>
             </div>
           </div>
         </div>
 
         <div>
-          <h3 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b;">เปรียบเทียบผลการดำเนินงานรายพอร์ต (${sortedPortfolios.length} บัญชี):</h3>
+          <h3 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: var(--txt);">เปรียบเทียบผลการดำเนินงานรายพอร์ต (${sortedPortfolios.length} บัญชี):</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
             ${portCardsHtml}
           </div>
@@ -2585,11 +2585,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const pageStart = (this.holdingsPage - 1) * pageSize;
     const pageHoldings = filteredHoldings.slice(pageStart, pageStart + pageSize);
 
-    const pgBtn = (act, glyph, enabled) => `<button class="holdings-pg-btn" data-pg="${act}" ${enabled ? '' : 'disabled'} style="min-width: 30px; height: 28px; border: 1px solid ${enabled ? '#cbd5e1' : '#e2e8f0'}; border-radius: 7px; background: #fff; color: ${enabled ? '#475569' : '#cbd5e1'}; font-size: 13px; line-height: 1; cursor: ${enabled ? 'pointer' : 'default'};">${glyph}</button>`;
+    const pgBtn = (act, glyph, enabled) => `<button class="holdings-pg-btn" data-pg="${act}" ${enabled ? '' : 'disabled'} style="min-width: 30px; height: 28px; border: 1px solid ${enabled ? 'var(--line-2)' : 'var(--line)'}; border-radius: 7px; background: var(--panel); color: ${enabled ? 'var(--txt-soft)' : 'var(--txt-faint)'}; font-size: 13px; line-height: 1; cursor: ${enabled ? 'pointer' : 'default'};">${glyph}</button>`;
     const pagerHtml = filteredHoldings.length ? `
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: #475569;">
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: var(--txt-soft);">
             <label style="display: flex; align-items: center; gap: 5px;">แสดงต่อหน้า
-              <select id="select-holdings-size" style="padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; font-size: 12.5px; color: #0f172a; cursor: pointer;">
+              <select id="select-holdings-size" style="padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel); font: inherit; font-size: 12.5px; color: var(--txt-strong); cursor: pointer;">
                 ${[20, 50, 100, 0].map(v => `<option value="${v}" ${this.holdingsSize === v ? 'selected' : ''}>${v || 'ทั้งหมด'}</option>`).join('')}
               </select>
             </label>
@@ -2601,8 +2601,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </div>` : '';
 
     const getSortArrow = (col) => {
-      if (this.sortColumn !== col) return '<span style="color:#94a3b8; font-size:10px; margin-left:4px;">↕</span>';
-      return this.sortDirection === 'asc' ? '<span style="color:#0284c7; font-weight:bold; font-size:11px; margin-left:4px;">▲</span>' : '<span style="color:#0284c7; font-weight:bold; font-size:11px; margin-left:4px;">▼</span>';
+      if (this.sortColumn !== col) return '<span style="color:var(--txt-faint); font-size:10px; margin-left:4px;">↕</span>';
+      return this.sortDirection === 'asc' ? '<span style="color:var(--accent); font-weight:bold; font-size:11px; margin-left:4px;">▲</span>' : '<span style="color:var(--accent); font-weight:bold; font-size:11px; margin-left:4px;">▼</span>';
     };
 
     const tableRows = pageHoldings.map((h, i) => {
@@ -2610,7 +2610,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const isFund = h.assetType === 'mutual-fund';
       const plValue = isForeign ? (h.unrealizedUSD || 0) : (h.unrealizedPL || 0);
       const isPositive = plValue >= 0;
-      const plTextColor = isPositive ? '#16a34a' : '#dc2626';
+      const plTextColor = isPositive ? 'var(--up)' : 'var(--down)';
 
       const formatNavOrPrice = (val) => {
         if (isFund) return '฿' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
@@ -2619,8 +2619,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
       const avgDisplay = isForeign ? formatUSD(h.avgCostUSD) : formatNavOrPrice(h.avgCost);
       const marketPriceDisplay = isForeign ? formatUSD(h.priceUSD) : formatNavOrPrice(h.marketPrice);
-      const totalCostDisplay = isForeign ? `<div>${formatUSD(h.costUSD)}</div><div style="font-size:11px;color:#94a3b8;">≈ ${formatBaht(h.totalCost)}</div>` : formatBaht(h.totalCost);
-      const marketValDisplay = isForeign ? `<div>${formatUSD(h.marketUSD)}</div><div style="font-size:11px;color:#94a3b8;">≈ ${formatBaht(h.marketValue)}</div>` : formatBaht(h.marketValue);
+      const totalCostDisplay = isForeign ? `<div>${formatUSD(h.costUSD)}</div><div style="font-size:11px;color:var(--txt-faint);">≈ ${formatBaht(h.totalCost)}</div>` : formatBaht(h.totalCost);
+      const marketValDisplay = isForeign ? `<div>${formatUSD(h.marketUSD)}</div><div style="font-size:11px;color:var(--txt-faint);">≈ ${formatBaht(h.marketValue)}</div>` : formatBaht(h.marketValue);
       // จำนวนเงินที่มีเครื่องหมาย: ใส่ - นำหน้าสัญลักษณ์เงิน (−$1.78) ไม่ใช่ตามหลัง (แบบ $-1.78)
       const signedMoney = (v, usd) => `${v < 0 ? '−' : '+'}${usd ? '$' : '฿'}${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       const plValDisplay = signedMoney(isForeign ? (h.unrealizedUSD || 0) : h.unrealizedPL, isForeign);
@@ -2628,35 +2628,35 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const dayPct = h.dayChangePct;
       const dayAmt = isForeign ? h.dayChangeUSD : h.dayChangeTHB;
       const hasDay = dayPct != null && dayAmt != null;
-      const dayTextColor = hasDay ? (dayPct >= 0 ? '#16a34a' : '#dc2626') : '#94a3b8';
+      const dayTextColor = hasDay ? (dayPct >= 0 ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
       const dayPctDisplay = hasDay ? `${dayPct >= 0 ? '+' : '−'}${Math.abs(dayPct).toFixed(2)}%` : '—';
       const dayAmtDisplay = hasDay ? signedMoney(dayAmt, isForeign) : '—';
 
       const quoteStatusMeta = {
-        live: { icon: '🟢', bg: '#ecfdf5', color: '#059669', label: h.quoteSource || 'ราคาสด' },
-        stale: { icon: '🟡', bg: '#fffbeb', color: '#d97706', label: 'ข้อมูลเก่า' + (h.quoteTime ? ` (${h.quoteTime})` : '') },
-        estimate: { icon: '🟠', bg: '#fff7ed', color: '#c2410c', label: 'ราคาประมาณการ' },
-        missing: { icon: '🔴', bg: '#fef2f2', color: '#dc2626', label: 'ไม่มีราคา (ใช้ทุนเฉลี่ย)' }
+        live: { icon: '🟢', bg: 'var(--up-soft)', color: 'var(--up-2)', label: h.quoteSource || 'ราคาสด' },
+        stale: { icon: '🟡', bg: 'var(--warn-soft)', color: 'var(--warn)', label: 'ข้อมูลเก่า' + (h.quoteTime ? ` (${h.quoteTime})` : '') },
+        estimate: { icon: '🟠', bg: 'var(--warn-soft-2)', color: 'var(--orange)', label: 'ราคาประมาณการ' },
+        missing: { icon: '🔴', bg: 'var(--down-soft)', color: 'var(--down)', label: 'ไม่มีราคา (ใช้ทุนเฉลี่ย)' }
       };
       const qs = quoteStatusMeta[h.quoteStatus] || quoteStatusMeta.missing;
       const isLive = h.quoteStatus === 'live';
 
       const sourceBadgeHtml = `<span style="background:${qs.bg}; color:${qs.color}; padding:1px 6px; border-radius:4px; font-weight:600; font-size:11px;">${qs.icon} ${qs.label}</span>` +
-        (isLive && h.quoteTime ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${h.quoteTime}</div>` : '');
+        (isLive && h.quoteTime ? `<div style="font-size:10px;color:var(--txt-faint);margin-top:2px;">${h.quoteTime}</div>` : '');
 
       // ชื่อเต็มของหลักทรัพย์แสดงเป็นบรรทัดรองใต้สัญลักษณ์
       const fullName = String(h.name || '').trim();
       const symUpper = String(h.symbol || '').trim().toUpperCase();
       const showsName = !!fullName && fullName.toUpperCase() !== symUpper && fullName.toUpperCase() !== symUpper.replace(/\.BK$/i, '');
       const nameHtml = showsName
-        ? `<div style="font-size:11px;color:#64748b;margin-top:3px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${this.esc(fullName)}">${this.esc(fullName)}</div>`
+        ? `<div style="font-size:11px;color:var(--txt-muted);margin-top:3px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${this.esc(fullName)}">${this.esc(fullName)}</div>`
         : '';
 
       return `
         <tr>
-          <td style="font-weight: 700; color: #334155; padding: 10px 8px;">${pageStart + i + 1}</td>
+          <td style="font-weight: 700; color: var(--txt-mid); padding: 10px 8px;">${pageStart + i + 1}</td>
           <td style="padding: 10px 8px;">
-            <button class="jump-to-chart-btn" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 13px; color: #0284c7; cursor: pointer;">
+            <button class="jump-to-chart-btn" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: var(--inset); border: 1px solid var(--line-2); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 13px; color: var(--accent); cursor: pointer;">
               📈 ${h.symbol}
             </button>${nameHtml}
           </td>
@@ -2673,8 +2673,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <td class="text-right" style="color: ${dayTextColor}; font-weight: 700; padding: 10px 8px;">${dayAmtDisplay}</td>
           <td class="text-right" style="color: ${plTextColor}; font-weight: 700; padding: 10px 8px;">${plValDisplay}</td>
           <td class="text-center" style="white-space: nowrap; padding: 10px 8px;">
-            <button class="btn-action-refresh" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: ${isLive ? '#0284c7' : '#dc2626'}; color: #fff; border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer; margin-right: 4px; font-size: 12px;" title="${isLive ? 'อัปเดตราคาล่าสุด' : 'ไม่สามารถดึงราคาล่าสุดได้ (คลิกเพื่อลองใหม่)'}">🔄</button>
-            <button class="btn-action-settings" data-symbol="${h.symbol}" style="background: #334155; color: #fff; border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px;">⚙️</button>
+            <button class="btn-action-refresh" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: ${isLive ? 'var(--accent)' : 'var(--down)'}; color: var(--on-accent); border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer; margin-right: 4px; font-size: 12px;" title="${isLive ? 'อัปเดตราคาล่าสุด' : 'ไม่สามารถดึงราคาล่าสุดได้ (คลิกเพื่อลองใหม่)'}">🔄</button>
+            <button class="btn-action-settings" data-symbol="${h.symbol}" style="background: var(--solid-slate); color: var(--on-ink); border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px;">⚙️</button>
           </td>
         </tr>
       `;
@@ -2700,32 +2700,32 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <div style="margin-bottom: 14px;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <span style="font-size: 18px;">📊</span>
-            <span style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">HOLDINGS MANAGEMENT</span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); letter-spacing: 0.5px;">HOLDINGS MANAGEMENT</span>
           </div>
           <div style="display: flex; align-items: baseline; gap: 8px;">
-            <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: #0f172a;">${currentName}</h1>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: var(--txt-strong);">${currentName}</h1>
           </div>
-          <div style="font-size: 13px; color: #64748b; margin-top: 2px;">${summary.activeCount} สินทรัพย์</div>
+          <div style="font-size: 13px; color: var(--txt-muted); margin-top: 2px;">${summary.activeCount} สินทรัพย์</div>
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 18px;">
-          <select id="portfolio-select" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; font-weight: 600; cursor: pointer;">
+          <select id="portfolio-select" style="padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; background: var(--panel); font-weight: 600; cursor: pointer;">
             ${portOptions}
           </select>
           ${(summary.isForeignPort || currentName.toUpperCase().includes('DIME') || currentName.toUpperCase().includes('US') || currentName.toUpperCase().includes('OFFSHORE')) ? `
-            <span id="main-fx-badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 6px; padding: 6px 12px; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+            <span id="main-fx-badge" style="background: var(--up-soft); color: var(--up-4); border: 1px solid var(--up-line-2); border-radius: 6px; padding: 6px 12px; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
               ${this.formatFxLabel(summary.liveFxRate || 33.49)}
             </span>
           ` : ''}
 
-          <button id="btn-open-buy-modal" style="background: #059669; color: #fff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">➕ ซื้อสินทรัพย์เพิ่ม</button>
-          <button id="btn-sync-quotes" style="background: #fff; border: 1px solid #38bdf8; color: #0284c7; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 อัปเดตราคาตลาด</button>
+          <button id="btn-open-buy-modal" style="background: var(--up-2); color: var(--on-accent); border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">➕ ซื้อสินทรัพย์เพิ่ม</button>
+          <button id="btn-sync-quotes" style="background: var(--panel); border: 1px solid var(--accent-bright); color: var(--accent); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 อัปเดตราคาตลาด</button>
           ${this.lastSyncFailures.length > 0 ? `
-            <button id="btn-retry-failed-quotes" style="background: #fffbeb; border: 1px solid #fbbf24; color: #b45309; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔁 ลองใหม่ ${this.lastSyncFailures.length} รายการที่ดึงไม่ได้</button>
+            <button id="btn-retry-failed-quotes" style="background: var(--warn-soft); border: 1px solid var(--warn-4); color: var(--warn-3); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔁 ลองใหม่ ${this.lastSyncFailures.length} รายการที่ดึงไม่ได้</button>
           ` : ''}
-          <button id="btn-edit-port" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">✏️ แก้ไขพอร์ต</button>
-          <button id="btn-export-json" style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">📤 ส่งออก JSON</button>
-          <label style="background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin: 0;">
+          <button id="btn-edit-port" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">✏️ แก้ไขพอร์ต</button>
+          <button id="btn-export-json" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">📤 ส่งออก JSON</button>
+          <label style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin: 0;">
             📥 นำเข้า JSON
             <input type="file" id="file-import-json" accept=".json" style="display: none;">
           </label>
@@ -2734,48 +2734,48 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <!-- 4 กล่องสรุปสถิติ (ตรงตามรูป 1 เป๊ะ สำหรับพอร์ตต่างประเทศ) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 22px;">
           <!-- กล่องที่ 1: ต้นทุนรวม -->
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 6px;">ต้นทุนรวม (Cost Basis)</div>
-            <div style="font-size: 26px; font-weight: 900; color: #0f172a; margin-bottom: 12px;">${costBig}</div>
-            <div style="border-top: 1px dashed #e2e8f0; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="color: #64748b;">${costSub}</span>
-              <strong style="color: #059669;">${rightCostSub}</strong>
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;">
+            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">ต้นทุนรวม (Cost Basis)</div>
+            <div style="font-size: 26px; font-weight: 900; color: var(--txt-strong); margin-bottom: 12px;">${costBig}</div>
+            <div style="border-top: 1px dashed var(--line); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="color: var(--txt-muted);">${costSub}</span>
+              <strong style="color: var(--up-2);">${rightCostSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 2: มูลค่าตลาด -->
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 6px;">มูลค่าตลาด (Market Value)</div>
-            <div style="font-size: 26px; font-weight: 900; color: #0f172a; margin-bottom: 12px;">${mktBig}</div>
-            <div style="border-top: 1px dashed #e2e8f0; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="color: #64748b;">${mktSub}</span>
-              <strong style="color: #0f172a;">${rightMktSub}</strong>
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;">
+            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">มูลค่าตลาด (Market Value)</div>
+            <div style="font-size: 26px; font-weight: 900; color: var(--txt-strong); margin-bottom: 12px;">${mktBig}</div>
+            <div style="border-top: 1px dashed var(--line); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="color: var(--txt-muted);">${mktSub}</span>
+              <strong style="color: var(--txt-strong);">${rightMktSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 3: กำไร / ขาดทุนที่ยังไม่เกิดขึ้น -->
-          <div style="background: #fff; border: 1px solid ${isProfit ? '#bbf7d0' : '#fecaca'}; border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 6px;">กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
-            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? '#16a34a' : '#dc2626'}; margin-bottom: 12px;">${unplBig}</div>
-            <div style="border-top: 1px dashed ${isProfit ? '#bbf7d0' : '#fecaca'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="color: #64748b;">${unplSub}</span>
-              <strong style="color: #16a34a;">${rightUnplSub}</strong>
+          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 18px 20px;">
+            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
+            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 12px;">${unplBig}</div>
+            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="color: var(--txt-muted);">${unplSub}</span>
+              <strong style="color: var(--up);">${rightUnplSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 4: ผลตอบแทนรวม (%) -->
-          <div style="background: #fff; border: 1px solid ${isProfit ? '#bbf7d0' : '#fecaca'}; border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 6px;">ผลตอบแทนรวม (%)</div>
-            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? '#16a34a' : '#dc2626'}; margin-bottom: 12px;">${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%</div>
-            <div style="border-top: 1px dashed ${isProfit ? '#bbf7d0' : '#fecaca'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="color: #64748b;">กำไรรับจริงสะสม</span>
-              <strong style="color: ${summary.realizedPL >= 0 ? '#16a34a' : '#dc2626'};">${summary.realizedPL >= 0 ? '+' : ''}${formatBaht(summary.realizedPL)}</strong>
+          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 18px 20px;">
+            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">ผลตอบแทนรวม (%)</div>
+            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 12px;">${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%</div>
+            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="color: var(--txt-muted);">กำไรรับจริงสะสม</span>
+              <strong style="color: ${summary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${summary.realizedPL >= 0 ? '+' : ''}${formatBaht(summary.realizedPL)}</strong>
             </div>
           </div>
         </div>
 
         ${(summary.missingQuotes || summary.estimateQuotes || summary.staleQuotes) ? `
-          <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; color:#9a3412; line-height:1.7;">
+          <div style="background:var(--warn-soft-2); border:1px solid var(--orange-line); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:12.5px; color:var(--orange); line-height:1.7;">
             ⚠️ ราคาบางรายการยังไม่ใช่ราคาสด:
             ${summary.missingQuotes ? `<strong>${summary.missingQuotes} รายการไม่มีราคา</strong> (มูลค่าคำนวณจากทุนเฉลี่ย) · ` : ''}
             ${summary.estimateQuotes ? `<strong>${summary.estimateQuotes} รายการเป็นราคาประมาณการ</strong> · ` : ''}
@@ -2786,22 +2786,22 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-            <div style="font-size: 14.5px; font-weight: 800; color: #0f172a;">รายการสินทรัพย์ที่ถือครอง (${filteredHoldings.length} จาก ${summary.activeCount} รายการ)</div>
+            <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">รายการสินทรัพย์ที่ถือครอง (${filteredHoldings.length} จาก ${summary.activeCount} รายการ)</div>
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-              <input type="text" id="input-holdings-search" value="${this.searchQuery}" placeholder="🔍 ค้นหา Symbol..." style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; width: 130px;">
+              <input type="text" id="input-holdings-search" value="${this.searchQuery}" placeholder="🔍 ค้นหา Symbol..." style="padding: 5px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px; width: 130px;">
               <div style="display: flex; gap: 3px;">
-                <button class="filter-tab-btn ${this.filterCategory === 'all' ? 'active' : ''}" data-cat="all" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; cursor: pointer;">ทั้งหมด</button>
-                <button class="filter-tab-btn ${this.filterCategory === 'profit' ? 'active' : ''}" data-cat="profit" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #16a34a; cursor: pointer;">🟢 กำไร</button>
-                <button class="filter-tab-btn ${this.filterCategory === 'loss' ? 'active' : ''}" data-cat="loss" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #dc2626; cursor: pointer;">🔴 ขาดทุน</button>
-                <button class="filter-tab-btn ${this.filterCategory === 'fund' ? 'active' : ''}" data-cat="fund" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; cursor: pointer;">🌱 กองทุน</button>
-                <button class="filter-tab-btn ${this.filterCategory === 'stock' ? 'active' : ''}" data-cat="stock" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; cursor: pointer;">📈 หุ้น</button>
+                <button class="filter-tab-btn ${this.filterCategory === 'all' ? 'active' : ''}" data-cat="all" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--panel); cursor: pointer;">ทั้งหมด</button>
+                <button class="filter-tab-btn ${this.filterCategory === 'profit' ? 'active' : ''}" data-cat="profit" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--panel); color: var(--up); cursor: pointer;">🟢 กำไร</button>
+                <button class="filter-tab-btn ${this.filterCategory === 'loss' ? 'active' : ''}" data-cat="loss" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--panel); color: var(--down); cursor: pointer;">🔴 ขาดทุน</button>
+                <button class="filter-tab-btn ${this.filterCategory === 'fund' ? 'active' : ''}" data-cat="fund" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--panel); cursor: pointer;">🌱 กองทุน</button>
+                <button class="filter-tab-btn ${this.filterCategory === 'stock' ? 'active' : ''}" data-cat="stock" style="padding: 4px 8px; font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--panel); cursor: pointer;">📈 หุ้น</button>
               </div>
             </div>
           </div>
           <div style="overflow-x: auto;">
             <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
-                <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 12px;">
+                <tr style="border-bottom: 1px solid var(--line); color: var(--txt-muted); font-size: 12px;">
                   <th style="padding: 8px 10px; text-align: left; width: 40px;">#</th>
                   <th class="sortable-th" data-col="symbol" style="padding: 8px 10px; text-align: left; cursor: pointer;">SYMBOL ${getSortArrow('symbol')}</th>
                   <th class="text-right sortable-th" data-col="shares" style="padding: 8px 10px; cursor: pointer;">จำนวน ${getSortArrow('shares')}</th>
@@ -2817,7 +2817,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
                 </tr>
               </thead>
               <tbody>
-                ${tableRows || '<tr><td colspan="12" style="text-align:center; padding: 24px; color: #94a3b8;">ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</td></tr>'}
+                ${tableRows || '<tr><td colspan="12" style="text-align:center; padding: 24px; color: var(--txt-faint);">ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -2897,15 +2897,15 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const qtyFmt = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 4 });
       const legRows = legs.map(l => `
         <tr>
-          <td style="padding: 3px 8px; color: #475569;">${l.date || '-'}</td>
+          <td style="padding: 3px 8px; color: var(--txt-soft);">${l.date || '-'}</td>
           <td class="text-right" style="padding: 3px 8px;">${qtyFmt(l.qty)}</td>
           <td class="text-right" style="padding: 3px 8px;">${formatBaht(l.price)}</td>
           <td class="text-right" style="padding: 3px 8px;">${formatBaht(l.cost)}</td>
         </tr>`).join('');
       const divRows = divs.map(d => `
         <tr>
-          <td style="padding: 3px 8px; color: #475569;">${d.date || '-'}</td>
-          <td class="text-right" style="padding: 3px 8px; color: #16a34a;">+${formatBaht(d.amount)}</td>
+          <td style="padding: 3px 8px; color: var(--txt-soft);">${d.date || '-'}</td>
+          <td class="text-right" style="padding: 3px 8px; color: var(--up);">+${formatBaht(d.amount)}</td>
         </tr>`).join('');
       const totalReturn = (c.totalReturn !== undefined) ? c.totalReturn : c.realizedGain;
       const totalReturnPct = (c.totalReturnPct !== undefined) ? c.totalReturnPct : c.gainPct;
@@ -2913,52 +2913,52 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
       const summaryLine = (label, value, color) => `
         <div style="display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; font-size: 12px;">
-          <span style="color: #64748b;">${label}</span>
-          <strong style="color: ${color || '#0f172a'}; font-variant-numeric: tabular-nums;">${value}</strong>
+          <span style="color: var(--txt-muted);">${label}</span>
+          <strong style="color: ${color || 'var(--txt-strong)'}; font-variant-numeric: tabular-nums;">${value}</strong>
         </div>`;
 
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
+        <tr style="border-bottom: 1px solid var(--line-soft);">
           <td style="padding: 10px 12px; white-space: nowrap; font-variant-numeric: tabular-nums;">${c.date || '-'}</td>
           <td style="padding: 10px 12px;">
-            <strong style="color: #0f172a;">${c.symbol}</strong>
-            <button type="button" class="btn-perf-detail" data-target="perf-detail-${idx}" style="margin-left: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #0369a1; border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">▸ รายละเอียด</button>
+            <strong style="color: var(--txt-strong);">${c.symbol}</strong>
+            <button type="button" class="btn-perf-detail" data-target="perf-detail-${idx}" style="margin-left: 8px; background: var(--inset); border: 1px solid var(--line-2); color: var(--accent-3); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">▸ รายละเอียด</button>
           </td>
-          <td style="padding: 10px 12px; color: #475569;">${c.portName}</td>
+          <td style="padding: 10px 12px; color: var(--txt-soft);">${c.portName}</td>
           <td class="text-right" style="padding: 10px 12px; font-variant-numeric: tabular-nums;">${c.shares.toLocaleString('en-US', { maximumFractionDigits: 4 })}</td>
           <td class="text-right" style="padding: 10px 12px; font-variant-numeric: tabular-nums;">${formatBaht(c.costBasis)}</td>
           <td class="text-right" style="padding: 10px 12px; font-variant-numeric: tabular-nums;">${formatBaht(c.sellValue)}</td>
-          <td class="text-right" style="padding: 10px 12px; color: ${isPos ? '#16a34a' : '#dc2626'}; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums;">
+          <td class="text-right" style="padding: 10px 12px; color: ${isPos ? 'var(--up)' : 'var(--down)'}; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums;">
             ${isPos ? '+' : ''}${formatBaht(c.realizedGain)} (${isPos ? '+' : ''}${c.gainPct.toFixed(2)}%)
           </td>
           <td class="text-center" style="padding: 10px 12px; white-space: nowrap;">
-            <button class="btn-delete-sell-order" data-id="${c.id}" data-symbol="${c.symbol}" title="ลบรายการขายนี้ (คืนหุ้นกลับเข้าพอร์ต)" style="background: none; border: 1px solid #fecaca; color: #dc2626; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">🗑️ ลบ</button>
+            <button class="btn-delete-sell-order" data-id="${c.id}" data-symbol="${c.symbol}" title="ลบรายการขายนี้ (คืนหุ้นกลับเข้าพอร์ต)" style="background: none; border: 1px solid var(--down-line); color: var(--down); border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">🗑️ ลบ</button>
           </td>
         </tr>
-        <tr id="perf-detail-${idx}" style="display: none; background: #f8fafc;">
+        <tr id="perf-detail-${idx}" style="display: none; background: var(--panel-2);">
           <td colspan="8" style="padding: 12px 16px 16px 16px;">
             <div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; text-align: left;">
               <div style="min-width: 300px; flex: 1;">
-                <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">🧾 ไม้ซื้อที่เป็นฐานต้นทุนถัวเฉลี่ย</div>
+                <div style="font-size: 11.5px; font-weight: 800; color: var(--txt-strong); margin-bottom: 4px;">🧾 ไม้ซื้อที่เป็นฐานต้นทุนถัวเฉลี่ย</div>
                 <table style="width: 100%; border-collapse: collapse;">
-                  <thead><tr style="color: #64748b; font-size: 11px; text-align: left;"><th style="padding: 2px 8px;">วันที่ซื้อ</th><th class="text-right" style="padding: 2px 8px;">จำนวน</th><th class="text-right" style="padding: 2px 8px;">ราคา/หุ้น</th><th class="text-right" style="padding: 2px 8px;">ต้นทุน</th></tr></thead>
-                  <tbody style="font-size: 12px;">${legRows || '<tr><td colspan="4" style="padding: 3px 8px; color: #94a3b8;">ไม่มีประวัติไม้ซื้อในระบบ (รายการนำเข้าที่ไม่มีวันซื้อ)</td></tr>'}</tbody>
+                  <thead><tr style="color: var(--txt-muted); font-size: 11px; text-align: left;"><th style="padding: 2px 8px;">วันที่ซื้อ</th><th class="text-right" style="padding: 2px 8px;">จำนวน</th><th class="text-right" style="padding: 2px 8px;">ราคา/หุ้น</th><th class="text-right" style="padding: 2px 8px;">ต้นทุน</th></tr></thead>
+                  <tbody style="font-size: 12px;">${legRows || '<tr><td colspan="4" style="padding: 3px 8px; color: var(--txt-faint);">ไม่มีประวัติไม้ซื้อในระบบ (รายการนำเข้าที่ไม่มีวันซื้อ)</td></tr>'}</tbody>
                 </table>
               </div>
               <div style="min-width: 200px;">
-                <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">💵 เงินปันผลระหว่างถือ</div>
+                <div style="font-size: 11.5px; font-weight: 800; color: var(--txt-strong); margin-bottom: 4px;">💵 เงินปันผลระหว่างถือ</div>
                 <table style="width: 100%; border-collapse: collapse;">
-                  <thead><tr style="color: #64748b; font-size: 11px; text-align: left;"><th style="padding: 2px 8px;">วันที่รับ</th><th class="text-right" style="padding: 2px 8px;">จำนวนรับสุทธิ</th></tr></thead>
-                  <tbody style="font-size: 12px;">${divRows || '<tr><td colspan="2" style="padding: 3px 8px; color: #94a3b8;">ยังไม่มีการบันทึกเงินปันผล</td></tr>'}</tbody>
+                  <thead><tr style="color: var(--txt-muted); font-size: 11px; text-align: left;"><th style="padding: 2px 8px;">วันที่รับ</th><th class="text-right" style="padding: 2px 8px;">จำนวนรับสุทธิ</th></tr></thead>
+                  <tbody style="font-size: 12px;">${divRows || '<tr><td colspan="2" style="padding: 3px 8px; color: var(--txt-faint);">ยังไม่มีการบันทึกเงินปันผล</td></tr>'}</tbody>
                 </table>
               </div>
-              <div style="min-width: 250px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;">
-                <div style="font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">📊 สรุปสถานะนี้ทั้งรอบ</div>
+              <div style="min-width: 250px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;">
+                <div style="font-size: 11.5px; font-weight: 800; color: var(--txt-strong); margin-bottom: 6px;">📊 สรุปสถานะนี้ทั้งรอบ</div>
                 ${summaryLine('ต้นทุนถัวเฉลี่ยรวม', formatBaht(c.costBasis))}
                 ${summaryLine(`ขายสุทธิ ${qtyFmt(c.shares)} หน่วย @ ${formatBaht(c.sellPrice || (c.sellValue / (c.shares || 1)))}`, formatBaht(c.sellValue))}
-                ${summaryLine('กำไร/ขาดทุนจากราคา', `${c.realizedGain >= 0 ? '+' : ''}${formatBaht(c.realizedGain)}`, c.realizedGain >= 0 ? '#16a34a' : '#dc2626')}
-                ${summaryLine('เงินปันผลรับ', `+${formatBaht(c.dividendTotal || 0)}`, '#16a34a')}
-                ${summaryLine('ผลตอบแทนรวม', `${isTotalPos ? '+' : ''}${formatBaht(totalReturn)} (${isTotalPos ? '+' : ''}${totalReturnPct.toFixed(2)}%)`, isTotalPos ? '#16a34a' : '#dc2626')}
+                ${summaryLine('กำไร/ขาดทุนจากราคา', `${c.realizedGain >= 0 ? '+' : ''}${formatBaht(c.realizedGain)}`, c.realizedGain >= 0 ? 'var(--up)' : 'var(--down)')}
+                ${summaryLine('เงินปันผลรับ', `+${formatBaht(c.dividendTotal || 0)}`, 'var(--up)')}
+                ${summaryLine('ผลตอบแทนรวม', `${isTotalPos ? '+' : ''}${formatBaht(totalReturn)} (${isTotalPos ? '+' : ''}${totalReturnPct.toFixed(2)}%)`, isTotalPos ? 'var(--up)' : 'var(--down)')}
               </div>
             </div>
           </td>
@@ -2970,20 +2970,20 @@ this.openAssetModal(holding.symbol, { reopen: true });
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: nowrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">📈</div>
+            <div style="background: var(--accent-soft); color: var(--accent); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">📈</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">PERFORMANCE & REALIZED JOURNAL</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">PERFORMANCE & REALIZED JOURNAL</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">รายงานผลตอบแทนสะสม</h1>
-                <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${totalTrades} รายการปิดสถานะ</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">รายงานผลตอบแทนสะสม</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${totalTrades} รายการปิดสถานะ</span>
               </div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-shrink: 0;">
-            <select id="perf-port-filter" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; cursor: pointer;">
+            <select id="perf-port-filter" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px; background: var(--panel); cursor: pointer;">
               ${perfPortOptions}
             </select>
-            <select id="perf-year-select" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; background: #fff; cursor: pointer;">
+            <select id="perf-year-select" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px; background: var(--panel); cursor: pointer;">
               <option value="ALL" ${this.selectedPerfYear === 'ALL' ? 'selected' : ''}>📅 ทั้งหมดทุกปี</option>
               ${yearsList.map(y => `<option value="${y}" ${this.selectedPerfYear === String(y) ? 'selected' : ''}>ปี ${y}</option>`).join('')}
             </select>
@@ -2991,39 +2991,39 @@ this.openAssetModal(holding.symbol, { reopen: true });
         </div>
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
-          <div class="stat-card ${isRealizedPos ? 'profit' : 'loss'}" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">กำไร / ขาดทุนรับจริง (Realized P/L)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isRealizedPos ? '#16a34a' : '#dc2626'};">${isRealizedPos ? '+' : ''}${formatBaht(totalRealized)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">Win Rate: <strong>${winRatePct}%</strong> (${winCount} ชนะ / ${lossCount} แพ้)</div>
+          <div class="stat-card ${isRealizedPos ? 'profit' : 'loss'}" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">กำไร / ขาดทุนรับจริง (Realized P/L)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isRealizedPos ? 'var(--up)' : 'var(--down)'};">${isRealizedPos ? '+' : ''}${formatBaht(totalRealized)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">Win Rate: <strong>${winRatePct}%</strong> (${winCount} ชนะ / ${lossCount} แพ้)</div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">กำไรที่ยังไม่รับจริง (Unrealized P/L)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${summary.unrealizedPL >= 0 ? '#16a34a' : '#dc2626'};">${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">ผลตอบแทนพอร์ต: <strong>${summary.returnPct.toFixed(2)}%</strong></div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">กำไรที่ยังไม่รับจริง (Unrealized P/L)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${summary.unrealizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">ผลตอบแทนพอร์ต: <strong>${summary.returnPct.toFixed(2)}%</strong></div>
           </div>
-          <div class="stat-card profit" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">ผลตอบแทนสุทธิรวม (Net Gain)</div>
-            <div class="card-value tag-profit" style="font-size: 20px; font-weight: 900; color: #16a34a;">${totalNetGainOverall >= 0 ? '+' : ''}${formatBaht(totalNetGainOverall)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #16a34a; margin-top: 6px;">รวมปันผลสะสม: <strong>+${formatBaht(summary.dividends)}</strong></div>
+          <div class="stat-card profit" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">ผลตอบแทนสุทธิรวม (Net Gain)</div>
+            <div class="card-value tag-profit" style="font-size: 20px; font-weight: 900; color: var(--up);">${totalNetGainOverall >= 0 ? '+' : ''}${formatBaht(totalNetGainOverall)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--up); margin-top: 6px;">รวมปันผลสะสม: <strong>+${formatBaht(summary.dividends)}</strong></div>
           </div>
         </div>
 
-        <div class="holdings-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
+        <div class="holdings-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
           <div class="holdings-card-header" style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">📜 บันทึกประวัติการขายทำกำไร / ขาดทุน (Realized Positions)</h3>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--txt-strong);">📜 บันทึกประวัติการขายทำกำไร / ขาดทุน (Realized Positions)</h3>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <input type="text" id="input-perf-search" value="${this.perfSearchQuery}" placeholder="🔍 ค้นหา Symbol..." style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; width: 140px;">
+              <input type="text" id="input-perf-search" value="${this.perfSearchQuery}" placeholder="🔍 ค้นหา Symbol..." style="padding: 5px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px; width: 140px;">
               <div style="display: flex; gap: 3px;">
-                <button class="perf-filter-tab-btn" data-cat="all" style="padding: 4px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; background: ${this.perfFilterCategory === 'all' ? '#0284c7' : '#fff'}; color: ${this.perfFilterCategory === 'all' ? '#fff' : '#475569'}; cursor: pointer;">ทั้งหมด</button>
-                <button class="perf-filter-tab-btn" data-cat="profit" style="padding: 4px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; background: ${this.perfFilterCategory === 'profit' ? '#059669' : '#fff'}; color: ${this.perfFilterCategory === 'profit' ? '#fff' : '#16a34a'}; cursor: pointer;">🟢 กำไร</button>
-                <button class="perf-filter-tab-btn" data-cat="loss" style="padding: 4px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; background: ${this.perfFilterCategory === 'loss' ? '#dc2626' : '#fff'}; color: ${this.perfFilterCategory === 'loss' ? '#fff' : '#dc2626'}; cursor: pointer;">🔴 ขาดทุน</button>
+                <button class="perf-filter-tab-btn" data-cat="all" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 4px; background: ${this.perfFilterCategory === 'all' ? 'var(--accent)' : 'var(--panel)'}; color: ${this.perfFilterCategory === 'all' ? 'var(--on-accent)' : 'var(--txt-soft)'}; cursor: pointer;">ทั้งหมด</button>
+                <button class="perf-filter-tab-btn" data-cat="profit" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 4px; background: ${this.perfFilterCategory === 'profit' ? 'var(--up-2)' : 'var(--panel)'}; color: ${this.perfFilterCategory === 'profit' ? 'var(--on-accent)' : 'var(--up)'}; cursor: pointer;">🟢 กำไร</button>
+                <button class="perf-filter-tab-btn" data-cat="loss" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 4px; background: ${this.perfFilterCategory === 'loss' ? 'var(--down)' : 'var(--panel)'}; color: ${this.perfFilterCategory === 'loss' ? 'var(--on-accent)' : 'var(--down)'}; cursor: pointer;">🔴 ขาดทุน</button>
               </div>
             </div>
           </div>
           <div style="overflow-x: auto; max-height: 480px;">
             <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
-                <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px;">
+                <tr style="border-bottom: 2px solid var(--line); color: var(--txt-muted); font-size: 12px;">
                   <th style="padding: 10px 12px; text-align: left; white-space: nowrap;">วันที่ขาย</th>
                   <th style="padding: 10px 12px; text-align: left;">SYMBOL</th>
                   <th style="padding: 10px 12px; text-align: left;">พอร์ต</th>
@@ -3035,7 +3035,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml || '<tr><td colspan="8" style="text-align:center; padding: 24px; color: #94a3b8;">ไม่พบประวัติการปิดสถานะขายในเงื่อนไขที่เลือก</td></tr>'}
+                ${rowsHtml || '<tr><td colspan="8" style="text-align:center; padding: 24px; color: var(--txt-faint);">ไม่พบประวัติการปิดสถานะขายในเงื่อนไขที่เลือก</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -3198,11 +3198,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const hPct = Math.round((val / maxMonthVal) * 100);
       return `
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 140px; min-width: 32px;">
-          <div style="font-size: 10px; color: ${val > 0 ? '#16a34a' : '#94a3b8'}; font-weight: 700; margin-bottom: 4px;">${val > 0 ? formatNum(val) : ''}</div>
-          <div style="width: 100%; max-width: 24px; background: #e2e8f0; height: 100px; border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden;">
-            <div style="width: 100%; height: ${Math.max(val > 0 ? 8 : 0, hPct)}%; background: ${val > 0 ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)' : '#cbd5e1'}; border-radius: 4px;"></div>
+          <div style="font-size: 10px; color: ${val > 0 ? 'var(--up)' : 'var(--txt-faint)'}; font-weight: 700; margin-bottom: 4px;">${val > 0 ? formatNum(val) : ''}</div>
+          <div style="width: 100%; max-width: 24px; background: var(--line); height: 100px; border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden;">
+            <div style="width: 100%; height: ${Math.max(val > 0 ? 8 : 0, hPct)}%; background: ${val > 0 ? 'linear-gradient(180deg, var(--up-3) 0%, var(--up-2) 100%)' : 'var(--line-2)'}; border-radius: 4px;"></div>
           </div>
-          <div style="font-size: 11px; margin-top: 8px; color: #64748b;">${mName}</div>
+          <div style="font-size: 11px; margin-top: 8px; color: var(--txt-muted);">${mName}</div>
         </div>
       `;
     }).join('');
@@ -3316,11 +3316,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
       return `
         <tr>
           <td style="text-align: center; padding: 8px 6px;"><strong>${idx + 1}</strong></td>
-          <td style="padding: 8px 8px;"><strong style="color: #0f172a;">${item.cleanSymbol}</strong></td>
-          <td style="padding: 8px 8px; color: #475569;">${item.portName}</td>
+          <td style="padding: 8px 8px;"><strong style="color: var(--txt-strong);">${item.cleanSymbol}</strong></td>
+          <td style="padding: 8px 8px; color: var(--txt-soft);">${item.portName}</td>
           <td class="text-right" style="padding: 8px 8px;">${item.count} ครั้ง</td>
-          <td class="text-right" style="padding: 8px 8px;"><strong style="color: #16a34a;">+${formatBaht(item.totalAmount)}</strong></td>
-          <td class="text-right" style="padding: 8px 8px;"><strong style="color: #0284c7; background: #f0f9ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bae6fd;">${costYieldText}</strong></td>
+          <td class="text-right" style="padding: 8px 8px;"><strong style="color: var(--up);">+${formatBaht(item.totalAmount)}</strong></td>
+          <td class="text-right" style="padding: 8px 8px;"><strong style="color: var(--accent); background: var(--accent-softer); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--accent-line);">${costYieldText}</strong></td>
         </tr>
       `;
     }).join('');
@@ -3330,9 +3330,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <td style="white-space: nowrap;">${t.date}</td>
         <td><strong>${(t.symbol || '').replace(/\.BK$/i, '')}</strong></td>
         <td>${t.portName}</td>
-        <td class="text-right" style="color: #64748b;">${formatBaht(t.grossAmount || t.amount)}</td>
-        <td class="text-right" style="color: #dc2626;">-${formatBaht(t.taxWithheld || 0)}</td>
-        <td class="text-right" style="color: #16a34a; font-weight: 700;">+${formatBaht(t.amount)}</td>
+        <td class="text-right" style="color: var(--txt-muted);">${formatBaht(t.grossAmount || t.amount)}</td>
+        <td class="text-right" style="color: var(--down);">-${formatBaht(t.taxWithheld || 0)}</td>
+        <td class="text-right" style="color: var(--up); font-weight: 700;">+${formatBaht(t.amount)}</td>
       </tr>
     `).join('');
 
@@ -3340,107 +3340,107 @@ this.openAssetModal(holding.symbol, { reopen: true });
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: nowrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: border-radius: 10px; font-size: 22px; flex-shrink: 0;">💵</div>
+            <div style="background: var(--accent-soft); color: var(--accent); width: 44px; height: 44px; display: flex; align-items: center; justify-content: border-radius: 10px; font-size: 22px; flex-shrink: 0;">💵</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">DIVIDEND CASH FLOW & TAX CREDIT</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">DIVIDEND CASH FLOW & TAX CREDIT</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">รายงานเงินปันผลจริง & เครดิตภาษี</h1>
-                <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${portFilteredDividends.length} รายการรับเงิน</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">รายงานเงินปันผลจริง & เครดิตภาษี</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${portFilteredDividends.length} รายการรับเงิน</span>
               </div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-shrink: 0;">
-            <select id="div-port-filter" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">${divPortOptions}</select>
-            <select id="div-year-select" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+            <select id="div-port-filter" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px;">${divPortOptions}</select>
+            <select id="div-year-select" class="select-port-dropdown" style="padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px;">
               <option value="ALL" ${this.selectedDivYear === 'ALL' ? 'selected' : ''}>📅 ทั้งหมดทุกปี</option>
               ${yearsList.map(y => `<option value="${y}" ${this.selectedDivYear === String(y) ? 'selected' : ''}>ปี ${y}</option>`).join('')}
             </select>
-            <button class="btn-soft" id="btn-open-add-div" style="background: #10b981; color: #fff; border: none; font-weight: 700; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer;">➕ บันทึกปันผล</button>
+            <button class="btn-soft" id="btn-open-add-div" style="background: var(--up-3); color: var(--on-accent); border: none; font-weight: 700; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer;">➕ บันทึกปันผล</button>
           </div>
         </div>
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 20px;">
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">💵 ปันผลสุทธิรับจริง (Net Dividend)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: #16a34a;">+${formatBaht(totalDivAmount)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">ยอดรวมก่อนหักภาษี: <strong>${formatBaht(totalGrossAmount)}</strong></div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">💵 ปันผลสุทธิรับจริง (Net Dividend)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--up);">+${formatBaht(totalDivAmount)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">ยอดรวมก่อนหักภาษี: <strong>${formatBaht(totalGrossAmount)}</strong></div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🏛️ ภาษีหัก ณ ที่จ่าย 10% (Withholding Tax)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: #dc2626;">-${formatBaht(totalTaxWithheld)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">หักนำส่งกรมสรรพากรแล้ว</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🏛️ ภาษีหัก ณ ที่จ่าย 10% (Withholding Tax)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--down);">-${formatBaht(totalTaxWithheld)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">หักนำส่งกรมสรรพากรแล้ว</div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🧾 สิทธิเครดิตภาษีเงินปันผล (ประมาณการ)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: #0284c7;">+${formatBaht(estimatedTaxCredit)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #0284c7; margin-top: 6px;">ขอคืนได้ในการยื่น ภ.ง.ด.90 (ฐาน 20%)</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🧾 สิทธิเครดิตภาษีเงินปันผล (ประมาณการ)</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--accent);">+${formatBaht(estimatedTaxCredit)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--accent); margin-top: 6px;">ขอคืนได้ในการยื่น ภ.ง.ด.90 (ฐาน 20%)</div>
           </div>
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🎯 รายการสร้างกระแสเงินสด</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: #0f172a;">${topDivAssets.length} ตัว</div>
-            <div class="card-subtext" style="font-size: 11px; color: #16a34a; margin-top: 6px;">ตัวจ่ายสูงสุด: <strong>${topDivAssets[0]?.symbol || '-'}</strong></div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🎯 รายการสร้างกระแสเงินสด</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--txt-strong);">${topDivAssets.length} ตัว</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--up); margin-top: 6px;">ตัวจ่ายสูงสุด: <strong>${topDivAssets[0]?.symbol || '-'}</strong></div>
           </div>
         </div>
 
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">📅 แผนภูมิกระแสเงินสดปันผลรายเดือน ประจำปี ${activeYearStr}</h3>
-              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">แสดงยอดเงินปันผลสุทธิที่ได้รับจริงในแต่ละเดือน (บาท)</div>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--txt-strong);">📅 แผนภูมิกระแสเงินสดปันผลรายเดือน ประจำปี ${activeYearStr}</h3>
+              <div style="font-size: 12px; color: var(--txt-muted); margin-top: 2px;">แสดงยอดเงินปันผลสุทธิที่ได้รับจริงในแต่ละเดือน (บาท)</div>
             </div>
-            <div style="font-size: 13px; font-weight: 700; color: #16a34a; background: #ecfdf5; padding: 4px 10px; border-radius: 6px;">เฉลี่ย ฿${formatNum(totalDivAmount / 12)} / เดือน</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--up); background: var(--up-soft); padding: 4px 10px; border-radius: 6px;">เฉลี่ย ฿${formatNum(totalDivAmount / 12)} / เดือน</div>
           </div>
-          <div style="display: flex; gap: 8px; justify-content: space-between; align-items: flex-end; padding-top: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+          <div style="display: flex; gap: 8px; justify-content: space-between; align-items: flex-end; padding-top: 10px; border-bottom: 1px solid var(--line-soft); padding-bottom: 12px;">
             ${monthlyBarsHtml}
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px;">
-          <div class="holdings-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
+          <div class="holdings-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
             <div class="holdings-card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <div>
-                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">🏆 สรุปยอดเงินปันผลสะสมรายตัว (${topDivAssets.length} ตัว)</h3>
-                <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
-                  โหมด: <strong style="color: ${isLotMode ? '#16a34a' : '#0284c7'};">${isLotMode ? '🌱 รอบเงินจริง (Lot Yield)' : '💼 ต้นทุนปัจจุบัน (Current Cost)'}</strong>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--txt-strong);">🏆 สรุปยอดเงินปันผลสะสมรายตัว (${topDivAssets.length} ตัว)</h3>
+                <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 2px;">
+                  โหมด: <strong style="color: ${isLotMode ? 'var(--up)' : 'var(--accent)'};">${isLotMode ? '🌱 รอบเงินจริง (Lot Yield)' : '💼 ต้นทุนปัจจุบัน (Current Cost)'}</strong>
                 </div>
               </div>
-              <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 6px;">
-                <button type="button" onclick="PortfolioModule.divYieldViewMode='current'; PortfolioModule.render();" style="border: none; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 4px; cursor: pointer; background: ${!isLotMode ? '#fff' : 'transparent'}; color: ${!isLotMode ? '#0284c7' : '#64748b'};">💼 ต้นทุนปัจจุบัน</button>
-                <button type="button" onclick="PortfolioModule.divYieldViewMode='lot'; PortfolioModule.render();" style="border: none; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 4px; cursor: pointer; background: ${isLotMode ? '#fff' : 'transparent'}; color: ${isLotMode ? '#16a34a' : '#64748b'};">🌱 รอบเงินจริง</button>
+              <div style="display: flex; gap: 4px; background: var(--inset); padding: 3px; border-radius: 6px;">
+                <button type="button" onclick="PortfolioModule.divYieldViewMode='current'; PortfolioModule.render();" style="border: none; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 4px; cursor: pointer; background: ${!isLotMode ? 'var(--panel)' : 'transparent'}; color: ${!isLotMode ? 'var(--accent)' : 'var(--txt-muted)'};">💼 ต้นทุนปัจจุบัน</button>
+                <button type="button" onclick="PortfolioModule.divYieldViewMode='lot'; PortfolioModule.render();" style="border: none; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 4px; cursor: pointer; background: ${isLotMode ? 'var(--panel)' : 'transparent'}; color: ${isLotMode ? 'var(--up)' : 'var(--txt-muted)'};">🌱 รอบเงินจริง</button>
               </div>
             </div>
             <div style="overflow-x: auto; max-height: 420px;">
               <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px; user-select: none;">
+                  <tr style="border-bottom: 2px solid var(--line); color: var(--txt-muted); font-size: 12px; user-select: none;">
                     <th style="width: 35px; text-align: center; padding: 8px 6px;">#</th>
                     <th id="th-sort-sym" onclick="window.sortDivTable('symbol')" style="padding: 8px 8px; text-align: left; cursor: pointer;">SYMBOL</th>
                     <th style="padding: 8px 8px; text-align: left;">พอร์ต</th>
                     <th id="th-sort-count" onclick="window.sortDivTable('count')" class="text-right" style="padding: 8px 8px; cursor: pointer;">จำนวนครั้ง</th>
-                    <th id="th-sort-amount" onclick="window.sortDivTable('amount')" class="text-right" style="padding: 8px 8px; color: #16a34a; cursor: pointer;">เงินปันผลรวม</th>
-                    <th id="th-sort-yield" onclick="window.sortDivTable('yield')" class="text-right" style="padding: 8px 8px; color: #0284c7; cursor: pointer;">Cost Yield (%) ↕</th>
+                    <th id="th-sort-amount" onclick="window.sortDivTable('amount')" class="text-right" style="padding: 8px 8px; color: var(--up); cursor: pointer;">เงินปันผลรวม</th>
+                    <th id="th-sort-yield" onclick="window.sortDivTable('yield')" class="text-right" style="padding: 8px 8px; color: var(--accent); cursor: pointer;">Cost Yield (%) ↕</th>
                   </tr>
                   </thead>
-                <tbody>${assetTableRows || '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #94a3b8;">ไม่พบข้อมูลปันผลในเงื่อนไขที่เลือก</td></tr>'}</tbody>
+                <tbody>${assetTableRows || '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--txt-faint);">ไม่พบข้อมูลปันผลในเงื่อนไขที่เลือก</td></tr>'}</tbody>
               </table>
-              <div style="padding: 6px 8px 0; font-size: 11px; color: #94a3b8;">† สถานะนี้ปิดไปแล้ว (ขายหมดพอร์ต) Cost Yield จึงคิดจากต้นทุนของสถานะที่ปิด</div>
+              <div style="padding: 6px 8px 0; font-size: 11px; color: var(--txt-faint);">† สถานะนี้ปิดไปแล้ว (ขายหมดพอร์ต) Cost Yield จึงคิดจากต้นทุนของสถานะที่ปิด</div>
             </div>
           </div>
-          <div class="holdings-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-            <div class="holdings-card-header" style="margin-bottom: 12px;"><h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">📜 ประวัติรายการรับเงินปันผล (${finalFiltered.length} รายการ)</h3></div>
+          <div class="holdings-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
+            <div class="holdings-card-header" style="margin-bottom: 12px;"><h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--txt-strong);">📜 ประวัติรายการรับเงินปันผล (${finalFiltered.length} รายการ)</h3></div>
             <div style="overflow-x: auto; max-height: 420px;">
               <table class="custom-table" style="width: 100%; min-width: 520px; border-collapse: collapse; font-size: 13px;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px;">
+                  <tr style="border-bottom: 2px solid var(--line); color: var(--txt-muted); font-size: 12px;">
                     <th style="padding: 8px 10px; text-align: left; white-space: nowrap;">วันที่รับ</th>
                     <th style="padding: 8px 10px; text-align: left; white-space: nowrap;">SYMBOL</th>
                     <th style="padding: 8px 10px; text-align: left; white-space: nowrap;">พอร์ต</th>
                     <th class="text-right" style="padding: 8px 10px; white-space: nowrap;">ยอดก่อนหัก</th>
-                    <th class="text-right" style="padding: 8px 10px; color: #dc2626; white-space: nowrap;">หัก 10%</th>
-                    <th class="text-right" style="padding: 8px 10px; color: #16a34a; white-space: nowrap;">รับสุทธิ</th>
+                    <th class="text-right" style="padding: 8px 10px; color: var(--down); white-space: nowrap;">หัก 10%</th>
+                    <th class="text-right" style="padding: 8px 10px; color: var(--up); white-space: nowrap;">รับสุทธิ</th>
                   </tr>
                 </thead>
-                <tbody>${historyRows || '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #94a3b8;">ไม่พบรายการในปีที่เลือก</td></tr>'}</tbody>
+                <tbody>${historyRows || '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--txt-faint);">ไม่พบรายการในปีที่เลือก</td></tr>'}</tbody>
               </table>
             </div>
           </div>
@@ -3517,18 +3517,18 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const isGain = pnlPct >= 0;
 
       portStatusHtml = `
-        <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+        <div style="background: var(--up-soft-2); border: 1.5px solid var(--up-line-3); border-radius: 8px; padding: 12px; margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="color: #166534; font-weight: 800; font-size: 12.5px;">💼 สถานะในพอร์ตของคุณ</span>
-            <strong style="color: ${isGain ? '#16a34a' : '#dc2626'}; font-size: 13px; font-weight: 900;">${isGain ? '+' : ''}${pnlPct.toFixed(2)}%</strong>
+            <span style="color: var(--up-5); font-weight: 800; font-size: 12.5px;">💼 สถานะในพอร์ตของคุณ</span>
+            <strong style="color: ${isGain ? 'var(--up)' : 'var(--down)'}; font-size: 13px; font-weight: 900;">${isGain ? '+' : ''}${pnlPct.toFixed(2)}%</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #334155; margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--txt-mid); margin-bottom: 4px;">
             <span>ถือครอง: <strong>${holdingMatch.shares.toLocaleString('en-US')} ${isFund ? 'หน่วย' : 'หุ้น'}</strong></span>
             <span>ทุนเฉลี่ย: <strong>${currencySign}${avgCostDisplay.toFixed(isFund ? 4 : 2)}</strong></span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #475569; border-top: 1px dashed #bbf7d0; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--txt-soft); border-top: 1px dashed var(--up-line); padding-top: 4px;">
             <span>กำไรสุทธิ:</span>
-            <strong style="color: ${isGain ? '#16a34a' : '#dc2626'};">${isGain ? '+' : '-'}${currencySign}${Math.abs(profitLossTHB).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            <strong style="color: ${isGain ? 'var(--up)' : 'var(--down)'};">${isGain ? '+' : '-'}${currencySign}${Math.abs(profitLossTHB).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
           </div>
         </div>
       `;
@@ -3538,20 +3538,20 @@ this.openAssetModal(holding.symbol, { reopen: true });
       <div class="portfolio-container" style="padding-bottom: 30px;">
         
         <!-- Header Bar: ค้นหา + ตัวกรองครบ 4 ช่อง ตาม Mockup รูปที่ 1 & 3 -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
             <div style="flex: 2; min-width: 200px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">สัญลักษณ์</label>
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-bottom: 4px;">สัญลักษณ์</label>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="input-chart-symbol" list="portfolio-stocks-datalist" value="${cleanSym}" placeholder="เช่น ALLY, PTT" style="flex: 1; height: 38px; padding: 0 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 14px; text-transform: uppercase; font-weight: 800; outline: none;">
+                <input type="text" id="input-chart-symbol" list="portfolio-stocks-datalist" value="${cleanSym}" placeholder="เช่น ALLY, PTT" style="flex: 1; height: 38px; padding: 0 12px; border: 1.5px solid var(--line-2); border-radius: 6px; font-size: 14px; text-transform: uppercase; font-weight: 800; outline: none;">
                 <datalist id="portfolio-stocks-datalist">${datalistOptions}</datalist>
-                <button id="btn-submit-analyze" style="height: 38px; padding: 0 18px; border-radius: 6px; border: none; background: #00695c; color: #ffffff; font-weight: 800; font-size: 13.5px; cursor: pointer;">วิเคราะห์</button>
+                <button id="btn-submit-analyze" style="height: 38px; padding: 0 18px; border-radius: 6px; border: none; background: var(--teal); color: var(--on-accent); font-weight: 800; font-size: 13.5px; cursor: pointer;">วิเคราะห์</button>
               </div>
             </div>
             
             <div style="flex: 1.2; min-width: 140px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">ประเภท</label>
-              <select id="select-chart-market-type" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-bottom: 4px;">ประเภท</label>
+              <select id="select-chart-market-type" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 600; background: var(--panel); cursor: pointer;">
                 <option value="TH" ${isThai ? 'selected' : ''}>หุ้นไทย (SET)</option>
                 <option value="US" ${(!isThai && !isFund) ? 'selected' : ''}>หุ้นต่างประเทศ (US)</option>
                 <option value="FUND" ${isFund ? 'selected' : ''}>กองทุนรวม (Fund)</option>
@@ -3559,8 +3559,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
             </div>
 
             <div style="flex: 1; min-width: 110px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">ช่วงเวลา</label>
-              <select id="select-chart-timeframe" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-bottom: 4px;">ช่วงเวลา</label>
+              <select id="select-chart-timeframe" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 600; background: var(--panel); cursor: pointer;">
                 <option value="1M">1 เดือน</option>
                 <option value="6M">6 เดือน</option>
                 <option value="1Y">1 ปี</option>
@@ -3570,8 +3570,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
             </div>
 
             <div style="flex: 1; min-width: 110px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">รูปแบบ</label>
-              <select id="select-chart-style" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-bottom: 4px;">รูปแบบ</label>
+              <select id="select-chart-style" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 600; background: var(--panel); cursor: pointer;">
                 <option value="candles" selected>แท่งเทียน</option>
                 <option value="line">เส้น (Line)</option>
                 <option value="area">พื้นที่ (Area)</option>
@@ -3584,29 +3584,29 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: start;">
           
           <!-- ฝั่งซ้าย: ข้อมูลราคา + กราฟ -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
               <div>
-                <div style="font-size: 12px; color: #0284c7; font-weight: 700; text-transform: uppercase;">กราฟเทคนิค</div>
+                <div style="font-size: 12px; color: var(--accent); font-weight: 700; text-transform: uppercase;">กราฟเทคนิค</div>
                 <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 2px;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: #0f172a;">${cleanSym}</h1>
-                  <span style="font-size: 13.5px; color: #64748b; font-weight: 600;">${preset.sector || holdingMatch?.stockName || cleanSym}</span>
+                  <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: var(--txt-strong);">${cleanSym}</h1>
+                  <span style="font-size: 13.5px; color: var(--txt-muted); font-weight: 600;">${preset.sector || holdingMatch?.stockName || cleanSym}</span>
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1;">${priceDisplay}</div>
-                <div style="font-size: 13px; font-weight: 700; color: ${isBullish ? '#16a34a' : '#dc2626'}; margin-top: 4px;">
-                  ${hasChange ? `${isBullish ? '+' : ''}${change.toFixed(2)} (${isBullish ? '+' : ''}${changePct.toFixed(2)}%) วันนี้` : '<span style="color:#94a3b8; font-weight:600;">ไม่มีข้อมูลราคาปิดก่อนหน้า</span>'}
+                <div style="font-size: 28px; font-weight: 900; color: var(--txt-strong); line-height: 1;">${priceDisplay}</div>
+                <div style="font-size: 13px; font-weight: 700; color: ${isBullish ? 'var(--up)' : 'var(--down)'}; margin-top: 4px;">
+                  ${hasChange ? `${isBullish ? '+' : ''}${change.toFixed(2)} (${isBullish ? '+' : ''}${changePct.toFixed(2)}%) วันนี้` : '<span style="color:var(--txt-faint); font-weight:600;">ไม่มีข้อมูลราคาปิดก่อนหน้า</span>'}
                 </div>
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-faint); border-top: 1px solid var(--line-soft); padding-top: 8px; margin-bottom: 16px;">
               <span>ข้อมูล: ${dataTimeStr ? `อัปเดตล่าสุด ${dataTimeStr}` : 'ยังไม่มีข้อมูลราคา'}${priceSource ? ` · ${priceSource}` : ''}</span>
               <span>กำลังแสดงข้อมูล${isThai ? 'หุ้นไทย' : isFund ? 'กองทุน' : 'หุ้นสหรัฐ'}: ${cleanSym}</span>
             </div>
 
-            <div id="chart-viewport-box" style="height: 580px; min-height: 580px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div id="chart-viewport-box" style="height: 580px; min-height: 580px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line);">
   <div id="tradingview_chart_container" style="width: 100%; height: 100%; min-height: 580px;"></div>
 </div>
           </div>
@@ -3615,68 +3615,68 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <div style="display: flex; flex-direction: column; gap: 16px;">
             
             <!-- การ์ด 1: Market Snapshot -->
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Market Snapshot</div>
-              <h2 style="margin: 4px 0 12px 0; font-size: 20px; font-weight: 900; color: #ea580c;">${cleanSym}</h2>
+            <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">Market Snapshot</div>
+              <h2 style="margin: 4px 0 12px 0; font-size: 20px; font-weight: 900; color: var(--orange);">${cleanSym}</h2>
               
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
-                <div style="font-size: 11px; color: #64748b;">ราคาล่าสุด</div>
-                <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${priceDisplay}</div>
+              <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--txt-muted);">ราคาล่าสุด</div>
+                <div style="font-size: 22px; font-weight: 900; color: var(--txt-strong);">${priceDisplay}</div>
               </div>
 
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; color: #64748b;">สถานะ:</span>
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#cbd5e1'}; display: inline-block;"></span>
-                <strong style="font-size: 12.5px; color: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#64748b'};">${hasChange ? `${isThai ? 'หุ้นไทย' : 'สินทรัพย์'} (${isBullish ? 'บวกวันนี้' : 'ย่อตัววันนี้'})` : 'ยังไม่มีข้อมูลเปลี่ยนแปลงรายวัน'}</strong>
+              <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; color: var(--txt-muted);">สถานะ:</span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${hasChange ? (isBullish ? 'var(--up)' : 'var(--down)') : 'var(--line-2)'}; display: inline-block;"></span>
+                <strong style="font-size: 12.5px; color: ${hasChange ? (isBullish ? 'var(--up)' : 'var(--down)') : 'var(--txt-muted)'};">${hasChange ? `${isThai ? 'หุ้นไทย' : 'สินทรัพย์'} (${isBullish ? 'บวกวันนี้' : 'ย่อตัววันนี้'})` : 'ยังไม่มีข้อมูลเปลี่ยนแปลงรายวัน'}</strong>
               </div>
-              <div style="text-align: right; font-size: 10.5px; color: #94a3b8; margin-top: 8px;">TradingView + ราคาอ้างอิงจากระบบ</div>
+              <div style="text-align: right; font-size: 10.5px; color: var(--txt-faint); margin-top: 8px;">TradingView + ราคาอ้างอิงจากระบบ</div>
             </div>
 
             <!-- การ์ด 2: แนวรับ / แนวต้าน -->
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">แนวรับ / แนวต้าน</div>
+            <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-size: 13px; font-weight: 800; color: var(--txt-strong); margin-bottom: 10px;">แนวรับ / แนวต้าน</div>
               ${hasRange ? `
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
-                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #dc2626; margin-bottom: 4px;">แนวต้าน (Resistance)</div>
-                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #475569;"><span>R2:</span><b>${currencySign}${r2.toFixed(2)}</b></div>
-                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #475569;"><span>R1:</span><b>${currencySign}${r1.toFixed(2)}</b></div>
+                <div style="background: var(--down-soft); border: 1px solid var(--down-line); border-radius: 8px; padding: 8px 10px;">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--down); margin-bottom: 4px;">แนวต้าน (Resistance)</div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-soft);"><span>R2:</span><b>${currencySign}${r2.toFixed(2)}</b></div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-soft);"><span>R1:</span><b>${currencySign}${r1.toFixed(2)}</b></div>
                 </div>
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 10px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #16a34a; margin-bottom: 4px;">แนวรับ (Support)</div>
-                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #475569;"><span>S1:</span><b>${currencySign}${s1.toFixed(2)}</b></div>
-                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #475569;"><span>S2:</span><b>${currencySign}${s2.toFixed(2)}</b></div>
+                <div style="background: var(--up-soft-2); border: 1px solid var(--up-line); border-radius: 8px; padding: 8px 10px;">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--up); margin-bottom: 4px;">แนวรับ (Support)</div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-soft);"><span>S1:</span><b>${currencySign}${s1.toFixed(2)}</b></div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-soft);"><span>S2:</span><b>${currencySign}${s2.toFixed(2)}</b></div>
                 </div>
               </div>
-              <div style="text-align: right; font-size: 11px; color: #64748b;">Pivot Point: ${currencySign}${pivot.toFixed(2)}</div>
+              <div style="text-align: right; font-size: 11px; color: var(--txt-muted);">Pivot Point: ${currencySign}${pivot.toFixed(2)}</div>
               ` : `
-              <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; font-size: 11.5px; color: #64748b; text-align: center; line-height: 1.6;">
+              <div style="background: var(--panel-2); border: 1px dashed var(--line-2); border-radius: 8px; padding: 12px; font-size: 11.5px; color: var(--txt-muted); text-align: center; line-height: 1.6;">
                 แหล่งข้อมูลไม่ได้ให้ราคา High/Low ของวันนี้<br>จึงยังคำนวณแนวรับ-แนวต้านไม่ได้
               </div>
               `}
             </div>
 
             <!-- การ์ด 3: สัญญาณเทคนิค & พอร์ต -->
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 12px;">สัญญาณเทคนิค</div>
+            <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-size: 13px; font-weight: 800; color: var(--txt-strong); margin-bottom: 12px;">สัญญาณเทคนิค</div>
               
               ${portStatusHtml}
 
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px;">
+              <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                  <span style="color: #64748b;">• โมเมนตัมวันนี้:</span>
-                  <strong style="color: ${hasChange ? (isBullish ? '#16a34a' : '#dc2626') : '#94a3b8'};">${hasChange ? (isBullish ? 'แรงซื้อหนุน' : 'มีแรงเทขาย') : 'ไม่มีข้อมูล'}</strong>
+                  <span style="color: var(--txt-muted);">• โมเมนตัมวันนี้:</span>
+                  <strong style="color: ${hasChange ? (isBullish ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)'};">${hasChange ? (isBullish ? 'แรงซื้อหนุน' : 'มีแรงเทขาย') : 'ไม่มีข้อมูล'}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #64748b;">• กรอบราคา High/Low:</span>
-                  <strong style="color: #0f172a;">${hasRange ? `${currencySign}${low.toFixed(2)} - ${currencySign}${high.toFixed(2)}` : '—'}</strong>
+                  <span style="color: var(--txt-muted);">• กรอบราคา High/Low:</span>
+                  <strong style="color: var(--txt-strong);">${hasRange ? `${currencySign}${low.toFixed(2)} - ${currencySign}${high.toFixed(2)}` : '—'}</strong>
                 </div>
               </div>
 
-              <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
-                <span style="color: #7e22ce; font-weight: 700;">🎁 ปันผลล่าสุด:</span>
-                <strong style="color: #0f172a;">${dps > 0 ? `${currencySign}${dps.toFixed(isFund ? 4 : 2)}` : '—'}</strong>
-                <span style="color: #64748b;">${yieldPct > 0 ? `(ประมาณจาก yield ${yieldPct}%)` : ''}</span>
+              <div style="background: var(--purple-soft); border: 1px solid var(--purple-line); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+                <span style="color: var(--purple-2); font-weight: 700;">🎁 ปันผลล่าสุด:</span>
+                <strong style="color: var(--txt-strong);">${dps > 0 ? `${currencySign}${dps.toFixed(isFund ? 4 : 2)}` : '—'}</strong>
+                <span style="color: var(--txt-muted);">${yieldPct > 0 ? `(ประมาณจาก yield ${yieldPct}%)` : ''}</span>
               </div>
             </div>
 
@@ -3770,17 +3770,17 @@ this.openAssetModal(holding.symbol, { reopen: true });
     // กองทุนรวม (Fund) มี 2 ปุ่ม
     if (isFund) {
       container.innerHTML = `
-        <div style="width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 24px; text-align: center;">
+        <div style="width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel); padding: 24px; text-align: center;">
           <div style="font-size: 40px; margin-bottom: 12px;">📊</div>
-          <h2 style="font-size: 22px; color: #0f172a; margin: 0 0 6px 0; font-weight: 800;">${displaySym}</h2>
-          <p style="color: #64748b; font-size: 13.5px; max-width: 440px; margin: 0 0 20px 0; line-height: 1.5;">
+          <h2 style="font-size: 22px; color: var(--txt-strong); margin: 0 0 6px 0; font-weight: 800;">${displaySym}</h2>
+          <p style="color: var(--txt-muted); font-size: 13.5px; max-width: 440px; margin: 0 0 20px 0; line-height: 1.5;">
             กองทุนรวมประกาศราคาแบบรายวัน (End of Day NAV) ไม่มีชาร์ตสดระหว่างวันบน TradingView ทั่วไป
           </p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-            <a href="https://www.finnomena.com/fund/${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: #0f766e; color: #fff; text-decoration: none; font-weight: 700; font-size: 13.5px;">
+            <a href="https://www.finnomena.com/fund/${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: var(--teal); color: var(--on-accent); text-decoration: none; font-weight: 700; font-size: 13.5px;">
               📈 ดูกราฟแท่งเทียน & NAV บน Finnomena ↗
             </a>
-            <a href="https://www.settrade.com/th/mutualfund/quote/${encodeURIComponent(displaySym)}/overview" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; text-decoration: none; font-weight: 700; font-size: 13.5px;">
+            <a href="https://www.settrade.com/th/mutualfund/quote/${encodeURIComponent(displaySym)}/overview" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line-2); color: var(--txt-mid); text-decoration: none; font-weight: 700; font-size: 13.5px;">
               🏛️ ตรวจสอบราคาบน Settrade ↗
             </a>
           </div>
@@ -3792,24 +3792,24 @@ this.openAssetModal(holding.symbol, { reopen: true });
     // หุ้นไทย (SET) มีครบ 3 ปุ่ม ตาม Mockup รูปที่ 1 และ 3 เป๊ะ
     if (isThai) {
       container.innerHTML = `
-        <div style="width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 24px; text-align: center;">
-          <div style="width: 54px; height: 54px; border-radius: 12px; background: #e0f2fe; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px;">
+        <div style="width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel); padding: 24px; text-align: center;">
+          <div style="width: 54px; height: 54px; border-radius: 12px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px;">
             🏢
           </div>
-          <h2 style="font-size: 22px; font-weight: 900; color: #0f172a; margin: 0 0 6px 0;">
-            ${displaySym} <span style="font-size: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 2px 6px; border-radius: 4px;">SET</span>
+          <h2 style="font-size: 22px; font-weight: 900; color: var(--txt-strong); margin: 0 0 6px 0;">
+            ${displaySym} <span style="font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 6px; border-radius: 4px;">SET</span>
           </h2>
-          <p style="color: #64748b; font-size: 13px; max-width: 440px; margin: 0 0 20px 0; line-height: 1.5;">
+          <p style="color: var(--txt-muted); font-size: 13px; max-width: 440px; margin: 0 0 20px 0; line-height: 1.5;">
             ตรวจสอบราคาและกราฟเทคนิคหุ้นไทยผ่านแพลตฟอร์มตลาดหลักทรัพย์ หรือเปิดดูกราฟเต็มบน TradingView
           </p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-            <a href="https://www.settrade.com/th/equities/quote/${encodeURIComponent(displaySym)}/overview" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; background: #0284c7; color: #fff; text-decoration: none; font-weight: 700; font-size: 13px;">
+            <a href="https://www.settrade.com/th/equities/quote/${encodeURIComponent(displaySym)}/overview" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 700; font-size: 13px;">
               🏛️ ดูข้อมูลบน Settrade ↗
             </a>
-            <a href="https://th.tradingview.com/chart/?symbol=SET%3A${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; background: #0f172a; color: #fff; text-decoration: none; font-weight: 700; font-size: 13px;">
+            <a href="https://th.tradingview.com/chart/?symbol=SET%3A${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; background: var(--solid-ink); color: var(--on-ink); text-decoration: none; font-weight: 700; font-size: 13px;">
               📈 ดูกราฟเต็มบน TradingView ↗
             </a>
-            <a href="https://www.finnomena.com/stock/${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; text-decoration: none; font-weight: 700; font-size: 13px;">
+            <a href="https://www.finnomena.com/stock/${encodeURIComponent(displaySym)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; background: var(--up-soft-2); border: 1px solid var(--up-line); color: var(--up-5); text-decoration: none; font-weight: 700; font-size: 13px;">
               🌱 บทวิเคราะห์ Finnomena ↗
             </a>
           </div>
@@ -3832,7 +3832,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
           "theme": "light",
           "style": "1",
           "locale": "th_TH",
-          "toolbar_bg": "#f8fafc",
+          "toolbar_bg": "var(--bg)",
           "enable_publishing": false,
           "allow_symbol_change": true,
           "container_id": "tradingview_chart_container",

@@ -672,12 +672,12 @@ const CloudSync = {
     }
 
     if (isSuccess) {
-      toast.style.background = '#10B981'; // สีเขียว
-      toast.style.color = '#FFFFFF';
+      toast.style.background = 'var(--up-3)';
+      toast.style.color = 'var(--on-accent)';
       toast.innerText = `☁️ ${message}`;
     } else {
-      toast.style.background = '#EF4444'; // สีแดง
-      toast.style.color = '#FFFFFF';
+      toast.style.background = 'var(--down-3)';
+      toast.style.color = 'var(--on-accent)';
       toast.innerText = `⚠️ ${message}`;
     }
 

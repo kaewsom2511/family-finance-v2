@@ -48,54 +48,54 @@
         modal = document.createElement('div');
         modal.id = 'fullBackupModal';
         modal.style.cssText = `
-          display: flex; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7);
+          display: flex; position: fixed; inset: 0; background: var(--overlay);
           backdrop-filter: blur(4px); z-index: 10000; align-items: center; justify-content: center;
           padding: 16px; font-family: 'Sarabun', sans-serif;
         `;
 
         modal.innerHTML = `
-          <div style="background: #ffffff; width: 100%; max-width: 520px; border-radius: 16px; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: left; position: relative;">
+          <div style="background: var(--panel); width: 100%; max-width: 520px; border-radius: 16px; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: left; position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
               <div>
-                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--txt-strong); display: flex; align-items: center; gap: 8px;">
                   📦 สำรองและกู้คืนข้อมูลรวมทั้งระบบ
                 </h3>
-                <div id="backupModalUserBadge" style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
-                  บัญชีปัจจุบัน: <strong style="color: #0284c7;">${user.name}</strong> (${user.isDad ? 'ผู้ดูแล ADMIN' : 'สมาชิก MEMBER'})
+                <div id="backupModalUserBadge" style="font-size: 12px; color: var(--txt-muted); margin-top: 4px; font-weight: 600;">
+                  บัญชีปัจจุบัน: <strong style="color: var(--accent);">${user.name}</strong> (${user.isDad ? 'ผู้ดูแล ADMIN' : 'สมาชิก MEMBER'})
                 </div>
               </div>
-              <button onclick="window.BackupModule.closeBackupModal()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer; padding: 4px;">✕</button>
+              <button onclick="window.BackupModule.closeBackupModal()" style="background: none; border: none; font-size: 18px; color: var(--txt-faint); cursor: pointer; padding: 4px;">✕</button>
             </div>
 
             <!-- กล่องที่ 1: การสำรองข้อมูล (Export) -->
-            <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 12px; padding: 18px; margin-bottom: 16px;">
-              <div style="font-weight: 700; color: #0369a1; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <div style="background: var(--accent-softer); border: 1.5px solid var(--accent-line); border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+              <div style="font-weight: 700; color: var(--accent-3); font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                 📥 สำรองข้อมูลทั้งหมด (One-Click Backup)
               </div>
-              <div style="font-size: 12px; color: #475569; margin-bottom: 12px; line-height: 1.5;">
+              <div style="font-size: 12px; color: var(--txt-soft); margin-bottom: 12px; line-height: 1.5;">
                 ดาวน์โหลดข้อมูลทุกโมดูล (รายรับรายจ่าย + พอร์ตลงทุน + ภาษี + หมวดหมู่และบัญชี + บิลประจำ) รวมเป็นไฟล์ JSON ไฟล์เดียว
               </div>
-              <button onclick="window.BackupModule.exportFullBackup()" style="width: 100%; background: #0284c7; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <button onclick="window.BackupModule.exportFullBackup()" style="width: 100%; background: var(--accent); color: var(--on-accent); border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 📥 ดาวน์โหลดไฟล์สำรองข้อมูลรวม
               </button>
             </div>
 
             <!-- กล่องที่ 2: การกู้คืนข้อมูล (Restore) -->
-            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
-              <div style="font-weight: 700; color: #b45309; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <div style="background: var(--warn-soft); border: 1.5px solid var(--warn-line); border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+              <div style="font-weight: 700; color: var(--warn-3); font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                 📤 กู้คืนข้อมูลทั้งหมด (One-Click Restore)
               </div>
-              <div style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.5;">
+              <div style="font-size: 12px; color: var(--txt-muted); margin-bottom: 12px; line-height: 1.5;">
                 เลือกไฟล์ Backup รวม เพื่อนำข้อมูลทั้งหมดกลับคืนสู่ระบบในครั้งเดียว (มีระบบตรวจสิทธิ์เจ้าของไฟล์)
               </div>
               <input type="file" id="inputFullBackupFile" accept=".json" style="display: none;" onchange="window.BackupModule.handleFileSelect(event)">
-              <button onclick="document.getElementById('inputFullBackupFile').click()" style="width: 100%; background: #d97706; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <button onclick="document.getElementById('inputFullBackupFile').click()" style="width: 100%; background: var(--warn); color: var(--on-accent); border: none; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 📂 เลือกไฟล์ JSON เพื่อกู้คืน
               </button>
             </div>
 
             <div style="text-align: right;">
-              <button onclick="window.BackupModule.closeBackupModal()" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569; padding: 7px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+              <button onclick="window.BackupModule.closeBackupModal()" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-soft); padding: 7px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
                 ปิดหน้าต่าง
               </button>
             </div>
@@ -105,7 +105,7 @@
       } else {
         const badge = document.getElementById('backupModalUserBadge');
         if (badge) {
-          badge.innerHTML = `บัญชีปัจจุบัน: <strong style="color: #0284c7;">${user.name}</strong> (${user.isDad ? 'ผู้ดูแล ADMIN' : 'สมาชิก MEMBER'})`;
+          badge.innerHTML = `บัญชีปัจจุบัน: <strong style="color: var(--accent);">${user.name}</strong> (${user.isDad ? 'ผู้ดูแล ADMIN' : 'สมาชิก MEMBER'})`;
         }
         modal.style.display = 'flex';
       }
