@@ -178,6 +178,13 @@ function getQuoteCacheHelper() {
   }
 }
 
+// API ไม่ได้ส่งชื่อเต็มมาทุกครั้ง การเขียนแคชทับทั้งก้อนห้ามทำให้ชื่อที่เคยอดีตหายไปด้วย
+function preserveCachedName(existing, quote) {
+  const priorName = String(existing && existing.name || '').trim();
+  if (String(quote.name || '').trim() || !priorName) return quote;
+  return Object.assign({}, quote, { name: priorName });
+}
+
 window.WealthPortSettings = {
   closeModal() {
     const m = document.getElementById('wealthport-port-modal');
@@ -390,6 +397,7 @@ var QuoteSyncService = {
         previousClose: prev > 0 ? prev : null,
         dividendRate: parseFloat(data.dividendRate || 0) || 0,
         source: data.source || (assetType === 'mutual-fund' ? 'Settrade' : 'Yahoo Finance'),
+        name: String(data.name || '').trim() || null,
         currency: data.currency || null,
         updatedAt: data.marketTime || data.updatedAt || new Date().toISOString(),
         stale: false,
@@ -437,6 +445,7 @@ var QuoteSyncService = {
         previousClose: parseFloat(cached.previousClose || 0) || null,
         dividendRate: 0,
         source: wasFakeLiveLabel ? 'แคชในเครื่อง' : oldSource,
+        name: String(cached.name || '').trim() || null,
         currency: cached.currency || null,
         updatedAt: cached.updatedAt || null,
         stale: true,
@@ -472,7 +481,7 @@ var QuoteSyncService = {
     const cleanUpper = String(symbol).toUpperCase();
     const baseSym = cleanUpper.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
     [`${assetType}|${symbol}`, `${assetType}|${cleanUpper}`, `${assetType}|${baseSym}`].forEach((key) => {
-      cache[key] = quote;
+      cache[key] = preserveCachedName(cache[key], quote);
     });
     localStorage.setItem('stock-trading-log:quote-cache:v1', JSON.stringify(cache));
     return true;
@@ -514,7 +523,7 @@ var QuoteSyncService = {
           const cleanUpper = String(item.symbol).toUpperCase();
           const baseSym = cleanUpper.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
           [`${item.type}|${item.symbol}`, `${item.type}|${cleanUpper}`, `${item.type}|${baseSym}`].forEach((key) => {
-            cache[key] = quote;
+            cache[key] = preserveCachedName(cache[key], quote);
           });
         }
       } else {
@@ -682,6 +691,34 @@ var PortfolioModule = {
       return 'foreign-stock';
     }
     return 'foreign-stock';
+  },
+
+  // ชื่อหลักทรัพย์มาจากข้อมูลภายนอก ต้อง escape ก่อนฝังลง HTML
+  esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+
+  // บางแหล่งข้อมูล (Settrade) ส่งชื่อมาเป็น HTML-escaped เช่น SCBRMS&amp;P500 → ถอดออกก่อนใช้
+  plainName(v) {
+    const s = String(v || '').trim();
+    if (!s || !/&[a-z#0-9]+;/i.test(s)) return s;
+    const el = document.createElement('textarea');
+    el.innerHTML = s;
+    return String(el.value || s).trim();
+  },
+
+  // บันทึกการซื้อขายมักใส่ stockName เป็นตัวย่อเดียวกับสัญลักษณ์ → เก็บเฉพาะชื่อที่ใช้ได้จริงที่ยาวที่สุด
+  tradeName(trades, symbol) {
+    const sym = String(symbol || '').trim().toUpperCase();
+    const base = sym.replace(/\.BK$/i, '').replace(/\([A-Z0-9-]+\)$/i, '').trim();
+    let best = '';
+    (trades || []).forEach(t => {
+      const n = String(t && t.stockName || '').trim();
+      const nu = n.toUpperCase();
+      if (!n || nu === sym || nu === base) return;
+      if (n.length > best.length) best = n;
+    });
+    return best;
   },
 
   findQuote(quotes, rawSymbol, assetType) {
@@ -1027,6 +1064,8 @@ var PortfolioModule = {
       item.dayChangeNative = hasDayChange ? rawPrice - prevCloseNative : null;
       item.dayChangeUSD = hasDayChange && isForeign ? item.dayChangeNative * item.shares : null;
       item.dayChangeTHB = hasDayChange ? item.dayChangeNative * item.shares * (isForeign ? liveFxRate : 1) : null;
+
+      item.name = this.plainName(q && q.name) || this.tradeName(item.trades, item.symbol) || null;
 
       if (item.quoteStatus === 'live') liveQuotes++;
       else if (item.quoteStatus === 'stale') staleQuotes++;
@@ -2605,10 +2644,13 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const sourceBadgeHtml = `<span style="background:${qs.bg}; color:${qs.color}; padding:1px 6px; border-radius:4px; font-weight:600; font-size:11px;">${qs.icon} ${qs.label}</span>` +
         (isLive && h.quoteTime ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${h.quoteTime}</div>` : '');
 
-      let typeBadge = isFund 
-        ? '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">🌱 FUND</span>' 
-        : (isForeign ? '<span style="background:rgba(14,165,233,0.15); color:#0284c7; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">🇺🇸 US</span>' 
-                     : '<span style="background:rgba(99,102,241,0.15); color:#6366f1; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">🇹🇭 TH</span>');
+      // ชื่อเต็มของหลักทรัพย์แสดงเป็นบรรทัดรองใต้สัญลักษณ์
+      const fullName = String(h.name || '').trim();
+      const symUpper = String(h.symbol || '').trim().toUpperCase();
+      const showsName = !!fullName && fullName.toUpperCase() !== symUpper && fullName.toUpperCase() !== symUpper.replace(/\.BK$/i, '');
+      const nameHtml = showsName
+        ? `<div style="font-size:11px;color:#64748b;margin-top:3px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${this.esc(fullName)}">${this.esc(fullName)}</div>`
+        : '';
 
       return `
         <tr>
@@ -2616,7 +2658,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <td style="padding: 10px 8px;">
             <button class="jump-to-chart-btn" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 13px; color: #0284c7; cursor: pointer;">
               📈 ${h.symbol}
-            </button>${typeBadge}
+            </button>${nameHtml}
           </td>
           <td class="text-right" style="padding: 10px 8px;">${formatNum(h.shares)}</td>
           <td class="text-right" style="padding: 10px 8px;">${avgDisplay}</td>
