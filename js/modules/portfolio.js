@@ -540,6 +540,9 @@ var PortfolioModule = {
   perfFilterCategory: 'all',
   sortColumn: '',
   sortDirection: 'desc',
+  holdingsPage: 1,
+  holdingsSize: 0,
+  holdingsTotalPages: 1,
   selectedDivYear: 'ALL',
   selectedDivPortId: 'ALL',
   selectedPerfYear: 'ALL',
@@ -1016,6 +1019,15 @@ var PortfolioModule = {
         item.plPct = (item.totalCost > 0) ? (item.unrealizedPL / item.totalCost) * 100 : 0;
       }
 
+      // เปลี่ยนแปลงวันนี้วัดจาก previousClose จริงเท่านั้น ไม่นับราคา fallback (ทุนเฉลี่ย/แคช/ประมาณการ)
+      const prevCloseNative = q ? (parseFloat(q.previousClose != null ? q.previousClose : q.prevClose) || 0) : 0;
+      const hasDayChange = rawPrice > 0 && prevCloseNative > 0 && !q.isEstimate;
+      item.prevClose = prevCloseNative > 0 ? prevCloseNative : null;
+      item.dayChangePct = hasDayChange ? ((rawPrice - prevCloseNative) / prevCloseNative) * 100 : null;
+      item.dayChangeNative = hasDayChange ? rawPrice - prevCloseNative : null;
+      item.dayChangeUSD = hasDayChange && isForeign ? item.dayChangeNative * item.shares : null;
+      item.dayChangeTHB = hasDayChange ? item.dayChangeNative * item.shares * (isForeign ? liveFxRate : 1) : null;
+
       if (item.quoteStatus === 'live') liveQuotes++;
       else if (item.quoteStatus === 'stale') staleQuotes++;
       else if (item.quoteStatus === 'estimate') estimateQuotes++;
@@ -1455,9 +1467,21 @@ if (settingsBtn) {
         return;
       }
 
+      const pgBtn = e.target.closest('.holdings-pg-btn');
+      if (pgBtn && !pgBtn.disabled) {
+        const act = pgBtn.dataset.pg;
+        this.holdingsPage = act === 'first' ? 1
+          : act === 'prev' ? this.holdingsPage - 1
+          : act === 'next' ? this.holdingsPage + 1
+          : this.holdingsTotalPages;
+        this.render();
+        return;
+      }
+
       const filterBtn = e.target.closest('.filter-tab-btn');
       if (filterBtn) {
         this.filterCategory = filterBtn.dataset.cat;
+        this.holdingsPage = 1;
         this.render();
         return;
       }
@@ -1491,6 +1515,11 @@ if (settingsBtn) {
       if (e.target && e.target.id === 'portfolio-select') {
         this.selectedPortfolioId = e.target.value;
         this.lastSyncFailures = [];
+        this.holdingsPage = 1;
+        this.render();
+      } else if (e.target && e.target.id === 'select-holdings-size') {
+        this.holdingsSize = parseInt(e.target.value, 10) || 0;
+        this.holdingsPage = 1;
         this.render();
       } else if (e.target && e.target.id === 'div-port-filter') {
         this.selectedDivPortId = e.target.value;
@@ -1512,6 +1541,7 @@ if (settingsBtn) {
     document.addEventListener('input', (e) => {
       if (e.target && e.target.id === 'input-holdings-search') {
         this.searchQuery = e.target.value.trim();
+        this.holdingsPage = 1;
         this.render();
         const nextInput = document.getElementById('input-holdings-search');
         if (nextInput) {
@@ -2499,6 +2529,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
           case 'marketPrice': valA = a.marketPrice; valB = b.marketPrice; break;
           case 'totalCost': valA = a.totalCost; valB = b.totalCost; break;
           case 'marketValue': valA = a.marketValue; valB = b.marketValue; break;
+          case 'dayPct': valA = a.dayChangePct; valB = b.dayChangePct; valA = valA == null ? -Infinity : valA; valB = valB == null ? -Infinity : valB; break;
+          case 'day': valA = a.dayChangeUSD != null ? a.dayChangeUSD : a.dayChangeTHB; valB = b.dayChangeUSD != null ? b.dayChangeUSD : b.dayChangeTHB; valA = valA == null ? -Infinity : valA; valB = valB == null ? -Infinity : valB; break;
+          case 'pl': valA = (a.assetType === 'foreign-stock' ? a.unrealizedUSD : a.unrealizedPL); valB = (b.assetType === 'foreign-stock' ? b.unrealizedUSD : b.unrealizedPL); break;
           case 'plPct': valA = a.plPct; valB = b.plPct; break;
           default: return 0;
         }
@@ -2506,18 +2539,39 @@ this.openAssetModal(holding.symbol, { reopen: true });
       });
     }
 
+    const pageSize = this.holdingsSize > 0 ? this.holdingsSize : (filteredHoldings.length || 1);
+    const totalPages = Math.max(1, Math.ceil(filteredHoldings.length / pageSize));
+    this.holdingsTotalPages = totalPages;
+    this.holdingsPage = Math.min(Math.max(1, this.holdingsPage), totalPages);
+    const pageStart = (this.holdingsPage - 1) * pageSize;
+    const pageHoldings = filteredHoldings.slice(pageStart, pageStart + pageSize);
+
+    const pgBtn = (act, glyph, enabled) => `<button class="holdings-pg-btn" data-pg="${act}" ${enabled ? '' : 'disabled'} style="min-width: 30px; height: 28px; border: 1px solid ${enabled ? '#cbd5e1' : '#e2e8f0'}; border-radius: 7px; background: #fff; color: ${enabled ? '#475569' : '#cbd5e1'}; font-size: 13px; line-height: 1; cursor: ${enabled ? 'pointer' : 'default'};">${glyph}</button>`;
+    const pagerHtml = filteredHoldings.length ? `
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: #475569;">
+            <label style="display: flex; align-items: center; gap: 6px;">แสดงต่อหน้า
+              <select id="select-holdings-size" style="padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; font-size: 12.5px; color: #0f172a; cursor: pointer;">
+                ${[20, 50, 100, 0].map(v => `<option value="${v}" ${this.holdingsSize === v ? 'selected' : ''}>${v || 'ทั้งหมด'}</option>`).join('')}
+              </select>
+            </label>
+            <span>${pageStart + 1}–${Math.min(pageStart + pageSize, filteredHoldings.length)} จาก ${filteredHoldings.length} รายการ</span>
+            <span style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+              ${pgBtn('first', '|‹', this.holdingsPage > 1)}${pgBtn('prev', '‹', this.holdingsPage > 1)}${pgBtn('next', '›', this.holdingsPage < totalPages)}${pgBtn('last', '›|', this.holdingsPage < totalPages)}
+              <span style="margin-left: 4px;">หน้า ${this.holdingsPage}/${totalPages}</span>
+            </span>
+          </div>` : '';
+
     const getSortArrow = (col) => {
       if (this.sortColumn !== col) return '<span style="color:#94a3b8; font-size:10px; margin-left:4px;">↕</span>';
       return this.sortDirection === 'asc' ? '<span style="color:#0284c7; font-weight:bold; font-size:11px; margin-left:4px;">▲</span>' : '<span style="color:#0284c7; font-weight:bold; font-size:11px; margin-left:4px;">▼</span>';
     };
 
-    const tableRows = filteredHoldings.map((h, i) => {
+    const tableRows = pageHoldings.map((h, i) => {
       const isForeign = h.assetType === 'foreign-stock';
       const isFund = h.assetType === 'mutual-fund';
       const plValue = isForeign ? (h.unrealizedUSD || 0) : (h.unrealizedPL || 0);
       const isPositive = plValue >= 0;
       const plTextColor = isPositive ? '#16a34a' : '#dc2626';
-      const plPrefix = isPositive ? '+' : '';
 
       const formatNavOrPrice = (val) => {
         if (isFund) return '฿' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
@@ -2528,7 +2582,16 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const marketPriceDisplay = isForeign ? formatUSD(h.priceUSD) : formatNavOrPrice(h.marketPrice);
       const totalCostDisplay = isForeign ? `<div>${formatUSD(h.costUSD)}</div><div style="font-size:11px;color:#94a3b8;">≈ ${formatBaht(h.totalCost)}</div>` : formatBaht(h.totalCost);
       const marketValDisplay = isForeign ? `<div>${formatUSD(h.marketUSD)}</div><div style="font-size:11px;color:#94a3b8;">≈ ${formatBaht(h.marketValue)}</div>` : formatBaht(h.marketValue);
-      const plValDisplay = isForeign ? `${plPrefix}${formatUSD(h.unrealizedUSD || 0)}` : `${plPrefix}${formatBaht(h.unrealizedPL)}`;
+      // จำนวนเงินที่มีเครื่องหมาย: ใส่ - นำหน้าสัญลักษณ์เงิน (−$1.78) ไม่ใช่ตามหลัง (แบบ $-1.78)
+      const signedMoney = (v, usd) => `${v < 0 ? '−' : '+'}${usd ? '$' : '฿'}${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const plValDisplay = signedMoney(isForeign ? (h.unrealizedUSD || 0) : h.unrealizedPL, isForeign);
+
+      const dayPct = h.dayChangePct;
+      const dayAmt = isForeign ? h.dayChangeUSD : h.dayChangeTHB;
+      const hasDay = dayPct != null && dayAmt != null;
+      const dayTextColor = hasDay ? (dayPct >= 0 ? '#16a34a' : '#dc2626') : '#94a3b8';
+      const dayPctDisplay = hasDay ? `${dayPct >= 0 ? '+' : '−'}${Math.abs(dayPct).toFixed(2)}%` : '—';
+      const dayAmtDisplay = hasDay ? signedMoney(dayAmt, isForeign) : '—';
 
       const quoteStatusMeta = {
         live: { icon: '🟢', bg: '#ecfdf5', color: '#059669', label: h.quoteSource || 'ราคาสด' },
@@ -2549,7 +2612,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
       return `
         <tr>
-          <td style="font-weight: 700; color: #334155; padding: 10px 8px;">${i + 1}</td>
+          <td style="font-weight: 700; color: #334155; padding: 10px 8px;">${pageStart + i + 1}</td>
           <td style="padding: 10px 8px;">
             <button class="jump-to-chart-btn" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 13px; color: #0284c7; cursor: pointer;">
               📈 ${h.symbol}
@@ -2563,7 +2626,10 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </td>
           <td class="text-right" style="padding: 10px 8px;"><strong>${totalCostDisplay}</strong></td>
           <td class="text-right" style="padding: 10px 8px;"><strong>${marketValDisplay}</strong></td>
-          <td class="text-right" style="color: ${plTextColor}; font-weight: 700; padding: 10px 8px;">${plValDisplay} (${plPrefix}${h.plPct.toFixed(2)}%)</td>
+          <td class="text-right" style="color: ${dayTextColor}; font-weight: 700; padding: 10px 8px;">${dayPctDisplay}</td>
+          <td class="text-right" style="color: ${plTextColor}; font-weight: 700; padding: 10px 8px;">${h.plPct >= 0 ? '+' : '−'}${Math.abs(h.plPct).toFixed(2)}%</td>
+          <td class="text-right" style="color: ${dayTextColor}; font-weight: 700; padding: 10px 8px;">${dayAmtDisplay}</td>
+          <td class="text-right" style="color: ${plTextColor}; font-weight: 700; padding: 10px 8px;">${plValDisplay}</td>
           <td class="text-center" style="white-space: nowrap; padding: 10px 8px;">
             <button class="btn-action-refresh" data-symbol="${h.symbol}" data-type="${h.assetType}" style="background: ${isLive ? '#0284c7' : '#dc2626'}; color: #fff; border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer; margin-right: 4px; font-size: 12px;" title="${isLive ? 'อัปเดตราคาล่าสุด' : 'ไม่สามารถดึงราคาล่าสุดได้ (คลิกเพื่อลองใหม่)'}">🔄</button>
             <button class="btn-action-settings" data-symbol="${h.symbol}" style="background: #334155; color: #fff; border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px;">⚙️</button>
@@ -2701,15 +2767,19 @@ this.openAssetModal(holding.symbol, { reopen: true });
                   <th class="text-right sortable-th" data-col="marketPrice" style="padding: 8px 10px; cursor: pointer;">ราคาปัจจุบัน / แหล่งข้อมูล ${getSortArrow('marketPrice')}</th>
                   <th class="text-right sortable-th" data-col="totalCost" style="padding: 8px 10px; cursor: pointer;">ต้นทุน ${getSortArrow('totalCost')}</th>
                   <th class="text-right sortable-th" data-col="marketValue" style="padding: 8px 10px; cursor: pointer;">มูลค่าปัจจุบัน ${getSortArrow('marketValue')}</th>
-                  <th class="text-right sortable-th" data-col="plPct" style="padding: 8px 10px; cursor: pointer;">%P/L ${getSortArrow('plPct')}</th>
+                  <th class="text-right sortable-th" data-col="dayPct" style="padding: 8px 10px; cursor: pointer;">วันนี้ % ${getSortArrow('dayPct')}</th>
+                  <th class="text-right sortable-th" data-col="plPct" style="padding: 8px 10px; cursor: pointer;">กำไรสะสม % ${getSortArrow('plPct')}</th>
+                  <th class="text-right sortable-th" data-col="day" style="padding: 8px 10px; cursor: pointer;">วันนี้ ${getSortArrow('day')}</th>
+                  <th class="text-right sortable-th" data-col="pl" style="padding: 8px 10px; cursor: pointer;">กำไรสะสม ${getSortArrow('pl')}</th>
                   <th class="text-center" style="padding: 8px 10px; width: 80px;">จัดการ</th>
                 </tr>
               </thead>
               <tbody>
-                ${tableRows || '<tr><td colspan="9" style="text-align:center; padding: 24px; color: #94a3b8;">ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</td></tr>'}
+                ${tableRows || '<tr><td colspan="12" style="text-align:center; padding: 24px; color: #94a3b8;">ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</td></tr>'}
               </tbody>
             </table>
           </div>
+          ${pagerHtml}
         </div>
       </div>
     `;
