@@ -2587,16 +2587,16 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const pgBtn = (act, glyph, enabled) => `<button class="holdings-pg-btn" data-pg="${act}" ${enabled ? '' : 'disabled'} style="min-width: 30px; height: 28px; border: 1px solid ${enabled ? '#cbd5e1' : '#e2e8f0'}; border-radius: 7px; background: #fff; color: ${enabled ? '#475569' : '#cbd5e1'}; font-size: 13px; line-height: 1; cursor: ${enabled ? 'pointer' : 'default'};">${glyph}</button>`;
     const pagerHtml = filteredHoldings.length ? `
-          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: #475569;">
-            <label style="display: flex; align-items: center; gap: 6px;">แสดงต่อหน้า
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: #475569;">
+            <label style="display: flex; align-items: center; gap: 5px;">แสดงต่อหน้า
               <select id="select-holdings-size" style="padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; font-size: 12.5px; color: #0f172a; cursor: pointer;">
                 ${[20, 50, 100, 0].map(v => `<option value="${v}" ${this.holdingsSize === v ? 'selected' : ''}>${v || 'ทั้งหมด'}</option>`).join('')}
               </select>
             </label>
             <span>${pageStart + 1}–${Math.min(pageStart + pageSize, filteredHoldings.length)} จาก ${filteredHoldings.length} รายการ</span>
-            <span style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+            <span style="display: flex; align-items: center; gap: 5px;">
               ${pgBtn('first', '|‹', this.holdingsPage > 1)}${pgBtn('prev', '‹', this.holdingsPage > 1)}${pgBtn('next', '›', this.holdingsPage < totalPages)}${pgBtn('last', '›|', this.holdingsPage < totalPages)}
-              <span style="margin-left: 4px;">หน้า ${this.holdingsPage}/${totalPages}</span>
+              <span style="margin-left: 2px;">หน้า ${this.holdingsPage}/${totalPages}</span>
             </span>
           </div>` : '';
 
