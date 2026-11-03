@@ -21,6 +21,7 @@
   --txt-faint: #94a3b8;
   --on-accent: #ffffff;
   --on-ink: #ffffff;
+  --on-ink-muted: #cbd5e1;
 
   --accent: #0284c7;
   --accent-2: #0ea5e9;
@@ -75,6 +76,28 @@
   --blue-soft: #eff6ff;
   --blue-line: #bfdbfe;
 
+  --indigo-soft: #e0e7ff;
+  --indigo-ink: #4338ca;
+  --blue-ink: #1d4ed8;
+  --blue-border: #93c5fd;
+  --pink-soft: #fdf2f8;
+  --pink-ink: #be185d;
+  --yellow-soft: #fef9c3;
+  --yellow-ink: #854d0e;
+  --yellow-line: #fef08a;
+  --amber-soft: #fef3c7;
+  --butter-soft: #fffbe8;
+  --butter-line: #ffe58f;
+  --butter-ink: #594200;
+  --cream-soft: #fefce8;
+  --honey-ink: #a16207;
+  --mint-soft: #e6f4ea;
+  --mint-line: #b7eb8f;
+  --mint-ink: #137333;
+  --jade-soft: #eefcf3;
+  --jade-ink: #00796b;
+  --navy: #1e3a5f;
+
   --shadow-1: rgba(0, 0, 0, 0.02);
   --shadow-2: rgba(0, 0, 0, 0.2);
   --overlay: rgba(15, 23, 42, 0.6);
@@ -113,6 +136,7 @@ body[data-theme="dark"] {
   --txt-faint: #7f95b1;
   --on-accent: #06202a;
   --on-ink: #eef4fb;
+  --on-ink-muted: #b6c6da;
 
   --accent: #22d3ee;
   --accent-2: #38bdf8;
@@ -166,6 +190,28 @@ body[data-theme="dark"] {
   --blue-2: #93c5fd;
   --blue-soft: rgba(59, 130, 246, 0.14);
   --blue-line: rgba(147, 197, 253, 0.4);
+
+  --indigo-soft: rgba(129, 140, 248, 0.18);
+  --indigo-ink: #a5b4fc;
+  --blue-ink: #93c5fd;
+  --blue-border: rgba(34, 211, 238, 0.45);
+  --pink-soft: rgba(244, 114, 182, 0.16);
+  --pink-ink: #f9a8d4;
+  --yellow-soft: rgba(250, 204, 21, 0.16);
+  --yellow-ink: #fde68a;
+  --yellow-line: rgba(250, 204, 21, 0.45);
+  --amber-soft: rgba(251, 191, 36, 0.16);
+  --butter-soft: rgba(251, 191, 36, 0.1);
+  --butter-line: rgba(251, 191, 36, 0.4);
+  --butter-ink: #fcd34d;
+  --cream-soft: rgba(254, 240, 138, 0.1);
+  --honey-ink: #fcd34d;
+  --mint-soft: rgba(52, 211, 153, 0.14);
+  --mint-line: rgba(52, 211, 153, 0.4);
+  --mint-ink: #6ee7b7;
+  --jade-soft: rgba(52, 211, 153, 0.1);
+  --jade-ink: #5eead4;
+  --navy: #16223a;
 
   --shadow-1: rgba(0, 0, 0, 0.25);
   --shadow-2: rgba(0, 0, 0, 0.55);

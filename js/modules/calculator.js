@@ -106,17 +106,17 @@
       el.style.transition = "all 0.2s ease";
 
       if (type === "ok" || type === "success") {
-        el.style.background = "#eefcf3";
-        el.style.border = "1px solid #bbf7d0";
-        el.style.color = "#00796b";
+        el.style.background = "var(--jade-soft)";
+        el.style.border = "1px solid var(--up-line)";
+        el.style.color = "var(--jade-ink)";
       } else if (type === "warn" || type === "warning") {
-        el.style.background = "#fefce8";
-        el.style.border = "1px solid #fef08a";
-        el.style.color = "#a16207";
+        el.style.background = "var(--cream-soft)";
+        el.style.border = "1px solid var(--yellow-line)";
+        el.style.color = "var(--honey-ink)";
       } else {
-        el.style.background = "#f8fafc";
-        el.style.border = "1px solid #e2e8f0";
-        el.style.color = "#475569";
+        el.style.background = "var(--panel-2)";
+        el.style.border = "1px solid var(--line)";
+        el.style.color = "var(--txt-soft)";
       }
     }
 

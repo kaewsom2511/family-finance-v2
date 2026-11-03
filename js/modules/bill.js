@@ -410,9 +410,9 @@ const BillModule = {
   },
 
   statusStyle(item) {
-    if (item.status === 'overdue' || item.status === 'due-today') return { bg: '#fef2f2', border: '#fecaca', color: '#dc2626' };
-    if (item.status === 'due-soon') return { bg: '#fffbeb', border: '#fde68a', color: '#b45309' };
-    return { bg: '#f0f9ff', border: '#bae6fd', color: '#0369a1' };
+    if (item.status === 'overdue' || item.status === 'due-today') return { bg: 'var(--down-soft)', border: 'var(--down-line)', color: 'var(--down)' };
+    if (item.status === 'due-soon') return { bg: 'var(--warn-soft)', border: 'var(--warn-line)', color: 'var(--warn-3)' };
+    return { bg: 'var(--accent-softer)', border: 'var(--accent-line)', color: 'var(--accent-3)' };
   },
 
   sourceLabel(s) {
@@ -427,8 +427,8 @@ const BillModule = {
     const overdue = inWindow.filter((i) => i.status === 'overdue');
     const total = inWindow.reduce((s, i) => s + (i.amount || 0), 0);
     const nearest = inWindow[0];
-    const tone = overdue.length ? { bg: '#fef2f2', border: '#fecaca', accent: '#dc2626' }
-      : { bg: '#f8fafc', border: '#e2e8f0', accent: '#0284c7' };
+    const tone = overdue.length ? { bg: 'var(--down-soft)', border: 'var(--down-line)', accent: 'var(--down)' }
+      : { bg: 'var(--panel-2)', border: 'var(--line)', accent: 'var(--accent)' };
 
     return `
       <div id="bill-banner-inner" style="background: ${tone.bg}; border: 1px solid ${tone.border}; border-radius: 14px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; cursor: pointer;" data-bill-action="open-bills">
@@ -436,11 +436,11 @@ const BillModule = {
           <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: ${tone.accent}; font-weight: 800;">
             ${overdue.length ? `มีบิลเกินกำหนด ${overdue.length} รายการ` : `รอบบิลอีก ${this.BANNER_DAYS} วัน: ${inWindow.length} รายการ`}
           </div>
-          <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 4px;">
+          <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-top: 4px;">
             ${nearest.name} · ${this.countdownLabel(nearest)}
             ${nearest.amount ? `· ฿${this.fmtBaht(nearest.amount)}` : ''}
           </div>
-          ${total ? `<div style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 3px;">รวมที่ต้องชำระช่วงนี้ ฿${this.fmtBaht(total)}</div>` : ''}
+          ${total ? `<div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-top: 3px;">รวมที่ต้องชำระช่วงนี้ ฿${this.fmtBaht(total)}</div>` : ''}
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           ${inWindow.slice(0, 4).map((i) => {
@@ -472,25 +472,25 @@ const BillModule = {
   rowHtml(item, mode) {
     const st = this.statusStyle(item);
     const actions = mode === 'candidate'
-      ? `<button data-bill-action="confirm" data-id="${this.esc(item.key)}" style="background: #0284c7; color: #fff; border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">ติดตามบิลนี้</button>
-         <button data-bill-action="dismiss" data-id="${this.esc(item.key)}" style="background: #fff; color: #64748b; border: 1px solid #cbd5e1; border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">ไม่ต้องเตือน</button>`
-      : `${item.source !== 'card' ? `<button data-bill-action="edit" data-id="${item.id}" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">แก้ไข</button>` : ''}
-         <button data-bill-action="pay" data-id="${item.id}" style="background: #0284c7; color: #fff; border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">บันทึกชำระ</button>`;
+      ? `<button data-bill-action="confirm" data-id="${this.esc(item.key)}" style="background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">ติดตามบิลนี้</button>
+         <button data-bill-action="dismiss" data-id="${this.esc(item.key)}" style="background: var(--panel); color: var(--txt-muted); border: 1px solid var(--line-2); border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">ไม่ต้องเตือน</button>`
+      : `${item.source !== 'card' ? `<button data-bill-action="edit" data-id="${item.id}" style="background: var(--panel); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 7px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;">แก้ไข</button>` : ''}
+         <button data-bill-action="pay" data-id="${item.id}" style="background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer;">บันทึกชำระ</button>`;
 
     return `
-      <div style="display: flex; align-items: center; gap: 14px; padding: 13px 16px; border: 1px solid #e2e8f0; border-radius: 11px; background: #fff; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 14px; padding: 13px 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); flex-wrap: wrap;">
         <div style="width: 46px; text-align: center;">
           <div style="font-size: 17px; font-weight: 900; color: ${st.color}; line-height: 1.1;">${mode === 'candidate' ? '?' : Math.max(item.days, 0)}</div>
-          <div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">${mode === 'candidate' ? 'คาดการ' : item.days < 0 ? 'เกินวัน' : 'วัน'}</div>
+          <div style="font-size: 9.5px; color: var(--txt-faint); font-weight: 700; text-transform: uppercase;">${mode === 'candidate' ? 'คาดการ' : item.days < 0 ? 'เกินวัน' : 'วัน'}</div>
         </div>
         <div style="flex: 1; min-width: 180px;">
-          <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">${item.name}</div>
-          <div style="font-size: 11.5px; color: #64748b; font-weight: 600; margin-top: 2px;">
+          <div style="font-size: 13.5px; font-weight: 800; color: var(--txt-strong);">${item.name}</div>
+          <div style="font-size: 11.5px; color: var(--txt-muted); font-weight: 600; margin-top: 2px;">
             ${item.category} · ${this.sourceLabel(item)} · ${this.cadenceLabel(item)}
             ${item.nextDue ? ` · ครบ ${this.fmtDate(item.nextDue)}` : ''}
             ${item.amount ? ` · ฿${this.fmtBaht(item.amount)}` : ''}
           </div>
-          ${item.lastPaidDate ? `<div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">จ่ายล่าสุด ${this.fmtDate(item.lastPaidDate)}${item.missed > 1 ? ` · ตกหล่น ${item.missed} รอบ` : ''}</div>` : '<div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">ยังไม่เคยบันทึกรอบนี้</div>'}
+          ${item.lastPaidDate ? `<div style="font-size: 11px; color: var(--txt-faint); margin-top: 2px;">จ่ายล่าสุด ${this.fmtDate(item.lastPaidDate)}${item.missed > 1 ? ` · ตกหล่น ${item.missed} รอบ` : ''}</div>` : '<div style="font-size: 11px; color: var(--txt-faint); margin-top: 2px;">ยังไม่เคยบันทึกรอบนี้</div>'}
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <span style="background: ${st.bg}; color: ${st.color}; border: 1px solid ${st.border}; border-radius: 8px; padding: 5px 11px; font-size: 11.5px; font-weight: 800; white-space: nowrap;">${this.countdownLabel(item)}</span>
@@ -519,39 +519,39 @@ const BillModule = {
       <div style="display: flex; flex-direction: column; gap: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
           <div>
-            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">กำหนดชำระใน 30 วัน</div>
-            <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">นับรอบจากประวัติรายการจ่ายจริง · ${items.length} รายการที่ติดตาม</div>
+            <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">กำหนดชำระใน 30 วัน</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); font-weight: 600;">นับรอบจากประวัติรายการจ่ายจริง · ${items.length} รายการที่ติดตาม</div>
           </div>
-          <button data-bill-action="add" style="background: #fff; border: 1px solid #0284c7; color: #0284c7; border-radius: 8px; padding: 7px 15px; font-size: 12.5px; font-weight: 700; cursor: pointer;">+ เพิ่มบิลเอง</button>
+          <button data-bill-action="add" style="background: var(--panel); border: 1px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 7px 15px; font-size: 12.5px; font-weight: 700; cursor: pointer;">+ เพิ่มบิลเอง</button>
         </div>
 
         ${dueSoon.length ? dueSoon.map((i) => this.rowHtml(i, 'tracked')).join('')
-          : '<div style="padding: 22px; text-align: center; color: #94a3b8; font-size: 13px; font-weight: 600; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 11px;">อีก 30 วันข้างหน้าไม่มีบิลครบกำหนด</div>'}
+          : '<div style="padding: 22px; text-align: center; color: var(--txt-faint); font-size: 13px; font-weight: 600; background: var(--panel-2); border: 1px dashed var(--line-2); border-radius: 11px;">อีก 30 วันข้างหน้าไม่มีบิลครบกำหนด</div>'}
 
         ${later.length ? `
-          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 800; margin-top: 4px;">รอบถัดไป</div>
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--txt-faint); font-weight: 800; margin-top: 4px;">รอบถัดไป</div>
           ${later.slice(0, 6).map((i) => this.rowHtml(i, 'tracked')).join('')}
         ` : ''}
 
         ${candidates.length ? `
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;">
-            <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">พบบิลที่จ่ายซ้ำในประวัติ แต่ยังไม่ได้ติดตาม</div>
-            <div style="font-size: 11.5px; color: #64748b; font-weight: 600; margin-bottom: 12px;">ตรวจจับจากรายการประเภท "บิล" ที่จ่ายซ้ำอย่างน้อย ${this.MIN_SAMPLES} ครั้งใน ${this.LOOKBACK_MONTHS} เดือนล่าสุด · กดติดตามเพื่อรับเตือน</div>
+          <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;">
+            <div style="font-size: 13px; font-weight: 800; color: var(--txt-strong); margin-bottom: 4px;">พบบิลที่จ่ายซ้ำในประวัติ แต่ยังไม่ได้ติดตาม</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); font-weight: 600; margin-bottom: 12px;">ตรวจจับจากรายการประเภท "บิล" ที่จ่ายซ้ำอย่างน้อย ${this.MIN_SAMPLES} ครั้งใน ${this.LOOKBACK_MONTHS} เดือนล่าสุด · กดติดตามเพื่อรับเตือน</div>
             <div style="display: flex; flex-direction: column; gap: 9px;">
               ${candidates.slice(0, 8).map((c) => this.rowHtml(c, 'candidate')).join('')}
             </div>
           </div>
         ` : `
-          <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 16px;">
-            <div style="font-size: 12.5px; font-weight: 700; color: #64748b;">ยังไม่มีบิลอัตโนมัติที่ตรวจจับเพิ่ม</div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 3px;">เมื่อคุณบันทึกรายการประเภท "บิล" ซ้ำอย่างน้อย ${this.MIN_SAMPLES} ครั้ง ระบบจะเสนอรอบชำระให้อัตโนมัติ</div>
+          <div style="background: var(--panel-2); border: 1px dashed var(--line-2); border-radius: 12px; padding: 16px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted);">ยังไม่มีบิลอัตโนมัติที่ตรวจจับเพิ่ม</div>
+            <div style="font-size: 11.5px; color: var(--txt-faint); margin-top: 3px;">เมื่อคุณบันทึกรายการประเภท "บิล" ซ้ำอย่างน้อย ${this.MIN_SAMPLES} ครั้ง ระบบจะเสนอรอบชำระให้อัตโนมัติ</div>
           </div>
         `}
 
         ${store.dismissed.length ? `
-          <div style="font-size: 11.5px; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div style="font-size: 11.5px; color: var(--txt-faint); font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span>บิลที่ปิดการเตือนไว้ (กู้คืนเพื่อให้กลับมาเสนอใหม่):</span>
-            ${store.dismissed.map((k) => `<span style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 10px; display: inline-flex; gap: 8px; align-items: center;">${this.esc(this.dismissedLabel(k))}<button data-bill-action="restore" data-id="${this.esc(k)}" style="background: none; border: none; color: #0284c7; font-size: 11.5px; font-weight: 800; cursor: pointer; padding: 0;">กู้คืน</button></span>`).join('')}
+            ${store.dismissed.map((k) => `<span style="background: var(--inset); border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; display: inline-flex; gap: 8px; align-items: center;">${this.esc(this.dismissedLabel(k))}<button data-bill-action="restore" data-id="${this.esc(k)}" style="background: none; border: none; color: var(--accent); font-size: 11.5px; font-weight: 800; cursor: pointer; padding: 0;">กู้คืน</button></span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -600,59 +600,59 @@ const BillModule = {
 
     const html = `
       <div id="modal-edit-bill" style="position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999; padding: 16px;">
-        <div style="background: #fff; border-radius: 12px; width: 430px; max-width: 100%; max-height: 92vh; overflow: auto; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">${id ? 'แก้ไขบิลประจำ' : 'เพิ่มบิลประจำ'}</h3>
-            <button id="btn-close-bill-modal" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">&times;</button>
+        <div style="background: var(--panel); border-radius: 12px; width: 430px; max-width: 100%; max-height: 92vh; overflow: auto; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong);">${id ? 'แก้ไขบิลประจำ' : 'เพิ่มบิลประจำ'}</h3>
+            <button id="btn-close-bill-modal" style="background: none; border: none; font-size: 20px; color: var(--txt-faint); cursor: pointer;">&times;</button>
           </div>
           <div style="display: flex; flex-direction: column; gap: 13px;">
             <div>
-              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ชื่อบิล</label>
-              <input id="input-bill-name" value="${model.name || ''}" placeholder="เช่น ค่าไฟ การไฟฟ้านครหลวง" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ชื่อบิล</label>
+              <input id="input-bill-name" value="${model.name || ''}" placeholder="เช่น ค่าไฟ การไฟฟ้านครหลวง" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px; font-weight: 700;">
             </div>
             <div>
-              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">หมวดบิล</label>
-              <select id="select-bill-category" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; background: #fff;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">หมวดบิล</label>
+              <select id="select-bill-category" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px; font-weight: 700; background: var(--panel);">
                 ${this.categoryOptions(model.category)}
               </select>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <div style="flex: 1; min-width: 120px;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ความถี่</label>
-                <select id="select-bill-cadence" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ความถี่</label>
+                <select id="select-bill-cadence" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700; background: var(--panel);">
                   ${cadences.map(([v, l]) => `<option value="${v}" ${model.cadence === v ? 'selected' : ''}>${l}</option>`).join('')}
                 </select>
               </div>
               <div style="width: 84px;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่ครบ</label>
-                <input id="input-bill-day" type="number" min="1" max="31" value="${model.anchorDay}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันที่ครบ</label>
+                <input id="input-bill-day" type="number" min="1" max="31" value="${model.anchorDay}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
               <div style="width: 118px;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">เดือนที่ครบ</label>
-                <select id="select-bill-month" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">เดือนที่ครบ</label>
+                <select id="select-bill-month" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700; background: var(--panel);">
                   ${this.monthOptions(model.anchorMonth)}
                 </select>
               </div>
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ยอดโดยประมาณ (บาท)</label>
-                <input id="input-bill-amount" type="number" step="any" value="${model.amount || ''}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ยอดโดยประมาณ (บาท)</label>
+                <input id="input-bill-amount" type="number" step="any" value="${model.amount || ''}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
               <div style="width: 104px;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">เตือนล่วงหน้า (วัน)</label>
-                <input id="input-bill-alert" type="number" min="1" max="30" value="${model.alertDays || this.DEFAULT_ALERT_DAYS}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">เตือนล่วงหน้า (วัน)</label>
+                <input id="input-bill-alert" type="number" min="1" max="30" value="${model.alertDays || this.DEFAULT_ALERT_DAYS}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-              <label style="display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: #475569; cursor: pointer;">
+              <label style="display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--txt-soft); cursor: pointer;">
                 <input id="input-bill-enabled" type="checkbox" ${model.enabled !== false ? 'checked' : ''}> ติดตามบิลนี้
               </label>
-              ${id ? '<button id="btn-delete-bill" style="background: #fff; border: 1px solid #fecaca; color: #dc2626; border-radius: 7px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;">ลบ</button>' : ''}
+              ${id ? '<button id="btn-delete-bill" style="background: var(--panel); border: 1px solid var(--down-line); color: var(--down); border-radius: 7px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;">ลบ</button>' : ''}
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-              <button id="btn-cancel-bill-modal" style="background: #fff; border: 1px solid #cbd5e1; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-              <button id="btn-save-bill-modal" style="background: #0284c7; color: #fff; border: none; padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">บันทึก</button>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 12px;">
+              <button id="btn-cancel-bill-modal" style="background: var(--panel); border: 1px solid var(--line-2); padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+              <button id="btn-save-bill-modal" style="background: var(--accent); color: var(--on-accent); border: none; padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">บันทึก</button>
             </div>
           </div>
         </div>

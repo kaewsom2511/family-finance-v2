@@ -8,27 +8,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
-    body { margin: 0; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+    body { margin: 0; background-color: var(--panel-2); color: var(--txt-strong); display: flex; flex-direction: column; min-height: 100vh; }
     
     /* Top Navbar */
     .top-navbar {
-      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      height: 60px; background: var(--panel); border-bottom: 1px solid var(--line);
       display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
       position: sticky; top: 0; z-index: 50;
     }
-    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
-    .brand-logo span { color: #0f172a; }
+    .brand-logo { font-size: 20px; font-weight: 800; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: var(--txt-strong); }
     
     .top-search-bar {
-      display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; padding: 6px 12px; width: 320px;
+      display: flex; align-items: center; background: var(--inset); border-radius: 8px; padding: 6px 12px; width: 320px;
     }
     .top-search-bar input {
-      border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155;
+      border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: var(--txt-mid);
     }
     .top-user-actions { display: flex; align-items: center; gap: 14px; }
     .user-badge {
-      display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
-      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: #334155;
+      display: inline-flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--line);
+      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: var(--txt-mid);
     }
 
     /* App Container Layout */
@@ -36,74 +36,74 @@
     
     /* Sidebar สไตล์ Stock Analysis */
     .sidebar {
-      width: 240px; background: #ffffff; border-right: 1px solid #e2e8f0;
+      width: 240px; background: var(--panel); border-right: 1px solid var(--line);
       padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
       flex-shrink: 0; user-select: none;
     }
     .menu-group-title {
-      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      font-size: 11px; font-weight: 700; color: var(--txt-faint); text-transform: uppercase;
       letter-spacing: 0.5px; padding: 8px 10px 4px;
     }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
     
     .sidebar-link, .nav-group-header {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      border-radius: 8px; color: var(--txt-soft); text-decoration: none; font-size: 13.5px; font-weight: 700;
       background: transparent; border: none; width: 100%; cursor: pointer; text-align: left;
       transition: background 0.15s, color 0.15s;
     }
-    .sidebar-link:hover, .nav-group-header:hover { background: #f8fafc; color: #0f172a; }
+    .sidebar-link:hover, .nav-group-header:hover { background: var(--panel-2); color: var(--txt-strong); }
     .sidebar-link.active {
-      background: #f0f9ff; color: #0284c7; font-weight: 800;
-      border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0;
+      background: var(--accent-softer); color: var(--accent); font-weight: 800;
+      border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
     }
     .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
 
     /* Accordion Dropdown */
     .nav-group-header .arrow-indicator {
-      margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: #94a3b8;
+      margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: var(--txt-faint);
     }
     .nav-sub-items {
       display: none; flex-direction: column; padding-left: 32px; gap: 2px; margin-top: 2px;
     }
     .nav-group.open .nav-sub-items { display: flex; }
     .nav-group.open .nav-group-header .arrow-indicator { transform: rotate(180deg); }
-    .nav-group.open .nav-group-header { color: #0284c7; }
+    .nav-group.open .nav-group-header { color: var(--accent); }
 
     .nav-sub-item {
-      padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: #64748b;
+      padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: var(--txt-muted);
       text-decoration: none; border-radius: 6px; transition: background 0.15s, color 0.15s;
       cursor: pointer;
     }
-    .nav-sub-item:hover { background: #f1f5f9; color: #0f172a; }
-    .nav-sub-item.active { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+    .nav-sub-item:hover { background: var(--inset); color: var(--txt-strong); }
+    .nav-sub-item.active { background: var(--accent-soft); color: var(--accent-3); font-weight: 700; }
 
     /* Main Content */
     .main-wrapper { flex: 1; padding: 24px 30px; overflow-y: auto; text-align: left; }
 
     /* Card & Form Styles */
     .calc-card {
-      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;
     }
-    .form-label { font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; }
+    .form-label { font-size: 12.5px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px; display: block; }
     .form-control {
-      width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
-      font-size: 14px; font-weight: 600; color: #0f172a; outline: none; transition: border-color 0.15s;
+      width: 100%; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 8px;
+      font-size: 14px; font-weight: 600; color: var(--txt-strong); outline: none; transition: border-color 0.15s;
     }
-    .form-control:focus { border-color: #0284c7; }
+    .form-control:focus { border-color: var(--accent); }
     .btn-calc {
-      background: #0284c7; color: #ffffff; border: none; padding: 10px 20px;
+      background: var(--accent); color: var(--on-accent); border: none; padding: 10px 20px;
       border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;
     }
-    .btn-calc:hover { background: #0369a1; }
+    .btn-calc:hover { background: var(--accent-3); }
     .calc-result-box {
-      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;
+      background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 20px;
       display: flex; flex-direction: column; gap: 12px;
     }
   </style>
 </head>
-<body>
+<body data-theme="dark">
 
   <!-- Top Navbar -->
   <header class="top-navbar">
@@ -117,10 +117,10 @@
     <div class="top-user-actions">
       <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
         <div style="text-align: right;">
-          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
-          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: var(--txt);"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: var(--txt-muted); text-transform: uppercase;"></div>
         </div>
-        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: var(--down-soft-2); color: var(--down-2); border: 1px solid var(--down-line); border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
           ออกจากระบบ
         </button>
       </div>
@@ -220,10 +220,10 @@
       <!-- TAB 1: คำนวณภาษี (Tax Calculator) -->
       <section id="section-tax" class="calc-section">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-          <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">📑</div>
+          <div style="background: var(--accent-soft); color: var(--accent); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">📑</div>
           <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">TAX ESTIMATION SIMULATOR</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">คำนวณภาษีเงินได้บุคคลธรรมดา</h1>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">TAX ESTIMATION SIMULATOR</div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">คำนวณภาษีเงินได้บุคคลธรรมดา</h1>
           </div>
         </div>
 
@@ -252,25 +252,25 @@
             </div>
 
             <div class="calc-result-box">
-              <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">สรุปภาระภาษีโดยประมาณ</div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">สรุปภาระภาษีโดยประมาณ</div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid);">
                 <span>หักค่าใช้จ่ายตามกฎหมาย (50% ไม่เกิน 1 แสน):</span>
                 <strong id="res-tax-expense">-฿100,000.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid);">
                 <span>รวมค่าลดหย่อนทั้งหมด:</span>
-                <strong id="res-tax-deduct" style="color: #16a34a;">-฿360,000.00</strong>
+                <strong id="res-tax-deduct" style="color: var(--up);">-฿360,000.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid); padding-bottom: 8px; border-bottom: 1px dashed var(--line-2);">
                 <span>เงินได้สุทธิที่นำไปคำนวณภาษี:</span>
                 <strong id="res-tax-net-income" style="font-weight: 800;">฿740,000.00</strong>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px;">
-                <span style="font-size: 14px; font-weight: 800; color: #0f172a;">ภาษีที่ต้องชำระทั้งปี:</span>
-                <span id="res-tax-payable" style="font-size: 26px; font-weight: 900; color: #dc2626;">฿63,000.00</span>
+                <span style="font-size: 14px; font-weight: 800; color: var(--txt-strong);">ภาษีที่ต้องชำระทั้งปี:</span>
+                <span id="res-tax-payable" style="font-size: 26px; font-weight: 900; color: var(--down);">฿63,000.00</span>
               </div>
-              <div style="font-size: 12px; color: #64748b; font-weight: 600;">
-                ฐานภาษีสูงสุด: <strong id="res-tax-bracket" style="color: #0284c7;">15%</strong> (เฉลี่ยจ่ายจริง <span id="res-tax-effective-rate">5.25%</span> ของรายได้)
+              <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600;">
+                ฐานภาษีสูงสุด: <strong id="res-tax-bracket" style="color: var(--accent);">15%</strong> (เฉลี่ยจ่ายจริง <span id="res-tax-effective-rate">5.25%</span> ของรายได้)
               </div>
             </div>
           </div>
@@ -280,10 +280,10 @@
       <!-- TAB 2: วางแผนเกษียณ & DCA (Retirement Planner) -->
       <section id="section-retirement" class="calc-section" style="display: none;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-          <div style="background: #fef3c7; color: #d97706; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">🎯</div>
+          <div style="background: var(--amber-soft); color: var(--warn); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">🎯</div>
           <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">COMPOUND INTEREST & RETIREMENT</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">จำลองการเติบโตแบบทบต้น & วางแผนเกษียณ (DCA)</h1>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">COMPOUND INTEREST & RETIREMENT</div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">จำลองการเติบโตแบบทบต้น & วางแผนเกษียณ (DCA)</h1>
           </div>
         </div>
 
@@ -312,21 +312,21 @@
             </div>
 
             <div class="calc-result-box">
-              <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">พอร์ตสะสม ณ วันเกษียณ</div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">พอร์ตสะสม ณ วันเกษียณ</div>
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid);">
                 <span>เงินต้นทั้งหมดที่ลงไป (Cost Basis):</span>
                 <strong id="res-dca-total-cost">฿5,500,000.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155; padding-bottom: 8px; border-bottom: 1px dashed #cbd5e1;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid); padding-bottom: 8px; border-bottom: 1px dashed var(--line-2);">
                 <span>ผลกำไรจากดอกเบี้ยทบต้น (Compound Gain):</span>
-                <strong id="res-dca-compound-gain" style="color: #16a34a;">+฿5,463,892.42</strong>
+                <strong id="res-dca-compound-gain" style="color: var(--up);">+฿5,463,892.42</strong>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px;">
-                <span style="font-size: 14px; font-weight: 800; color: #0f172a;">มูลค่าพอร์ตรวมสุทธิ:</span>
-                <span id="res-dca-grand-total" style="font-size: 26px; font-weight: 900; color: #0284c7;">฿10,963,892.42</span>
+                <span style="font-size: 14px; font-weight: 800; color: var(--txt-strong);">มูลค่าพอร์ตรวมสุทธิ:</span>
+                <span id="res-dca-grand-total" style="font-size: 26px; font-weight: 900; color: var(--accent);">฿10,963,892.42</span>
               </div>
-              <div style="font-size: 12px; color: #64748b; font-weight: 600;">
-                💵 หากถอนปันผลใช้หลังเกษียณปีละ 4% จะมีเงินใช้เฉลี่ย: <strong id="res-dca-monthly-passive" style="color: #16a34a;">฿36,546 / เดือน</strong> โดยเงินต้นยังคงอยู่
+              <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600;">
+                💵 หากถอนปันผลใช้หลังเกษียณปีละ 4% จะมีเงินใช้เฉลี่ย: <strong id="res-dca-monthly-passive" style="color: var(--up);">฿36,546 / เดือน</strong> โดยเงินต้นยังคงอยู่
               </div>
             </div>
           </div>
@@ -336,10 +336,10 @@
       <!-- TAB 3: ดอกเบี้ยกู้ / ผ่อนบ้าน-รถ (Loan Amortization) -->
       <section id="section-loan" class="calc-section" style="display: none;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-          <div style="background: #f1f5f9; color: #334155; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">📉</div>
+          <div style="background: var(--inset); color: var(--txt-mid); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">📉</div>
           <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">LOAN & MORTGAGE AMORTIZATION</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">คำนวณเงินกู้ / ค่างวดผ่อนบ้าน-สินเชื่อ</h1>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">LOAN & MORTGAGE AMORTIZATION</div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">คำนวณเงินกู้ / ค่างวดผ่อนบ้าน-สินเชื่อ</h1>
           </div>
         </div>
 
@@ -364,20 +364,20 @@
             </div>
 
             <div class="calc-result-box">
-              <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">สรุปยอดผ่อนชำระ</div>
+              <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase;">สรุปยอดผ่อนชำระ</div>
               <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <span style="font-size: 14px; font-weight: 800; color: #0f172a;">ค่างวดที่ต้องผ่อนต่อเดือน:</span>
-                <span id="res-loan-monthly" style="font-size: 26px; font-weight: 900; color: #dc2626;">฿14,498.95</span>
+                <span style="font-size: 14px; font-weight: 800; color: var(--txt-strong);">ค่างวดที่ต้องผ่อนต่อเดือน:</span>
+                <span id="res-loan-monthly" style="font-size: 26px; font-weight: 900; color: var(--down);">฿14,498.95</span>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155; margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid); margin-top: 8px;">
                 <span>ยอดเงินต้นรวม:</span>
                 <strong id="res-loan-principal">฿2,500,000.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid);">
                 <span>ดอกเบี้ยจ่ายรวมตลอดสัญญา:</span>
-                <strong id="res-loan-interest" style="color: #dc2626;">฿979,748.00</strong>
+                <strong id="res-loan-interest" style="color: var(--down);">฿979,748.00</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: #334155; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+              <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--txt-mid); padding-top: 8px; border-top: 1px dashed var(--line-2);">
                 <span>รวมยอดชำระทั้งสิ้น:</span>
                 <strong id="res-loan-grand-total" style="font-weight: 800;">฿3,479,748.00</strong>
               </div>

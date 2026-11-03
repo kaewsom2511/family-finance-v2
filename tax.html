@@ -10,8 +10,8 @@
     * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
     body { 
   margin: 0; 
-  background-color: #f8fafc; 
-  color: #0f172a; 
+  background-color: var(--panel-2); 
+  color: var(--txt-strong); 
   display: flex; 
   flex-direction: column; 
   height: 100vh;       /* เปลี่ยนจาก min-height เป็น height 100vh */
@@ -20,23 +20,23 @@
     
     /* Top Navbar */
     .top-navbar {
-      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      height: 60px; background: var(--panel); border-bottom: 1px solid var(--line);
       display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
       position: sticky; top: 0; z-index: 50;
     }
-    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
-    .brand-logo span { color: #0f172a; }
+    .brand-logo { font-size: 20px; font-weight: 800; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: var(--txt-strong); }
     
     .top-search-bar {
-      display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; padding: 6px 12px; width: 320px;
+      display: flex; align-items: center; background: var(--inset); border-radius: 8px; padding: 6px 12px; width: 320px;
     }
     .top-search-bar input {
-      border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155;
+      border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: var(--txt-mid);
     }
     .top-user-actions { display: flex; align-items: center; gap: 14px; }
     .user-badge {
-      display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0;
-      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: #334155;
+      display: inline-flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--line);
+      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 700; color: var(--txt-mid);
     }
 
     /* App Container Layout */
@@ -45,57 +45,57 @@
     /* Sidebar สไตล์ Stock Analysis */
     .sidebar {
   width: 240px; min-width: 240px; max-width: 240px; box-sizing: border-box;
-  background: #ffffff; border-right: 1px solid #e2e8f0;
+  background: var(--panel); border-right: 1px solid var(--line);
   padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
   flex-shrink: 0; user-select: none; overflow-y: auto;
 }
     .menu-group-title {
-      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      font-size: 11px; font-weight: 700; color: var(--txt-faint); text-transform: uppercase;
       letter-spacing: 0.5px; padding: 8px 10px 4px;
     }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
     
     .sidebar-link, .nav-group-header {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      border-radius: 8px; color: var(--txt-soft); text-decoration: none; font-size: 13.5px; font-weight: 700;
       background: transparent; border: none; width: 100%; cursor: pointer; text-align: left;
       transition: background 0.15s, color 0.15s;
     }
-    .sidebar-link:hover, .nav-group-header:hover { background: #f8fafc; color: #0f172a; }
+    .sidebar-link:hover, .nav-group-header:hover { background: var(--panel-2); color: var(--txt-strong); }
     .sidebar-link.active {
-      background: #f0f9ff; color: #0284c7; font-weight: 800;
-      border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0;
+      background: var(--accent-softer); color: var(--accent); font-weight: 800;
+      border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
     }
     .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
 
     /* Accordion Dropdown */
     .nav-group-header .arrow-indicator {
-      margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: #94a3b8;
+      margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: var(--txt-faint);
     }
     .nav-sub-items {
       display: none; flex-direction: column; padding-left: 16px; gap: 2px; margin-top: 2px;
     }
     .nav-group.open .nav-sub-items { display: flex; }
     .nav-group.open .nav-group-header .arrow-indicator { transform: rotate(180deg); }
-    .nav-group.open .nav-group-header { color: #0284c7; }
+    .nav-group.open .nav-group-header { color: var(--accent); }
 
     .nav-sub-item {
-  padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: #64748b;
+  padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: var(--txt-muted);
   text-decoration: none; border-radius: 6px; transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
-    .nav-sub-item:hover { background: #f1f5f9; color: #0f172a; }
-    .nav-sub-item.active { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+    .nav-sub-item:hover { background: var(--inset); color: var(--txt-strong); }
+    .nav-sub-item.active { background: var(--accent-soft); color: var(--accent-3); font-weight: 700; }
 
     /* Main Content Wrapper */
-    .main-wrapper { flex: 1; padding: 0; overflow-y: auto; text-align: left; background: #f8fafc; }
+    .main-wrapper { flex: 1; padding: 0; overflow-y: auto; text-align: left; background: var(--panel-2); }
 
     /* ซ่อนเฉพาะ Sidebar ตัวเก่าที่ฝังอยู่ใน tax.js แต่เปิดให้ตารางและส่วนคำนวณทั้งหมดแสดงเต็มพื้นที่ */
     #content-area aside { display: none !important; }
     #content-area > div { min-height: auto !important; background: transparent !important; }
   </style>
 </head>
-<body>
+<body data-theme="dark">
 
   <!-- Top Navbar -->
   <header class="top-navbar">
@@ -109,10 +109,10 @@
     <div class="top-user-actions">
       <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
         <div style="text-align: right;">
-          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
-          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: var(--txt);"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: var(--txt-muted); text-transform: uppercase;"></div>
         </div>
-        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: var(--down-soft-2); color: var(--down-2); border: 1px solid var(--down-line); border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
           ออกจากระบบ
         </button>
       </div>

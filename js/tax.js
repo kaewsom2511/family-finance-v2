@@ -836,7 +836,7 @@ var TaxModule = {
     if (c4) c4.textContent = fmt(s.taxEstimatedCurrent);
     if (c5) {
       c5.textContent = s.refundOrPayCurrent >= 0 ? `ขอคืน ${fmt(s.refundOrPayCurrent)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayCurrent))}`;
-      c5.style.color = s.refundOrPayCurrent >= 0 ? '#059669' : '#dc2626';
+      c5.style.color = s.refundOrPayCurrent >= 0 ? 'var(--up-2)' : 'var(--down)';
     }
 
     const bSummaryNet = document.querySelector("#bSummaryNet");
@@ -877,11 +877,11 @@ var TaxModule = {
     if (bTotalCreditPlan) bTotalCreditPlan.textContent = fmt(totalPaidBeforeTax);
     if (bRefund) {
       bRefund.textContent = s.refundOrPayCurrent >= 0 ? `รับคืน ${fmt(s.refundOrPayCurrent)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayCurrent))}`;
-      bRefund.style.color = s.refundOrPayCurrent >= 0 ? '#059669' : '#dc2626';
+      bRefund.style.color = s.refundOrPayCurrent >= 0 ? 'var(--up-2)' : 'var(--down)';
     }
     if (bRefundPlan) {
       bRefundPlan.textContent = s.refundOrPayPlan >= 0 ? `รับคืน ${fmt(s.refundOrPayPlan)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayPlan))}`;
-      bRefundPlan.style.color = s.refundOrPayPlan >= 0 ? '#059669' : '#dc2626';
+      bRefundPlan.style.color = s.refundOrPayPlan >= 0 ? 'var(--up-2)' : 'var(--down)';
     }
     if (bDiff) bDiff.textContent = s.savingsDiff > 0 ? `${fmt(s.savingsDiff)} บาท` : '-';
     if (bBurdenReduction) bBurdenReduction.textContent = s.totalPlanAdded > 0 ? `${s.taxBurdenReductionPct}%` : '-';
@@ -933,21 +933,21 @@ var TaxModule = {
       const isAutoCalc = (i.id === 'inc-40-4');
 
       return `
-        <tr style="border-bottom: 1px solid #dbeafe; font-size: 13px;">
-          <td style="padding: 8px 12px; font-weight: ${i.code ? '700' : '400'}; color: #1e293b; background: #fff;">
+        <tr style="border-bottom: 1px solid var(--blue-line); font-size: 13px;">
+          <td style="padding: 8px 12px; font-weight: ${i.code ? '700' : '400'}; color: var(--txt); background: var(--panel);">
             ${i.code ? `<strong>${i.code}</strong>${i.name}` : `<span style="padding-left: 14px;">${i.name}</span>`}
-            ${i.custom ? `<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 5px; border-radius:4px; margin-left:6px; font-weight:700;">เพิ่มเอง</span>` : ''}
-            ${isAutoCalc ? `<span style="font-size:10px; background:#f0fdf4; color:#166534; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700; border:1px solid #bbf7d0;">ออโต้จากตารางปันผล</span>` : ''}
+            ${i.custom ? `<span style="font-size:10px; background:var(--accent-soft); color:var(--accent-3); padding:2px 5px; border-radius:4px; margin-left:6px; font-weight:700;">เพิ่มเอง</span>` : ''}
+            ${isAutoCalc ? `<span style="font-size:10px; background:var(--up-soft-2); color:var(--up-5); padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700; border:1px solid var(--up-line);">ออโต้จากตารางปันผล</span>` : ''}
           </td>
-          <td style="padding: 8px 12px; color: #475569; font-size: 12.5px; background: #f0f7ff;">${i.rule}</td>
-          <td style="padding: 4px 8px; background: #fff; width: 140px; text-align: right;">
+          <td style="padding: 8px 12px; color: var(--txt-soft); font-size: 12.5px; background: var(--accent-softer);">${i.rule}</td>
+          <td style="padding: 4px 8px; background: var(--panel); width: 140px; text-align: right;">
             <input type="text" inputmode="decimal" data-income-id="${i.id}" value="${fmtInput(i.amount)}" placeholder="" ${isAutoCalc ? 'readonly title="คำนวณอัตโนมัติจากตารางเงินปันผล TSD ด้านล่าง"' : ''}
-              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: ${isAutoCalc ? '#f8fafc' : '#fff'}; color: ${isAutoCalc ? '#0369a1' : '#0f172a'};">
+              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: ${isAutoCalc ? 'var(--panel-2)' : 'var(--panel)'}; color: ${isAutoCalc ? 'var(--accent-3)' : 'var(--txt-strong)'};">
           </td>
-          <td class="number" data-income-expense="${i.id}" style="padding: 8px 12px; text-align: right; color: #334155; background: #f0f7ff;">${fmt(expense)}</td>
-          <td class="number" data-income-net="${i.id}" style="padding: 8px 12px; text-align: right; font-weight: 700; color: #0f172a; background: #f0f7ff;">${fmt(after)}</td>
-          <td style="padding: 6px 8px; text-align: center; background: #fff;">
-            ${!isAutoCalc ? `<button type="button" class="btn-manage-income" data-id="${i.id}" style="background: #1e293b; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">⚙ จัดการ</button>` : '<span style="color:#94a3b8; font-size:11px;">-</span>'}
+          <td class="number" data-income-expense="${i.id}" style="padding: 8px 12px; text-align: right; color: var(--txt-mid); background: var(--accent-softer);">${fmt(expense)}</td>
+          <td class="number" data-income-net="${i.id}" style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--txt-strong); background: var(--accent-softer);">${fmt(after)}</td>
+          <td style="padding: 6px 8px; text-align: center; background: var(--panel);">
+            ${!isAutoCalc ? `<button type="button" class="btn-manage-income" data-id="${i.id}" style="background: var(--solid-slate-3); color: var(--on-ink); border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">⚙ จัดการ</button>` : '<span style="color:var(--txt-faint); font-size:11px;">-</span>'}
           </td>
         </tr>
       `;
@@ -978,10 +978,10 @@ var TaxModule = {
         }
       }
 
-      const borderTopStyle = isGroupStart && index !== 0 ? 'border-top: 2.5px solid #94a3b8;' : 'border-top: 1px solid #dbeafe;';
+      const borderTopStyle = isGroupStart && index !== 0 ? 'border-top: 2.5px solid var(--txt-faint);' : 'border-top: 1px solid var(--blue-line);';
 
       const groupCell = isGroupStart ? `
-        <td rowspan="${groupSpan}" style="padding: 8px 4px; background: ${gColor}; color: #ffffff; font-size: 13px; font-weight: 800; text-align: center; vertical-align: middle; width: 44px; min-width: 44px; border-right: 1.5px solid #cbd5e1; user-select: none;">
+        <td rowspan="${groupSpan}" style="padding: 8px 4px; background: ${gColor}; color: var(--on-ink); font-size: 13px; font-weight: 800; text-align: center; vertical-align: middle; width: 44px; min-width: 44px; border-right: 1.5px solid var(--line-2); user-select: none;">
           <div style="writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 2px; margin: 0 auto; white-space: nowrap;">
             ${d.group}
           </div>
@@ -989,39 +989,39 @@ var TaxModule = {
       ` : '';
 
       deductRowsHtml += `
-        <tr style="${borderTopStyle} border-bottom: 1px solid #dbeafe; font-size: 13px;">
+        <tr style="${borderTopStyle} border-bottom: 1px solid var(--blue-line); font-size: 13px;">
           ${groupCell}
-          <td style="padding: 8px 12px; font-weight: 700; color: #1e293b; background: #fff;">
+          <td style="padding: 8px 12px; font-weight: 700; color: var(--txt); background: var(--panel);">
             ${d.name}
-            ${d.custom ? `<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 5px; border-radius:4px; margin-left:6px; font-weight:700;">เพิ่มเอง</span>` : ''}
+            ${d.custom ? `<span style="font-size:10px; background:var(--accent-soft); color:var(--accent-3); padding:2px 5px; border-radius:4px; margin-left:6px; font-weight:700;">เพิ่มเอง</span>` : ''}
           </td>
-          <td style="padding: 8px 12px; color: #475569; font-size: 12px; background: #f0f7ff;">${d.rule}</td>
-          <td data-deduct-limit="${d.id}" style="padding: 8px 12px; text-align: right; color: #334155; background: #f0f7ff;">${d.limit > 0 ? fmt(d.limit) : 'ไม่จำกัด'}</td>
-          <td style="padding: 4px 8px; background: #fff; width: 130px;">
+          <td style="padding: 8px 12px; color: var(--txt-soft); font-size: 12px; background: var(--accent-softer);">${d.rule}</td>
+          <td data-deduct-limit="${d.id}" style="padding: 8px 12px; text-align: right; color: var(--txt-mid); background: var(--accent-softer);">${d.limit > 0 ? fmt(d.limit) : 'ไม่จำกัด'}</td>
+          <td style="padding: 4px 8px; background: var(--panel); width: 130px;">
             <input type="text" inputmode="decimal" data-deduct-id="${d.id}" value="${fmtInput(d.current)}" placeholder="" 
-              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #fff;">
+              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: var(--panel);">
           </td>
-          <td class="number" data-deduct-remain="${d.id}" style="padding: 8px 12px; text-align: right; font-weight: 700; color: #0f172a; background: #f0f7ff;">${fmt(runningNet)}</td>
-          <td style="padding: 4px 8px; background: #fff; width: 130px;">
+          <td class="number" data-deduct-remain="${d.id}" style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--txt-strong); background: var(--accent-softer);">${fmt(runningNet)}</td>
+          <td style="padding: 4px 8px; background: var(--panel); width: 130px;">
             <input type="text" inputmode="decimal" data-plan-deduct-id="${d.id}" value="${fmtInput(d.plan)}" placeholder="" 
-              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1.5px solid #eab308; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #ffff00; color: #000;">
+              style="width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1.5px solid var(--warn-2); border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #ffff00; color: #000;">
           </td>
-          <td style="padding: 6px 8px; text-align: center; background: #fff;">
-            <button type="button" class="btn-manage-deduct" data-id="${d.id}" style="background: #1e293b; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">⚙ จัดการ</button>
+          <td style="padding: 6px 8px; text-align: center; background: var(--panel);">
+            <button type="button" class="btn-manage-deduct" data-id="${d.id}" style="background: var(--solid-slate-3); color: var(--on-ink); border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">⚙ จัดการ</button>
           </td>
         </tr>
       `;
     }
 
     const bracketRowsHtml = s.bracketRows.map((b, idx) => `
-      <tr style="border-bottom: 1px solid #dbeafe; font-size: 13px; text-align: right;">
-        <td style="padding: 8px 12px; text-align: center; color: #1e293b; background: #f0f7ff; font-weight: 600;">${b.label}</td>
-        <td style="padding: 8px 12px; background: #fff;">${b.netIncomeSpan > 0 ? fmt(b.netIncomeSpan) : '0.00'}</td>
-        <td style="padding: 8px 12px; text-align: center; background: #f0f7ff;">${b.rateStr}</td>
-        <td style="padding: 8px 12px; background: #fff;">${fmt(b.maxTax)}</td>
-        <td class="number" data-bracket-base="${idx}" style="padding: 8px 12px; font-weight: 700; background: #f0f7ff;">${fmt(b.currentBase)}</td>
-        <td class="number" data-bracket-tax="${idx}" style="padding: 8px 12px; font-weight: 700; color: #0f172a; background: #fff;">${fmt(b.currentTax)}</td>
-        <td class="number" data-bracket-plan="${idx}" style="padding: 8px 12px; color: #0f172a; background: #fefce8; font-weight: 700;">
+      <tr style="border-bottom: 1px solid var(--blue-line); font-size: 13px; text-align: right;">
+        <td style="padding: 8px 12px; text-align: center; color: var(--txt); background: var(--accent-softer); font-weight: 600;">${b.label}</td>
+        <td style="padding: 8px 12px; background: var(--panel);">${b.netIncomeSpan > 0 ? fmt(b.netIncomeSpan) : '0.00'}</td>
+        <td style="padding: 8px 12px; text-align: center; background: var(--accent-softer);">${b.rateStr}</td>
+        <td style="padding: 8px 12px; background: var(--panel);">${fmt(b.maxTax)}</td>
+        <td class="number" data-bracket-base="${idx}" style="padding: 8px 12px; font-weight: 700; background: var(--accent-softer);">${fmt(b.currentBase)}</td>
+        <td class="number" data-bracket-tax="${idx}" style="padding: 8px 12px; font-weight: 700; color: var(--txt-strong); background: var(--panel);">${fmt(b.currentTax)}</td>
+        <td class="number" data-bracket-plan="${idx}" style="padding: 8px 12px; color: var(--txt-strong); background: var(--cream-soft); font-weight: 700;">
           ${b.planTax > 0 ? fmt(b.planTax) : '-'}
         </td>
       </tr>
@@ -1032,20 +1032,20 @@ var TaxModule = {
     ).join('');
 
     container.innerHTML = `
-      <div style="display: flex; width: 100%; min-height: 100vh; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <div style="display: flex; width: 100%; min-height: 100vh; background: var(--panel-2); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         
         <!-- SIDEBAR ซ้ายมือ -->
-        <aside style="width: 190px; min-width: 190px; height: 100vh; position: sticky; top: 0; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 20px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; z-index: 50;">
+        <aside style="width: 190px; min-width: 190px; height: 100vh; position: sticky; top: 0; background: var(--panel); border-right: 1px solid var(--line); padding: 20px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; z-index: 50;">
           <div>
-            <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 10px; padding-left: 8px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-bottom: 10px; padding-left: 8px;">
               คำนวณภาษี
             </div>
             
-            <div style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 13.5px; padding: 9px 12px; border-radius: 8px; border-left: 3px solid #0284c7; cursor: default; user-select: none;">
+            <div style="background: var(--accent-soft); color: var(--accent-3); font-weight: 800; font-size: 13.5px; padding: 9px 12px; border-radius: 8px; border-left: 3px solid var(--accent); cursor: default; user-select: none;">
               คำนวณภาษี
             </div>
 
-            <button type="button" id="taxBackToHomeBtn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin-top: 6px; border-radius: 8px; border: none; background: transparent; color: #334155; font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.15s ease;">
+            <button type="button" id="taxBackToHomeBtn" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin-top: 6px; border-radius: 8px; border: none; background: transparent; color: var(--txt-mid); font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.15s ease;">
               กลับหน้าหลัก
             </button>
           </div>
@@ -1054,79 +1054,79 @@ var TaxModule = {
         <!-- MAIN CONTENT -->
         <div style="flex: 1; padding: 24px 32px 80px 32px; box-sizing: border-box; min-width: 0;">
           
-          <div style="font-size: 12px; font-weight: 700; color: #0284c7; margin-bottom: 2px;">Tax Planner</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 2px;">Tax Planner</div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-            <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: #0f172a;">วางแผนภาษีบุคคลธรรมดา</h1>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: var(--txt-strong);">วางแผนภาษีบุคคลธรรมดา</h1>
             
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <button type="button" id="btnExportTaxJson" style="background: #fff; border: 1.5px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <button type="button" id="btnExportTaxJson" style="background: var(--panel); border: 1.5px solid var(--line-2); color: var(--txt-mid); padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
                 📤 ส่งออก JSON
               </button>
-              <button type="button" id="btnImportTaxJson" style="background: #fff; border: 1.5px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <button type="button" id="btnImportTaxJson" style="background: var(--panel); border: 1.5px solid var(--line-2); color: var(--txt-mid); padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
                 📥 นำเข้า JSON
               </button>
 
-              <div style="display: flex; align-items: center; gap: 8px; background: #fff; padding: 5px 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                <span style="font-size: 13px; font-weight: 700; color: #475569;">ปีภาษี:</span>
-                <select id="taxYearSelect" style="padding: 4px 10px; border: 1.5px solid #0284c7; border-radius: 6px; font-weight: 900; font-size: 13.5px; color: #0369a1; background: #f0f9ff; cursor: pointer; outline: none;">
+              <div style="display: flex; align-items: center; gap: 8px; background: var(--panel); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                <span style="font-size: 13px; font-weight: 700; color: var(--txt-soft);">ปีภาษี:</span>
+                <select id="taxYearSelect" style="padding: 4px 10px; border: 1.5px solid var(--accent); border-radius: 6px; font-weight: 900; font-size: 13.5px; color: var(--accent-3); background: var(--accent-softer); cursor: pointer; outline: none;">
                   ${yearOptionsHtml}
                 </select>
-                <button type="button" id="btnAddYearBtn" title="เพิ่มปีภาษีใหม่ เช่น 2025" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer;">
+                <button type="button" id="btnAddYearBtn" title="เพิ่มปีภาษีใหม่ เช่น 2025" style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer;">
                   + เพิ่มปี
                 </button>
-                <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 4px;">บันทึกอัตโนมัติ - ${this.currentUser}</span>
+                <span style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-left: 4px;">บันทึกอัตโนมัติ - ${this.currentUser}</span>
               </div>
             </div>
           </div>
 
           <!-- การ์ดสรุป 5 ช่อง -->
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 12px;">
-              <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;">รายได้รวม</div>
-                <div id="cardTotalIncome" style="font-size: 22px; font-weight: 900; color: #0f172a;">${fmt(s.totalIncome)}</div>
+              <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 4px;">รายได้รวม</div>
+                <div id="cardTotalIncome" style="font-size: 22px; font-weight: 900; color: var(--txt-strong);">${fmt(s.totalIncome)}</div>
               </div>
-              <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;">หักค่าใช้จ่าย + ลดหย่อน</div>
-                <div id="cardTotalExpenseAndDeduct" style="font-size: 22px; font-weight: 900; color: #0f172a;">${fmt(s.totalExpense + s.totalDeductCurrent)}</div>
+              <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 4px;">หักค่าใช้จ่าย + ลดหย่อน</div>
+                <div id="cardTotalExpenseAndDeduct" style="font-size: 22px; font-weight: 900; color: var(--txt-strong);">${fmt(s.totalExpense + s.totalDeductCurrent)}</div>
               </div>
-              <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;">เงินได้สุทธิ</div>
-                <div id="cardNetTaxable" style="font-size: 22px; font-weight: 900; color: #0f172a;">${fmt(s.taxableNetCurrent)}</div>
+              <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 4px;">เงินได้สุทธิ</div>
+                <div id="cardNetTaxable" style="font-size: 22px; font-weight: 900; color: var(--txt-strong);">${fmt(s.taxableNetCurrent)}</div>
               </div>
-              <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;">ภาษีประมาณการ</div>
-                <div id="cardEstimatedTax" style="font-size: 22px; font-weight: 900; color: #0f172a;">${fmt(s.taxEstimatedCurrent)}</div>
+              <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px;">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 4px;">ภาษีประมาณการ</div>
+                <div id="cardEstimatedTax" style="font-size: 22px; font-weight: 900; color: var(--txt-strong);">${fmt(s.taxEstimatedCurrent)}</div>
               </div>
-              <div style="background: #fff; border: 1.5px solid ${s.refundOrPayCurrent >= 0 ? '#bbf7d0' : '#fecaca'}; border-radius: 8px; padding: 14px 18px;">
-                <div style="font-size: 11.5px; font-weight: 700; color: ${s.refundOrPayCurrent >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 4px;">ผลหลังหักภาษีที่จ่ายแล้ว</div>
-                <div id="cardTaxRefund" style="font-size: 22px; font-weight: 900; color: ${s.refundOrPayCurrent >= 0 ? '#059669' : '#dc2626'};">
+              <div style="background: var(--panel); border: 1.5px solid ${s.refundOrPayCurrent >= 0 ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 8px; padding: 14px 18px;">
+                <div style="font-size: 11.5px; font-weight: 700; color: ${s.refundOrPayCurrent >= 0 ? 'var(--up-5)' : 'var(--down-4)'}; margin-bottom: 4px;">ผลหลังหักภาษีที่จ่ายแล้ว</div>
+                <div id="cardTaxRefund" style="font-size: 22px; font-weight: 900; color: ${s.refundOrPayCurrent >= 0 ? 'var(--up-2)' : 'var(--down)'};">
                   ${s.refundOrPayCurrent >= 0 ? `ขอคืน ${fmt(s.refundOrPayCurrent)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayCurrent))}`}
                 </div>
               </div>
             </div>
-            <div style="font-size: 11.5px; color: #64748b;">ใช้เพื่อประเมินเบื้องต้น ควรตรวจสอบเงื่อนไขจริงก่อนยื่นภาษี</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">ใช้เพื่อประเมินเบื้องต้น ควรตรวจสอบเงื่อนไขจริงก่อนยื่นภาษี</div>
           </div>
 
           <!-- ตารางรายได้ตาม ม.40 -->
-          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">รายได้ตามมาตรา 40 และค่าใช้จ่าย</h3>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--txt-strong);">รายได้ตามมาตรา 40 และค่าใช้จ่าย</h3>
               <div style="display:flex; gap:8px;">
                 ${this.hiddenIncomes.length > 0 ? `
-                  <button type="button" id="btnRestoreHiddenIncome" style="background:#f8fafc; color:#0369a1; border:1px solid #cbd5e1; font-weight:700; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
+                  <button type="button" id="btnRestoreHiddenIncome" style="background:var(--panel-2); color:var(--accent-3); border:1px solid var(--line-2); font-weight:700; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
                     👁️ คืนค่าที่ซ่อน (${this.hiddenIncomes.length})
                   </button>
                 ` : ''}
-                <button type="button" id="btnAddIncomeType" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                <button type="button" id="btnAddIncomeType" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;">
                   เพิ่มรายการรายได้
                 </button>
               </div>
             </div>
-            <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <div style="overflow-x: auto; border: 1px solid var(--line-2); border-radius: 4px;">
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                  <tr style="background: #2b3a4a; color: #fff; font-size: 12.5px;">
+                  <tr style="background: var(--solid-slate); color: var(--on-ink); font-size: 12.5px;">
                     <th style="padding: 10px 12px;">ประเภทเงินได้</th>
                     <th style="padding: 10px 12px;">วิธีหักค่าใช้จ่าย</th>
                     <th style="padding: 10px 12px; text-align: right;">รายได้</th>
@@ -1137,12 +1137,12 @@ var TaxModule = {
                 </thead>
                 <tbody>
                   ${incomeRowsHtml}
-                  <tr style="background: #fefce8; font-weight: 900; font-size: 13.5px; border-top: 2px solid #cbd5e1;">
+                  <tr style="background: var(--cream-soft); font-weight: 900; font-size: 13.5px; border-top: 2px solid var(--line-2);">
                     <td colspan="2" style="padding: 10px 12px;">รวม</td>
-                    <td id="incomeTotalAmount" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.totalIncome)}</td>
-                    <td id="incomeTotalExpense" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.totalExpense)}</td>
-                    <td id="incomeTotalNet" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.incomeAfterExpense)}</td>
-                    <td style="background: #f0f7ff;"></td>
+                    <td id="incomeTotalAmount" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.totalIncome)}</td>
+                    <td id="incomeTotalExpense" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.totalExpense)}</td>
+                    <td id="incomeTotalNet" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.incomeAfterExpense)}</td>
+                    <td style="background: var(--accent-softer);"></td>
                   </tr>
                 </tbody>
               </table>
@@ -1150,24 +1150,24 @@ var TaxModule = {
           </div>
 
           <!-- ตารางเงินปันผลหุ้น / เครดิตภาษี (TSD Summary By Tax Rate: Inline 4-Row Grid) -->
-          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
               <div>
-                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">เงินปันผลหุ้น / เครดิตภาษี (มาตรา 40(4)(ข))</h3>
-                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">💡 กรอกตัวเลขตามตาราง "สรุปเงินได้ตามอัตราภาษี (Summary By Tax Rate)" หรือกดปุ่มนำเข้าไฟล์ Excel</div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--txt-strong);">เงินปันผลหุ้น / เครดิตภาษี (มาตรา 40(4)(ข))</h3>
+                <div style="font-size: 12px; color: var(--txt-muted); margin-top: 2px;">💡 กรอกตัวเลขตามตาราง "สรุปเงินได้ตามอัตราภาษี (Summary By Tax Rate)" หรือกดปุ่มนำเข้าไฟล์ Excel</div>
               </div>
               <div>
                 <input type="file" id="inputTsdFileHidden" accept=".xlsx, .xls, .csv" style="display: none;">
-                <button type="button" id="btnTriggerTsdImport" style="background: #0284c7; color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(2,132,199,0.25);">
+                <button type="button" id="btnTriggerTsdImport" style="background: var(--accent); color: var(--on-accent); border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(2,132,199,0.25);">
                   <span>📥</span> นำเข้าไฟล์ TSD (.xlsx)
                 </button>
               </div>
             </div>
 
-            <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <div style="overflow-x: auto; border: 1px solid var(--line-2); border-radius: 4px;">
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                  <tr style="background: #2b3a4a; color: #fff; font-size: 12.5px;">
+                  <tr style="background: var(--solid-slate); color: var(--on-ink); font-size: 12.5px;">
                     <th style="padding: 10px 12px; width: 28%;">กลุ่มอัตราภาษี (ตามใบสรุป TSD)</th>
                     <th style="padding: 10px 12px; text-align: right; width: 18%;">เงินปันผล (บาท)</th>
                     <th style="padding: 10px 12px; text-align: center; width: 12%;">อัตราภาษี</th>
@@ -1184,44 +1184,44 @@ var TaxModule = {
                       : (d.rate > 0 ? (d.amount * (d.rate / (100 - d.rate))) : 0);
                     const gross = (d.amount || 0) + credit;
                     return `
-                      <tr style="border-bottom: 1px solid #dbeafe; font-size: 13px;">
-                        <td style="padding: 10px 12px; font-weight: 700; color: #1e293b; background: #fff;">
+                      <tr style="border-bottom: 1px solid var(--blue-line); font-size: 13px;">
+                        <td style="padding: 10px 12px; font-weight: 700; color: var(--txt); background: var(--panel);">
                           ${d.label}
                         </td>
-                        <td style="padding: 4px 8px; background: #fff; text-align: right;">
+                        <td style="padding: 4px 8px; background: var(--panel); text-align: right;">
                           <input type="text" inputmode="decimal" class="input-tsd-amount" data-key="${d.key}" value="${fmtInput(d.amount)}" placeholder="0.00"
-                            style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #fff;">
+                            style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: var(--panel);">
                         </td>
-                        <td style="padding: 10px 12px; text-align: center; color: #475569; background: #f0f7ff; font-weight: 700;">
+                        <td style="padding: 10px 12px; text-align: center; color: var(--txt-soft); background: var(--accent-softer); font-weight: 700;">
                           ${d.rate > 0 ? d.rate + '%' : (d.key === 'rate-0' ? '0%' : '-')}
                         </td>
-                        <td class="number" data-tsd-credit="${d.key}" style="padding: 10px 12px; text-align: right; color: #059669; font-weight: 700; background: #f0f7ff;">
+                        <td class="number" data-tsd-credit="${d.key}" style="padding: 10px 12px; text-align: right; color: var(--up-2); font-weight: 700; background: var(--accent-softer);">
                           ${fmt(credit)}
                         </td>
-                        <td style="padding: 4px 8px; background: #fff; text-align: right;">
+                        <td style="padding: 4px 8px; background: var(--panel); text-align: right;">
                           <input type="text" inputmode="decimal" class="input-tsd-wht" data-key="${d.key}" value="${fmtInput(d.wht)}" placeholder="0.00"
-                            style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: #fff; color: #dc2626;">
+                            style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 4px; text-align: right; font-size: 13px; font-weight: 700; background: var(--panel); color: var(--down);">
                         </td>
-                        <td class="number" data-tsd-gross="${d.key}" style="padding: 10px 12px; text-align: right; font-weight: 800; color: #0f172a; background: #f0f7ff;">
+                        <td class="number" data-tsd-gross="${d.key}" style="padding: 10px 12px; text-align: right; font-weight: 800; color: var(--txt-strong); background: var(--accent-softer);">
                           ${fmt(gross)}
                         </td>
-                        <td style="padding: 6px 8px; text-align: center; background: #fff;">
+                        <td style="padding: 6px 8px; text-align: center; background: var(--panel);">
                           <button type="button" class="btn-clear-tsd-row" data-key="${d.key}" title="ล้างแถวนี้เป็น 0"
-                            style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                            style="background: var(--inset); color: var(--txt-muted); border: 1px solid var(--line-2); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
                             ล้าง
                           </button>
                         </td>
                       </tr>
                     `;
                   }).join('')}
-                  <tr style="background: #fefce8; font-weight: 900; font-size: 13.5px; border-top: 2px solid #cbd5e1;">
-                    <td style="padding: 10px 12px; color: #0f172a;">รวมทั้งสิ้น</td>
-                    <td id="tsdTotalAmount" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.divNetSum)}</td>
-                    <td style="background: #f0f7ff;"></td>
-                    <td id="tsdTotalCredit" style="padding: 10px 12px; text-align: right; color: #059669;">${fmt(s.divCreditSum)}</td>
-                    <td id="tsdTotalWht" style="padding: 10px 12px; text-align: right; color: #dc2626;">${fmt(s.divWhtSum)}</td>
-                    <td id="tsdTotalGross" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.divNetSum + s.divCreditSum)}</td>
-                    <td style="background: #fff;"></td>
+                  <tr style="background: var(--cream-soft); font-weight: 900; font-size: 13.5px; border-top: 2px solid var(--line-2);">
+                    <td style="padding: 10px 12px; color: var(--txt-strong);">รวมทั้งสิ้น</td>
+                    <td id="tsdTotalAmount" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.divNetSum)}</td>
+                    <td style="background: var(--accent-softer);"></td>
+                    <td id="tsdTotalCredit" style="padding: 10px 12px; text-align: right; color: var(--up-2);">${fmt(s.divCreditSum)}</td>
+                    <td id="tsdTotalWht" style="padding: 10px 12px; text-align: right; color: var(--down);">${fmt(s.divWhtSum)}</td>
+                    <td id="tsdTotalGross" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.divNetSum + s.divCreditSum)}</td>
+                    <td style="background: var(--panel);"></td>
                   </tr>
                 </tbody>
               </table>
@@ -1229,41 +1229,41 @@ var TaxModule = {
           </div>
 
           <!-- ตารางค่าลดหย่อน -->
-          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 16px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">ค่าลดหย่อน</h3>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--txt-strong);">ค่าลดหย่อน</h3>
               <div style="display:flex; gap:8px;">
                 ${this.hiddenDeductions.length > 0 ? `
-                  <button type="button" id="btnRestoreHiddenDeduct" style="background:#f8fafc; color:#0369a1; border:1px solid #cbd5e1; font-weight:700; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
+                  <button type="button" id="btnRestoreHiddenDeduct" style="background:var(--panel-2); color:var(--accent-3); border:1px solid var(--line-2); font-weight:700; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
                     👁️ คืนค่าที่ซ่อน (${this.hiddenDeductions.length})
                   </button>
                 ` : ''}
-                <button type="button" id="btnAddDeductionType" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                <button type="button" id="btnAddDeductionType" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;">
                   เพิ่มรายการลดหย่อน
                 </button>
               </div>
             </div>
-            <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <div style="overflow-x: auto; border: 1px solid var(--line-2); border-radius: 4px;">
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                  <tr style="background: #2b3a4a; color: #fff; font-size: 12.5px;">
+                  <tr style="background: var(--solid-slate); color: var(--on-ink); font-size: 12.5px;">
                     <th style="padding: 10px 6px; text-align: center; width: 44px;">กลุ่ม</th>
                     <th style="padding: 10px 12px;">รายการลดหย่อน</th>
                     <th style="padding: 10px 12px;">เงื่อนไข / เพดาน</th>
                     <th style="padding: 10px 12px; text-align: right;">สูงสุด</th>
                     <th style="padding: 10px 12px; text-align: right;">ค่าลดหย่อน</th>
                     <th style="padding: 10px 12px; text-align: right;">รายได้สุทธิคงเหลือ</th>
-                    <th style="padding: 10px 12px; text-align: right; background: #334155;">วางแผนเพิ่ม</th>
+                    <th style="padding: 10px 12px; text-align: right; background: var(--solid-slate);">วางแผนเพิ่ม</th>
                     <th style="padding: 10px 12px; text-align: center;">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${deductRowsHtml}
-                  <tr style="background: #fefce8; font-weight: 900; font-size: 13.5px; border-top: 2.5px solid #cbd5e1;">
+                  <tr style="background: var(--cream-soft); font-weight: 900; font-size: 13.5px; border-top: 2.5px solid var(--line-2);">
                     <td colspan="4" style="padding: 10px 12px;">รวมค่าลดหย่อน</td>
-                    <td id="deductTotalCurrent" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.totalDeductCurrent)}</td>
-                    <td id="deductTotalRemain" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.taxableNetCurrent)}</td>
-                    <td id="deductTotalPlan" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.totalDeductPlan - s.totalDeductCurrent)}</td>
+                    <td id="deductTotalCurrent" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.totalDeductCurrent)}</td>
+                    <td id="deductTotalRemain" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.taxableNetCurrent)}</td>
+                    <td id="deductTotalPlan" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.totalDeductPlan - s.totalDeductCurrent)}</td>
                     <td></td>
                   </tr>
                 </tbody>
@@ -1272,71 +1272,71 @@ var TaxModule = {
           </div>
 
           <!-- ตารางคำนวณขั้นบันไดและแผนเพิ่ม -->
-          <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); background: #dbeafe; border-bottom: 1px solid #bfdbfe;">
-              <div style="padding: 12px; text-align: center; border-right: 1px solid #bfdbfe;">
-                <div style="font-size: 11px; font-weight: 700; color: #475569;">เงินได้สุทธิสำหรับคำนวณภาษี</div>
-                <div id="bSummaryNet" style="font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px;">${fmt(s.taxableNetCurrent)}</div>
+          <div style="background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); background: var(--inset); border-bottom: 1px solid var(--blue-line);">
+              <div style="padding: 12px; text-align: center; border-right: 1px solid var(--blue-line);">
+                <div style="font-size: 11px; font-weight: 700; color: var(--txt-soft);">เงินได้สุทธิสำหรับคำนวณภาษี</div>
+                <div id="bSummaryNet" style="font-size: 18px; font-weight: 900; color: var(--txt-strong); margin-top: 2px;">${fmt(s.taxableNetCurrent)}</div>
               </div>
-              <div style="padding: 12px; text-align: center; border-right: 1px solid #bfdbfe;">
-                <div style="font-size: 11px; font-weight: 700; color: #475569;">วางแผนเพิ่มแล้วเหลือ</div>
-                <div id="bSummaryPlan" style="font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px;">${fmt(s.taxableNetPlan)}</div>
+              <div style="padding: 12px; text-align: center; border-right: 1px solid var(--blue-line);">
+                <div style="font-size: 11px; font-weight: 700; color: var(--txt-soft);">วางแผนเพิ่มแล้วเหลือ</div>
+                <div id="bSummaryPlan" style="font-size: 18px; font-weight: 900; color: var(--txt-strong); margin-top: 2px;">${fmt(s.taxableNetPlan)}</div>
               </div>
-              <div style="padding: 12px; text-align: center; border-right: 1px solid #bfdbfe;">
-                <div style="font-size: 11px; font-weight: 700; color: #475569;">Tax Rate</div>
-                <div id="bSummaryRate" style="font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px;">${s.effectiveRateCurrent}%</div>
+              <div style="padding: 12px; text-align: center; border-right: 1px solid var(--blue-line);">
+                <div style="font-size: 11px; font-weight: 700; color: var(--txt-soft);">Tax Rate</div>
+                <div id="bSummaryRate" style="font-size: 18px; font-weight: 900; color: var(--txt-strong); margin-top: 2px;">${s.effectiveRateCurrent}%</div>
               </div>
               <div style="padding: 12px; text-align: center;">
-                <div style="font-size: 11px; font-weight: 700; color: #475569;">Tax Rate หลังแผน</div>
-                <div id="bSummaryRatePlan" style="font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px;">${s.effectiveRatePlan}%</div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--txt-soft);">Tax Rate หลังแผน</div>
+                <div id="bSummaryRatePlan" style="font-size: 18px; font-weight: 900; color: var(--txt-strong); margin-top: 2px;">${s.effectiveRatePlan}%</div>
               </div>
             </div>
 
             <div style="overflow-x: auto;">
               <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                  <tr style="background: #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 800; border-bottom: 1px solid #cbd5e1;">
+                  <tr style="background: var(--line); color: var(--txt-strong); font-size: 12px; font-weight: 800; border-bottom: 1px solid var(--line-2);">
                     <th style="padding: 8px 12px; text-align: center;">เงินได้สุทธิต่อปี</th>
                     <th style="padding: 8px 12px; text-align: right;">Net Income</th>
                     <th style="padding: 8px 12px; text-align: center;">อัตราภาษีเงินได้</th>
                     <th style="padding: 8px 12px; text-align: right;">Tax Amount (Max)</th>
                     <th style="padding: 8px 12px; text-align: right;">เงินได้สุทธิ</th>
                     <th style="padding: 8px 12px; text-align: right;">Tax Amount</th>
-                    <th style="padding: 8px 12px; text-align: right; background: #fef08a;">วางแผนเพิ่ม</th>
+                    <th style="padding: 8px 12px; text-align: right; background: var(--warn-soft);">วางแผนเพิ่ม</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${bracketRowsHtml}
-                  <tr style="border-top: 2px solid #cbd5e1; font-weight: 800; font-size: 13px;">
+                  <tr style="border-top: 2px solid var(--line-2); font-weight: 800; font-size: 13px;">
                     <td colspan="5" style="padding: 10px 12px;">Total Tax Amount</td>
-                    <td id="bTotalTax" style="padding: 10px 12px; text-align: right; color: #0f172a;">${fmt(s.taxEstimatedCurrent)}</td>
-                    <td id="bTotalTaxPlan" style="padding: 10px 12px; text-align: right; color: #0f172a; background: #fefce8;">${fmt(s.taxEstimatedPlan)}</td>
+                    <td id="bTotalTax" style="padding: 10px 12px; text-align: right; color: var(--txt-strong);">${fmt(s.taxEstimatedCurrent)}</td>
+                    <td id="bTotalTaxPlan" style="padding: 10px 12px; text-align: right; color: var(--txt-strong); background: var(--cream-soft);">${fmt(s.taxEstimatedPlan)}</td>
                   </tr>
-                  <tr style="border-top: 1px solid #e2e8f0; font-weight: 700; font-size: 13px;">
+                  <tr style="border-top: 1px solid var(--line); font-weight: 700; font-size: 13px;">
                     <td colspan="5" style="padding: 8px 12px;">ภาษีหัก ณ ที่จ่ายแล้ว (เงินเดือน / อื่นๆ)</td>
                     <td colspan="2" style="padding: 6px 12px; text-align: left;">
-                      <input type="text" inputmode="decimal" id="tax-withheld-input" value="${fmtInput(this.taxPaidWithheld)}" style="width: 120px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 800; text-align: right; font-size: 13px;">
+                      <input type="text" inputmode="decimal" id="tax-withheld-input" value="${fmtInput(this.taxPaidWithheld)}" style="width: 120px; padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 4px; font-weight: 800; text-align: right; font-size: 13px;">
                     </td>
                   </tr>
-                  <tr style="border-top: 1px solid #e2e8f0; font-weight: 800; font-size: 13px;">
+                  <tr style="border-top: 1px solid var(--line); font-weight: 800; font-size: 13px;">
                     <td colspan="5" style="padding: 8px 12px;">ภาษีหัก ณ ที่จ่ายรวม / เครดิตภาษี</td>
-                    <td id="bTotalCredit" style="padding: 8px 12px; text-align: right; color: #0f172a;">${fmt(this.taxPaidWithheld + s.divWhtSum + s.divCreditSum)}</td>
-                    <td id="bTotalCreditPlan" style="padding: 8px 12px; text-align: right; color: #0f172a; background: #fefce8;">${fmt(this.taxPaidWithheld + s.divWhtSum + s.divCreditSum)}</td>
+                    <td id="bTotalCredit" style="padding: 8px 12px; text-align: right; color: var(--txt-strong);">${fmt(this.taxPaidWithheld + s.divWhtSum + s.divCreditSum)}</td>
+                    <td id="bTotalCreditPlan" style="padding: 8px 12px; text-align: right; color: var(--txt-strong); background: var(--cream-soft);">${fmt(this.taxPaidWithheld + s.divWhtSum + s.divCreditSum)}</td>
                   </tr>
-                  <tr style="border-top: 1px solid #e2e8f0; font-weight: 900; font-size: 13.5px;">
+                  <tr style="border-top: 1px solid var(--line); font-weight: 900; font-size: 13.5px;">
                     <td colspan="5" style="padding: 8px 12px;">ภาษีที่ต้อง (รับคืน/จ่ายเพิ่ม)</td>
-                    <td id="bRefund" style="padding: 8px 12px; text-align: right; color: ${s.refundOrPayCurrent >= 0 ? '#059669' : '#dc2626'};">
+                    <td id="bRefund" style="padding: 8px 12px; text-align: right; color: ${s.refundOrPayCurrent >= 0 ? 'var(--up-2)' : 'var(--down)'};">
                       ${s.refundOrPayCurrent >= 0 ? `รับคืน ${fmt(s.refundOrPayCurrent)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayCurrent))}`}
                     </td>
-                    <td id="bRefundPlan" style="padding: 8px 12px; text-align: right; color: ${s.refundOrPayPlan >= 0 ? '#059669' : '#dc2626'}; background: #fefce8;">
+                    <td id="bRefundPlan" style="padding: 8px 12px; text-align: right; color: ${s.refundOrPayPlan >= 0 ? 'var(--up-2)' : 'var(--down)'}; background: var(--cream-soft);">
                       ${s.refundOrPayPlan >= 0 ? `รับคืน ${fmt(s.refundOrPayPlan)}` : `จ่ายเพิ่ม ${fmt(Math.abs(s.refundOrPayPlan))}`}
                     </td>
                   </tr>
                   
-                  <tr style="border-top: 1.5px solid #fed7aa; background: #fff7ed; font-weight: 800; font-size: 13px; color: #c2410c;">
+                  <tr style="border-top: 1.5px solid var(--orange-line); background: var(--warn-soft-2); font-weight: 800; font-size: 13px; color: var(--orange);">
                     <td colspan="5" style="padding: 10px 12px;">
                       <div>💡 ลดภาระภาษีลงไปได้ (Tax Burden Reduction)</div>
-                      <div id="bBurdenDesc" style="font-size: 11.5px; font-weight: 600; color: #ea580c; margin-top: 3px; display: ${s.totalPlanAdded > 0 && Number(s.taxBurdenReductionPct) > 0 ? 'block' : 'none'};">
+                      <div id="bBurdenDesc" style="font-size: 11.5px; font-weight: 600; color: var(--orange); margin-top: 3px; display: ${s.totalPlanAdded > 0 && Number(s.taxBurdenReductionPct) > 0 ? 'block' : 'none'};">
                         💬 บอกให้รู้ว่า: ภาระภาษีที่ต้องจ่ายจริงลดฮวบลงไปถึง ~${Math.round(Number(s.taxBurdenReductionPct))}%
                       </div>
                     </td>
@@ -1345,10 +1345,10 @@ var TaxModule = {
                     </td>
                   </tr>
 
-                  <tr style="border-top: 1px solid #fed7aa; background: #fff7ed; font-weight: 800; font-size: 13px; color: #c2410c;">
+                  <tr style="border-top: 1px solid var(--orange-line); background: var(--warn-soft-2); font-weight: 800; font-size: 13px; color: var(--orange);">
                     <td colspan="5" style="padding: 10px 12px;">
                       <div>📈 ผลตอบแทนประหยัดภาษี (Tax Savings Yield on Plan)</div>
-                      <div id="bYieldDesc" style="font-size: 11.5px; font-weight: 600; color: #ea580c; margin-top: 3px; display: ${s.totalPlanAdded > 0 && Number(s.taxSavingsYieldPct) > 0 ? 'block' : 'none'};">
+                      <div id="bYieldDesc" style="font-size: 11.5px; font-weight: 600; color: var(--orange); margin-top: 3px; display: ${s.totalPlanAdded > 0 && Number(s.taxSavingsYieldPct) > 0 ? 'block' : 'none'};">
                         💬 บอกให้รู้ว่า: เงินทุก 100 บาทที่เราเอาไปซื้อ RMF/กองทุนเพิ่ม เราได้เงินคืนภาษีกลับเข้ากระเป๋าทันที ${s.taxSavingsYieldPct} บาท (กำไรทันทีเกือบ ${Math.round(Number(s.taxSavingsYieldPct))}% ตั้งแต่วันที่ซื้อ)
                       </div>
                     </td>
@@ -1357,7 +1357,7 @@ var TaxModule = {
                     </td>
                   </tr>
 
-                  <tr style="border-top: 1px solid #fed7aa; background: #ffedd5; font-weight: 900; font-size: 13.5px; color: #9a3412;">
+                  <tr style="border-top: 1px solid var(--orange-line); background: var(--warn-soft-2); font-weight: 900; font-size: 13.5px; color: var(--orange);">
                     <td colspan="5" style="padding: 10px 12px;">💰 ส่วนต่างภาษีที่ประหยัดได้จริง (ขอคืนเพิ่มขึ้น)</td>
                     <td colspan="2" id="bDiff" style="padding: 10px 12px; text-align: right;">${s.savingsDiff > 0 ? fmt(s.savingsDiff) + ' บาท' : '-'}</td>
                   </tr>
@@ -1592,25 +1592,25 @@ var TaxModule = {
       z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px;
     `;
     modal.innerHTML = `
-      <div style="background:#ffffff; border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid #e2e8f0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <div style="padding:18px 22px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+      <div style="background:var(--panel); border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid var(--line); font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="padding:18px 22px; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <h3 style="font-size:16.5px; font-weight:900; color:#0f172a; margin:0 0 2px 0;">➕ เพิ่มรายการรายได้พิเศษ</h3>
-            <span style="font-size:11.5px; color:#64748b;">กรอกรายละเอียดของประเภทเงินได้</span>
+            <h3 style="font-size:16.5px; font-weight:900; color:var(--txt-strong); margin:0 0 2px 0;">➕ เพิ่มรายการรายได้พิเศษ</h3>
+            <span style="font-size:11.5px; color:var(--txt-muted);">กรอกรายละเอียดของประเภทเงินได้</span>
           </div>
-          <button type="button" id="closeModalX" style="border:none; background:none; font-size:22px; color:#94a3b8; cursor:pointer; line-height:1;">✕</button>
+          <button type="button" id="closeModalX" style="border:none; background:none; font-size:22px; color:var(--txt-faint); cursor:pointer; line-height:1;">✕</button>
         </div>
         <div style="padding:20px 22px; display:flex; flex-direction:column; gap:14px;">
-          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">ชื่อรายการรายได้
-            <input type="text" id="newIncName" placeholder="เช่น รายได้จากการทำคอนเทนต์" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
+          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">ชื่อรายการรายได้
+            <input type="text" id="newIncName" placeholder="เช่น รายได้จากการทำคอนเทนต์" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
           </label>
-          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">อัตราหักค่าใช้จ่ายเหมา (%)
-            <input type="number" id="newIncRate" value="30" min="0" max="100" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
+          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">อัตราหักค่าใช้จ่ายเหมา (%)
+            <input type="number" id="newIncRate" value="30" min="0" max="100" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
           </label>
         </div>
-        <div style="padding:14px 22px; background:#f8fafc; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" id="cancelModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; font-weight:700; font-size:13px; color:#64748b; cursor:pointer;">ยกเลิก</button>
-          <button type="button" id="saveModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:#0284c7; color:#ffffff; font-weight:800; font-size:13px; cursor:pointer;">บันทึก</button>
+        <div style="padding:14px 22px; background:var(--panel-2); border-top:1px solid var(--line-soft); display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" id="cancelModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid var(--line-2); background:var(--panel); font-weight:700; font-size:13px; color:var(--txt-muted); cursor:pointer;">ยกเลิก</button>
+          <button type="button" id="saveModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:var(--accent); color:var(--on-accent); font-weight:800; font-size:13px; cursor:pointer;">บันทึก</button>
         </div>
       </div>
     `;
@@ -1654,30 +1654,30 @@ var TaxModule = {
       z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px;
     `;
     modal.innerHTML = `
-      <div style="background:#ffffff; border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid #e2e8f0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <div style="padding:18px 22px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+      <div style="background:var(--panel); border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid var(--line); font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="padding:18px 22px; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <h3 style="font-size:16.5px; font-weight:900; color:#0f172a; margin:0 0 2px 0;">➕ เพิ่มรายการลดหย่อนพิเศษ</h3>
-            <span style="font-size:11.5px; color:#64748b;">กรอกสิทธิประโยชน์และเพดานลดหย่อน</span>
+            <h3 style="font-size:16.5px; font-weight:900; color:var(--txt-strong); margin:0 0 2px 0;">➕ เพิ่มรายการลดหย่อนพิเศษ</h3>
+            <span style="font-size:11.5px; color:var(--txt-muted);">กรอกสิทธิประโยชน์และเพดานลดหย่อน</span>
           </div>
-          <button type="button" id="closeDeductModalX" style="border:none; background:none; font-size:22px; color:#94a3b8; cursor:pointer; line-height:1;">✕</button>
+          <button type="button" id="closeDeductModalX" style="border:none; background:none; font-size:22px; color:var(--txt-faint); cursor:pointer; line-height:1;">✕</button>
         </div>
         <div style="padding:20px 22px; display:flex; flex-direction:column; gap:14px;">
-          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">ชื่อรายการลดหย่อน
-            <input type="text" id="newDeductName" placeholder="เช่น ช้อปดีมีคืน / Easy e-Receipt" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
+          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">ชื่อรายการลดหย่อน
+            <input type="text" id="newDeductName" placeholder="เช่น ช้อปดีมีคืน / Easy e-Receipt" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
           </label>
-          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">กลุ่มรายการ
-            <select id="newDeductGroup" style="height:38px; padding:0 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box; background:#fff; cursor:pointer;">
+          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">กลุ่มรายการ
+            <select id="newDeductGroup" style="height:38px; padding:0 10px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box; background:var(--panel); cursor:pointer;">
               ${groupOptions}
             </select>
           </label>
-          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">เพดานลดหย่อนสูงสุด (บาท)
-            <input type="number" id="newDeductLimit" value="50000" min="0" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
+          <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">เพดานลดหย่อนสูงสุด (บาท)
+            <input type="number" id="newDeductLimit" value="50000" min="0" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
           </label>
         </div>
-        <div style="padding:14px 22px; background:#f8fafc; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" id="cancelDeductModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; font-weight:700; font-size:13px; color:#64748b; cursor:pointer;">ยกเลิก</button>
-          <button type="button" id="saveDeductModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:#0284c7; color:#ffffff; font-weight:800; font-size:13px; cursor:pointer;">บันทึก</button>
+        <div style="padding:14px 22px; background:var(--panel-2); border-top:1px solid var(--line-soft); display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" id="cancelDeductModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid var(--line-2); background:var(--panel); font-weight:700; font-size:13px; color:var(--txt-muted); cursor:pointer;">ยกเลิก</button>
+          <button type="button" id="saveDeductModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:var(--accent); color:var(--on-accent); font-weight:800; font-size:13px; cursor:pointer;">บันทึก</button>
         </div>
       </div>
     `;
@@ -1730,44 +1730,44 @@ var TaxModule = {
         z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px;
       `;
       modal.innerHTML = `
-        <div style="background:#ffffff; border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid #e2e8f0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <div style="padding:18px 22px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+        <div style="background:var(--panel); border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid var(--line); font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          <div style="padding:18px 22px; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <h3 style="font-size:16.5px; font-weight:900; color:#0f172a; margin:0 0 2px 0;">✏️ แก้ไขรายการรายได้</h3>
-              <span style="font-size:11.5px; color:#64748b;">ปรับปรุงค่าคำนวณและเกณฑ์ทางภาษี</span>
+              <h3 style="font-size:16.5px; font-weight:900; color:var(--txt-strong); margin:0 0 2px 0;">✏️ แก้ไขรายการรายได้</h3>
+              <span style="font-size:11.5px; color:var(--txt-muted);">ปรับปรุงค่าคำนวณและเกณฑ์ทางภาษี</span>
             </div>
-            <button type="button" id="closeManageModalX" style="border:none; background:none; font-size:22px; color:#94a3b8; cursor:pointer; line-height:1;">✕</button>
+            <button type="button" id="closeManageModalX" style="border:none; background:none; font-size:22px; color:var(--txt-faint); cursor:pointer; line-height:1;">✕</button>
           </div>
           <div style="padding:20px 22px; display:flex; flex-direction:column; gap:14px;">
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">ชื่อรายการรายได้
-              <input type="text" id="editIncomeName" value="${item.name}" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">ชื่อรายการรายได้
+              <input type="text" id="editIncomeName" value="${item.name}" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
             </label>
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">อัตราหักค่าใช้จ่ายเหมา (%)
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">อัตราหักค่าใช้จ่ายเหมา (%)
               <div style="display:flex; gap:8px; align-items:center;">
-                <input type="number" id="editIncomeRate" min="0" max="100" value="${currentRate}" style="flex:1; height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
+                <input type="number" id="editIncomeRate" min="0" max="100" value="${currentRate}" style="flex:1; height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
                 ${!isCustom ? `
-                  <button type="button" id="btnResetRate" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; font-size:12px; font-weight:700; color:#0369a1; cursor:pointer; white-space:nowrap;">
+                  <button type="button" id="btnResetRate" style="height:38px; padding:0 12px; border:1px solid var(--line-2); background:var(--panel-2); border-radius:8px; font-size:12px; font-weight:700; color:var(--accent-3); cursor:pointer; white-space:nowrap;">
                     ↺ คืนค่าตามเกณฑ์ (${defaultRate}%)
                   </button>
                 ` : ''}
               </div>
             </label>
 
-            <div style="margin-top:6px; padding-top:12px; border-top:1px dashed #e2e8f0;">
+            <div style="margin-top:6px; padding-top:12px; border-top:1px dashed var(--line);">
               ${isCustom ? `
-                <button type="button" id="btnDeleteIncome" style="width:100%; height:38px; border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button type="button" id="btnDeleteIncome" style="width:100%; height:38px; border:1px solid var(--down-line); background:var(--down-soft); color:var(--down); border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
                   🗑️ ลบรายการนี้ออกจากระบบ
                 </button>
               ` : `
-                <button type="button" id="btnHideIncome" style="width:100%; height:38px; border:1px solid #e2e8f0; background:#f8fafc; color:#64748b; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button type="button" id="btnHideIncome" style="width:100%; height:38px; border:1px solid var(--line); background:var(--panel-2); color:var(--txt-muted); border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
                   👁️ ซ่อนรายการนี้ (ไม่นำมาแสดง)
                 </button>
               `}
             </div>
           </div>
-          <div style="padding:14px 22px; background:#f8fafc; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:8px;">
-            <button type="button" id="cancelManageModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; font-weight:700; font-size:13px; color:#64748b; cursor:pointer;">ยกเลิก</button>
-            <button type="button" id="saveManageModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:#0284c7; color:#ffffff; font-weight:800; font-size:13px; cursor:pointer;">บันทึกการแก้ไข</button>
+          <div style="padding:14px 22px; background:var(--panel-2); border-top:1px solid var(--line-soft); display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" id="cancelManageModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid var(--line-2); background:var(--panel); font-weight:700; font-size:13px; color:var(--txt-muted); cursor:pointer;">ยกเลิก</button>
+            <button type="button" id="saveManageModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:var(--accent); color:var(--on-accent); font-weight:800; font-size:13px; cursor:pointer;">บันทึกการแก้ไข</button>
           </div>
         </div>
       `;
@@ -1841,52 +1841,52 @@ var TaxModule = {
         z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px;
       `;
       modal.innerHTML = `
-        <div style="background:#ffffff; border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid #e2e8f0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <div style="padding:18px 22px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+        <div style="background:var(--panel); border-radius:16px; width:100%; max-width:440px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; border:1px solid var(--line); font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          <div style="padding:18px 22px; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <h3 style="font-size:16.5px; font-weight:900; color:#0f172a; margin:0 0 2px 0;">✏️ แก้ไขรายการลดหย่อน</h3>
-              <span style="font-size:11.5px; color:#64748b;">ปรับปรุงค่าคำนวณและเกณฑ์ทางภาษี</span>
+              <h3 style="font-size:16.5px; font-weight:900; color:var(--txt-strong); margin:0 0 2px 0;">✏️ แก้ไขรายการลดหย่อน</h3>
+              <span style="font-size:11.5px; color:var(--txt-muted);">ปรับปรุงค่าคำนวณและเกณฑ์ทางภาษี</span>
             </div>
-            <button type="button" id="closeManageModalX" style="border:none; background:none; font-size:22px; color:#94a3b8; cursor:pointer; line-height:1;">✕</button>
+            <button type="button" id="closeManageModalX" style="border:none; background:none; font-size:22px; color:var(--txt-faint); cursor:pointer; line-height:1;">✕</button>
           </div>
           <div style="padding:20px 22px; display:flex; flex-direction:column; gap:14px;">
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">ชื่อรายการลดหย่อน
-              <input type="text" id="editDeductName" value="${item.name}" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">ชื่อรายการลดหย่อน
+              <input type="text" id="editDeductName" value="${item.name}" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
             </label>
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">กลุ่มรายการ
-              <select id="editDeductGroup" style="height:38px; padding:0 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box; background:#fff; cursor:pointer;">
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">กลุ่มรายการ
+              <select id="editDeductGroup" style="height:38px; padding:0 10px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box; background:var(--panel); cursor:pointer;">
                 ${groupOptions}
               </select>
             </label>
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">เงื่อนไข / คำอธิบายที่แสดง
-              <input type="text" id="editDeductRule" value="${item.rule || ''}" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">เงื่อนไข / คำอธิบายที่แสดง
+              <input type="text" id="editDeductRule" value="${item.rule || ''}" style="height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; outline:none; box-sizing:border-box;">
             </label>
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:#334155;">เพดานลดหย่อนสูงสุด (บาท)
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--txt-mid);">เพดานลดหย่อนสูงสุด (บาท)
               <div style="display:flex; gap:8px; align-items:center;">
-                <input type="number" id="editDeductLimit" min="0" value="${currentLimit}" style="flex:1; height:38px; padding:0 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
+                <input type="number" id="editDeductLimit" min="0" value="${currentLimit}" style="flex:1; height:38px; padding:0 12px; border:1px solid var(--line-2); border-radius:8px; font-size:13px; font-weight:700; outline:none; box-sizing:border-box;">
                 ${!isCustom && defaultLimit > 0 ? `
-                  <button type="button" id="btnResetLimit" style="height:38px; padding:0 12px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; font-size:12px; font-weight:700; color:#0369a1; cursor:pointer; white-space:nowrap;">
+                  <button type="button" id="btnResetLimit" style="height:38px; padding:0 12px; border:1px solid var(--line-2); background:var(--panel-2); border-radius:8px; font-size:12px; font-weight:700; color:var(--accent-3); cursor:pointer; white-space:nowrap;">
                     ↺ คืนค่าตามเกณฑ์ (${defaultLimit.toLocaleString('en-US')})
                   </button>
                 ` : ''}
               </div>
             </label>
 
-            <div style="margin-top:6px; padding-top:12px; border-top:1px dashed #e2e8f0;">
+            <div style="margin-top:6px; padding-top:12px; border-top:1px dashed var(--line);">
               ${isCustom ? `
-                <button type="button" id="btnDeleteDeduct" style="width:100%; height:38px; border:1px solid #fecaca; background:#fef2f2; color:#dc2626; border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button type="button" id="btnDeleteDeduct" style="width:100%; height:38px; border:1px solid var(--down-line); background:var(--down-soft); color:var(--down); border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
                   🗑️ ลบรายการนี้ออกจากระบบ
                 </button>
               ` : `
-                <button type="button" id="btnHideDeduct" style="width:100%; height:38px; border:1px solid #e2e8f0; background:#f8fafc; color:#64748b; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button type="button" id="btnHideDeduct" style="width:100%; height:38px; border:1px solid var(--line); background:var(--panel-2); color:var(--txt-muted); border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
                   👁️ ซ่อนรายการนี้ (ไม่นำมาแสดง)
                 </button>
               `}
             </div>
           </div>
-          <div style="padding:14px 22px; background:#f8fafc; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:8px;">
-            <button type="button" id="cancelManageModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; font-weight:700; font-size:13px; color:#64748b; cursor:pointer;">ยกเลิก</button>
-            <button type="button" id="saveManageModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:#0284c7; color:#ffffff; font-weight:800; font-size:13px; cursor:pointer;">บันทึกการแก้ไข</button>
+          <div style="padding:14px 22px; background:var(--panel-2); border-top:1px solid var(--line-soft); display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" id="cancelManageModalBtn" style="padding:8px 16px; border-radius:8px; border:1px solid var(--line-2); background:var(--panel); font-weight:700; font-size:13px; color:var(--txt-muted); cursor:pointer;">ยกเลิก</button>
+            <button type="button" id="saveManageModalBtn" style="padding:8px 20px; border-radius:8px; border:none; background:var(--accent); color:var(--on-accent); font-weight:800; font-size:13px; cursor:pointer;">บันทึกการแก้ไข</button>
           </div>
         </div>
       `;

@@ -354,7 +354,7 @@ var SettingsModule = {
     const tbody = document.getElementById('memberListBody');
     if (!tbody || typeof supabaseClient === 'undefined' || !supabaseClient) return;
 
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">กำลังดึงข้อมูลสมาชิก...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--txt-faint);">กำลังดึงข้อมูลสมาชิก...</td></tr>';
 
     try {
       const { data: members, error } = await supabaseClient
@@ -366,7 +366,7 @@ var SettingsModule = {
       this.cachedMembers = members || [];
       this.renderMemberRows();
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 24px; color: #dc2626;">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 24px; color: var(--down);">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
     }
   },
 
@@ -378,7 +378,7 @@ var SettingsModule = {
     if (statEl) statEl.innerText = this.cachedMembers.length;
 
     if (this.cachedMembers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายชื่อสมาชิก</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--txt-faint);">ไม่พบรายชื่อสมาชิก</td></tr>';
       return;
     }
 
@@ -389,32 +389,32 @@ var SettingsModule = {
       const initial = name.charAt(0);
 
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
+        <tr style="border-bottom: 1px solid var(--line-soft);">
           <td style="padding: 14px 20px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; ${isAdmin ? 'background: #e0f2fe; color: #0284c7;' : 'background: #f1f5f9; color: #64748b;'}">
+              <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; ${isAdmin ? 'background: var(--accent-soft); color: var(--accent);' : 'background: var(--inset); color: var(--txt-muted);'}">
                 ${initial}
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-weight: 700; color: #0f172a; font-size: 14.5px;">${name}</span>
-                ${isSelf ? '<span style="font-size: 10px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 1px 6px; border-radius: 4px;">ตัวคุณ</span>' : ''}
+                <span style="font-weight: 700; color: var(--txt-strong); font-size: 14.5px;">${name}</span>
+                ${isSelf ? '<span style="font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 4px;">ตัวคุณ</span>' : ''}
               </div>
             </div>
           </td>
           <td style="padding: 14px 20px;">
-            <span style="color: #64748b; font-size: 13.5px;">${m.email || '-'}</span>
+            <span style="color: var(--txt-muted); font-size: 13.5px;">${m.email || '-'}</span>
           </td>
           <td style="padding: 14px 20px;">
-            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; ${isAdmin ? 'background: #e0f2fe; color: #0284c7;' : 'background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;'}">
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; ${isAdmin ? 'background: var(--accent-soft); color: var(--accent);' : 'background: var(--panel-2); color: var(--txt-muted); border: 1px solid var(--line);'}">
               ${isAdmin ? '🛡️ ผู้ดูแล (ADMIN)' : '👤 สมาชิก (MEMBER)'}
             </span>
           </td>
           <td style="padding: 14px 20px; text-align: right; white-space: nowrap;">
-            <button onclick="SettingsModule.openEditModal('${m.id}')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155;" title="แก้ไขชื่อและสิทธิ์">
+            <button onclick="SettingsModule.openEditModal('${m.id}')" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--txt-mid);" title="แก้ไขชื่อและสิทธิ์">
               ✏️ แก้ไข
             </button>
             ${!isSelf ? `
-              <button onclick="SettingsModule.deleteMember('${m.id}', '${name}')" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; font-size: 12.5px; cursor: pointer; border: 1px solid #e2e8f0; background: #ffffff; color: #94a3b8; margin-left: 6px;" title="ลบสมาชิกนี้ถาวร">
+              <button onclick="SettingsModule.deleteMember('${m.id}', '${name}')" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; font-size: 12.5px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--txt-faint); margin-left: 6px;" title="ลบสมาชิกนี้ถาวร">
                 🗑️
               </button>
             ` : ''}
@@ -455,12 +455,12 @@ var SettingsModule = {
 
     if (role === 'admin') {
       if (rAdmin) rAdmin.checked = true;
-      if (cAdmin) cAdmin.style.borderColor = '#0284c7', cAdmin.style.background = '#f0f9ff';
-      if (cMember) cMember.style.borderColor = '#e2e8f0', cMember.style.background = '#ffffff';
+      if (cAdmin) cAdmin.style.borderColor = 'var(--accent)', cAdmin.style.background = 'var(--accent-softer)';
+      if (cMember) cMember.style.borderColor = 'var(--line)', cMember.style.background = 'var(--panel)';
     } else {
       if (rMember) rMember.checked = true;
-      if (cMember) cMember.style.borderColor = '#0284c7', cMember.style.background = '#f0f9ff';
-      if (cAdmin) cAdmin.style.borderColor = '#e2e8f0', cAdmin.style.background = '#ffffff';
+      if (cMember) cMember.style.borderColor = 'var(--accent)', cMember.style.background = 'var(--accent-softer)';
+      if (cAdmin) cAdmin.style.borderColor = 'var(--line)', cAdmin.style.background = 'var(--panel)';
     }
   },
 
@@ -522,15 +522,15 @@ var SettingsModule = {
 
     // แถบ 3 แท็บ (แท็บสมาชิกครอบครัวจะแสดงเมื่อเป็น Admin เท่านั้น)
     const tabHeadersHtml = `
-      <div style="display: flex; gap: 18px; border-bottom: 2px solid #e2e8f0; margin-bottom: 22px;">
-        <button class="settings-main-tab" data-tab="categories" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'categories' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'categories' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <div style="display: flex; gap: 18px; border-bottom: 2px solid var(--line); margin-bottom: 22px;">
+        <button class="settings-main-tab" data-tab="categories" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'categories' ? 'var(--accent)' : 'var(--txt-muted)'}; border-bottom: 3px solid ${this.activeTab === 'categories' ? 'var(--accent)' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
           <span>🏷️</span> จัดการหมวดหมู่ย่อย
         </button>
-        <button class="settings-main-tab" data-tab="accounts" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'accounts' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'accounts' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <button class="settings-main-tab" data-tab="accounts" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'accounts' ? 'var(--accent)' : 'var(--txt-muted)'}; border-bottom: 3px solid ${this.activeTab === 'accounts' ? 'var(--accent)' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
           <span>🗂️</span> จัดการบัญชีการเงิน (${accounts.length})
         </button>
         ${isAdmin ? `
-          <button class="settings-main-tab" data-tab="members" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'members' ? '#0284c7' : '#64748b'}; border-bottom: 3px solid ${this.activeTab === 'members' ? '#0284c7' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <button class="settings-main-tab" data-tab="members" style="background: none; border: none; padding: 8px 4px 12px 4px; font-size: 14.5px; font-weight: 800; color: ${this.activeTab === 'members' ? 'var(--accent)' : 'var(--txt-muted)'}; border-bottom: 3px solid ${this.activeTab === 'members' ? 'var(--accent)' : 'transparent'}; display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <span>👥</span> จัดการสมาชิกครอบครัว
           </button>
         ` : ''}
@@ -552,10 +552,10 @@ var SettingsModule = {
       const groupPillsHtml = groupMeta.map(g => {
         const isActive = this.activeCategoryGroup === g.key;
         return `
-          <button class="btn-cat-group" data-group="${g.key}" style="display: flex; align-items: center; gap: 8px; background: ${isActive ? '#0284c7' : '#ffffff'}; color: ${isActive ? '#ffffff' : '#334155'}; border: 1px solid ${isActive ? '#0284c7' : '#e2e8f0'}; padding: 7px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+          <button class="btn-cat-group" data-group="${g.key}" style="display: flex; align-items: center; gap: 8px; background: ${isActive ? 'var(--accent)' : 'var(--panel)'}; color: ${isActive ? 'var(--on-accent)' : 'var(--txt-mid)'}; border: 1px solid ${isActive ? 'var(--accent)' : 'var(--line)'}; padding: 7px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
             <span>${g.icon}</span>
             <span>${g.label}</span>
-            <span style="background: ${isActive ? 'rgba(255,255,255,0.2)' : '#f1f5f9'}; color: ${isActive ? '#ffffff' : '#64748b'}; font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 800;">${g.count}</span>
+            <span style="background: ${isActive ? 'rgba(255,255,255,0.2)' : 'var(--inset)'}; color: ${isActive ? 'var(--on-accent)' : 'var(--txt-muted)'}; font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 800;">${g.count}</span>
           </button>
         `;
       }).join('');
@@ -565,12 +565,12 @@ var SettingsModule = {
 
         if (isEditing) {
           return `
-            <div style="background: #ffffff; border: 1.5px solid #0284c7; border-radius: 10px; padding: 8px 10px; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 0 3px rgba(2,132,199,0.1);">
-              <input type="text" id="input-inline-edit" value="${cat}" style="flex: 1; min-width: 0; padding: 6px 10px; border: 1.5px solid #93c5fd; border-radius: 6px; font-size: 13.5px; font-weight: 700; color: #0f172a; outline: none; background: #ffffff;">
-              <button class="btn-save-inline-cat" style="background: #0284c7; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+            <div style="background: var(--panel); border: 1.5px solid var(--accent); border-radius: 10px; padding: 8px 10px; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 0 3px rgba(2,132,199,0.1);">
+              <input type="text" id="input-inline-edit" value="${cat}" style="flex: 1; min-width: 0; padding: 6px 10px; border: 1.5px solid var(--blue-border); border-radius: 6px; font-size: 13.5px; font-weight: 700; color: var(--txt-strong); outline: none; background: var(--panel);">
+              <button class="btn-save-inline-cat" style="background: var(--accent); color: var(--on-accent); border: none; border-radius: 6px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;">
                 บันทึก
               </button>
-              <button class="btn-cancel-inline-cat" style="background: #f1f5f9; color: #64748b; border: none; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px;" title="ยกเลิก">
+              <button class="btn-cancel-inline-cat" style="background: var(--inset); color: var(--txt-muted); border: none; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px;" title="ยกเลิก">
                 ✕
               </button>
             </div>
@@ -578,11 +578,11 @@ var SettingsModule = {
         }
 
         return `
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-            <span style="font-size: 13.5px; font-weight: 700; color: #0f172a;">${cat}</span>
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <span style="font-size: 13.5px; font-weight: 700; color: var(--txt-strong);">${cat}</span>
             <div style="display: flex; gap: 4px; align-items: center;">
-              <button class="btn-edit-cat" data-name="${cat}" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 12px;" title="แก้ไข">✏️</button>
-              <button class="btn-delete-cat" data-name="${cat}" style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ef4444; font-size: 12px;" title="ลบ">🗑️</button>
+              <button class="btn-edit-cat" data-name="${cat}" style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--txt-muted); font-size: 12px;" title="แก้ไข">✏️</button>
+              <button class="btn-delete-cat" data-name="${cat}" style="background: var(--down-soft); border: 1px solid var(--down-soft-2); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--down-3); font-size: 12px;" title="ลบ">🗑️</button>
             </div>
           </div>
         `;
@@ -593,12 +593,12 @@ var SettingsModule = {
           ${groupPillsHtml}
         </div>
 
-        <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <span style="font-size: 13px; font-weight: 700; color: #334155; white-space: nowrap;">
+        <div style="background: var(--panel-2); border: 1.5px dashed var(--line-2); border-radius: 10px; padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--txt-mid); white-space: nowrap;">
             ➕ เพิ่มหมวดหมู่ใหม่ใน [${this.activeCategoryGroup}]:
           </span>
-          <input type="text" id="input-new-category" placeholder="พิมพ์ชื่อหมวดหมู่แล้วกด Enter..." style="flex: 1; min-width: 220px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; background: #ffffff;">
-          <button id="btn-add-category" style="background: #0284c7; color: #ffffff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+          <input type="text" id="input-new-category" placeholder="พิมพ์ชื่อหมวดหมู่แล้วกด Enter..." style="flex: 1; min-width: 220px; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; outline: none; background: var(--panel);">
+          <button id="btn-add-category" style="background: var(--accent); color: var(--on-accent); border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;">
             บันทึกหมวดหมู่
           </button>
         </div>
@@ -611,17 +611,17 @@ var SettingsModule = {
       const accountCardsHtml = accounts.map(a => {
         const badge = this.getBankBadge(a.name, a.type);
         return `
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="background: ${badge.bg}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 5px 8px; border-radius: 7px; text-transform: uppercase; letter-spacing: 0.5px; min-width: 44px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+              <div style="background: ${badge.bg}; color: ${ThemeColor.inkOn(badge.bg)}; font-size: 11px; font-weight: 900; padding: 5px 8px; border-radius: 7px; text-transform: uppercase; letter-spacing: 0.5px; min-width: 44px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
                 ${badge.code}
               </div>
               <div>
-                <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${a.name}</div>
-                <div style="font-size: 11px; color: #64748b;">ประเภท: ${a.type}</div>
+                <div style="font-size: 14px; font-weight: 800; color: var(--txt-strong);">${a.name}</div>
+                <div style="font-size: 11px; color: var(--txt-muted);">ประเภท: ${a.type}</div>
               </div>
             </div>
-            <button class="btn-delete-account" data-id="${a.id}" data-name="${a.name}" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 13px;" title="ลบบัญชี">
+            <button class="btn-delete-account" data-id="${a.id}" data-name="${a.name}" style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--txt-muted); font-size: 13px;" title="ลบบัญชี">
               🗑️
             </button>
           </div>
@@ -629,12 +629,12 @@ var SettingsModule = {
       }).join('');
 
       contentBodyHtml = `
-        <div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <span style="font-size: 13px; font-weight: 700; color: #334155; white-space: nowrap;">
+        <div style="background: var(--panel); border: 1.5px dashed var(--line-2); border-radius: 10px; padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--txt-mid); white-space: nowrap;">
             ➕ เพิ่มบัญชี / บัตรใหม่:
           </span>
-          <input type="text" id="input-new-account" placeholder="ชื่อบัญชี (เช่น SCB Easy, Dime!, บัตรเคทีซี)..." style="flex: 2; min-width: 200px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; background: #ffffff;">
-          <select id="select-account-type" style="flex: 1; min-width: 140px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700; background: #fff;">
+          <input type="text" id="input-new-account" placeholder="ชื่อบัญชี (เช่น SCB Easy, Dime!, บัตรเคทีซี)..." style="flex: 2; min-width: 200px; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; outline: none; background: var(--panel);">
+          <select id="select-account-type" style="flex: 1; min-width: 140px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700; background: var(--panel);">
             <option value="ธนาคาร">🏦 ธนาคาร</option>
             <option value="เงินสด">💵 เงินสด</option>
             <option value="กระเป๋าเงิน">📱 กระเป๋าเงิน</option>
@@ -645,7 +645,7 @@ var SettingsModule = {
             <option value="พอร์ตกองทุน">🌱 พอร์ตกองทุน</option>
             <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
           </select>
-          <button id="btn-add-account" style="background: #0284c7; color: #ffffff; border: none; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+          <button id="btn-add-account" style="background: var(--accent); color: var(--on-accent); border: none; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;">
             บันทึกบัญชี
           </button>
         </div>
@@ -656,20 +656,20 @@ var SettingsModule = {
       `;
     } else if (this.activeTab === 'members') {
       contentBodyHtml = `
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden;">
-          <div style="padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden;">
+          <div style="padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-soft);">
             <div>
-              <div style="font-size: 15px; font-weight: 700; color: #0f172a;">👥 รายชื่อสมาชิกในครอบครัว</div>
-              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">กำหนดสิทธิ์ให้เข้าถึงพอร์ตการเงินส่วนตัวหรือภาพรวมทั้งบ้าน</div>
+              <div style="font-size: 15px; font-weight: 700; color: var(--txt-strong);">👥 รายชื่อสมาชิกในครอบครัว</div>
+              <div style="font-size: 12px; color: var(--txt-faint); margin-top: 2px;">กำหนดสิทธิ์ให้เข้าถึงพอร์ตการเงินส่วนตัวหรือภาพรวมทั้งบ้าน</div>
             </div>
-            <button onclick="SettingsModule.fetchMembers()" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">
+            <button onclick="SettingsModule.fetchMembers()" style="padding: 6px 12px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--txt-mid); cursor: pointer;">
               🔄 รีเฟรชข้อมูล
             </button>
           </div>
           <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
               <thead>
-                <tr style="background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                <tr style="background: var(--panel-2); color: var(--txt-muted); font-size: 12px; font-weight: 700; text-transform: uppercase;">
                   <th style="padding: 12px 20px; width: 32%;">ชื่อที่ใช้เรียก</th>
                   <th style="padding: 12px 20px; width: 30%;">อีเมล</th>
                   <th style="padding: 12px 20px; width: 20%;">บทบาท (ROLE)</th>
@@ -678,7 +678,7 @@ var SettingsModule = {
               </thead>
               <tbody id="memberListBody">
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">กำลังดึงข้อมูล...</td>
+                  <td colspan="4" style="text-align: center; padding: 30px; color: var(--txt-faint);">กำลังดึงข้อมูล...</td>
                 </tr>
               </tbody>
             </table>
@@ -690,10 +690,10 @@ var SettingsModule = {
     container.innerHTML = `
       <div style="width: 100%; max-width: 100%; margin: 0; text-align: left;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 22px;">
-          <div style="background: #f1f5f9; color: #334155; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">⚙️</div>
+          <div style="background: var(--inset); color: var(--txt-mid); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px;">⚙️</div>
           <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">SYSTEM CONFIGURATION</div>
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ตั้งค่าระบบ & หมวดหมู่การเงิน</h1>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">SYSTEM CONFIGURATION</div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">ตั้งค่าระบบ & หมวดหมู่การเงิน</h1>
           </div>
         </div>
 

@@ -8,92 +8,92 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
-    body { margin: 0; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+    body { margin: 0; background-color: var(--panel-2); color: var(--txt-strong); display: flex; flex-direction: column; min-height: 100vh; }
     
     .top-navbar {
-      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      height: 60px; background: var(--panel); border-bottom: 1px solid var(--line);
       display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
       position: sticky; top: 0; z-index: 50;
     }
-    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
-    .brand-logo span { color: #0f172a; }
-    .top-search-bar { display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; padding: 6px 12px; width: 320px; }
-    .top-search-bar input { border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155; }
+    .brand-logo { font-size: 20px; font-weight: 800; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: var(--txt-strong); }
+    .top-search-bar { display: flex; align-items: center; background: var(--inset); border-radius: 8px; padding: 6px 12px; width: 320px; }
+    .top-search-bar input { border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: var(--txt-mid); }
     .top-user-actions { display: flex; align-items: center; gap: 14px; }
 
     .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
     .sidebar {
       width: 240px; min-width: 240px; max-width: 240px; box-sizing: border-box;
-      background: #ffffff; border-right: 1px solid #e2e8f0;
+      background: var(--panel); border-right: 1px solid var(--line);
       padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
       flex-shrink: 0; user-select: none;
     }
-    .menu-group-title { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px 4px; }
+    .menu-group-title { font-size: 11px; font-weight: 700; color: var(--txt-faint); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px 4px; }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
     .sidebar-link, .nav-group-header {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      border-radius: 8px; color: var(--txt-soft); text-decoration: none; font-size: 13.5px; font-weight: 700;
       background: transparent; border: none; width: 100%; cursor: pointer; text-align: left;
       transition: background 0.15s, color 0.15s;
     }
-    .sidebar-link:hover, .nav-group-header:hover { background: #f8fafc; color: #0f172a; }
-    .sidebar-link.active { background: #f0f9ff; color: #0284c7; font-weight: 800; border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0; }
+    .sidebar-link:hover, .nav-group-header:hover { background: var(--panel-2); color: var(--txt-strong); }
+    .sidebar-link.active { background: var(--accent-softer); color: var(--accent); font-weight: 800; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; }
     .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
-    .nav-group-header .arrow-indicator { margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: #94a3b8; }
+    .nav-group-header .arrow-indicator { margin-left: auto; font-size: 10px; transition: transform 0.2s ease; color: var(--txt-faint); }
     .nav-sub-items { display: none; flex-direction: column; padding-left: 32px; gap: 2px; margin-top: 2px; }
     .nav-group.open .nav-sub-items { display: flex; }
     .nav-group.open .nav-group-header .arrow-indicator { transform: rotate(180deg); }
-    .nav-group.open .nav-group-header { color: #0284c7; }
-    .nav-sub-item { padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: #64748b; text-decoration: none; border-radius: 6px; }
-    .nav-sub-item:hover { background: #f1f5f9; color: #0f172a; }
-    .nav-sub-item.active { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+    .nav-group.open .nav-group-header { color: var(--accent); }
+    .nav-sub-item { padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: var(--txt-muted); text-decoration: none; border-radius: 6px; }
+    .nav-sub-item:hover { background: var(--inset); color: var(--txt-strong); }
+    .nav-sub-item.active { background: var(--accent-soft); color: var(--accent-3); font-weight: 700; }
 
-    .main-wrapper { flex: 1; padding: 24px 32px 260px; overflow-y: auto; background: #f8fafc; }
+    .main-wrapper { flex: 1; padding: 24px 32px 260px; overflow-y: auto; background: var(--panel-2); }
     .container { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-    .action-bar { display: flex; align-items: center; gap: 12px; background: #ffffff; padding: 10px 18px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; }
-    .btn-export { background: #0284c7; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 700; }
-    .btn-import { background: #059669; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 700; }
+    .action-bar { display: flex; align-items: center; gap: 12px; background: var(--panel); padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+    .btn-export { background: var(--accent); color: var(--on-accent); border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 700; }
+    .btn-import { background: var(--up-2); color: var(--on-accent); border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 700; }
 
     .page-header { display: flex; justify-content: space-between; align-items: flex-end; }
-    .page-title-group h1 { font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0 2px; }
-    .page-title-group .sub { font-size: 12px; font-weight: 700; color: #0284c7; text-transform: uppercase; }
-    .page-title-group p { font-size: 13px; color: #64748b; margin: 0; }
-    .btn-clear { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .page-title-group h1 { font-size: 24px; font-weight: 800; color: var(--txt-strong); margin: 4px 0 2px; }
+    .page-title-group .sub { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; }
+    .page-title-group p { font-size: 13px; color: var(--txt-muted); margin: 0; }
+    .btn-clear { background: var(--up-soft-2); border: 1px solid var(--up-line); color: var(--up-4); padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
 
     .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .summary-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; }
-    .card-label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 6px; }
-    .card-value { font-size: 22px; font-weight: 800; color: #0f172a; }
-    .card-value.highlight { color: #0284c7; }
+    .summary-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .card-label { font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-bottom: 6px; }
+    .card-value { font-size: 22px; font-weight: 800; color: var(--txt-strong); }
+    .card-value.highlight { color: var(--accent); }
 
-    .panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
     .panel-header { display: flex; justify-content: space-between; align-items: center; }
-    .panel-title { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; }
-    .panel-desc { font-size: 12.5px; color: #64748b; margin: 2px 0 0; }
+    .panel-title { font-size: 16px; font-weight: 800; color: var(--txt-strong); margin: 0; }
+    .panel-desc { font-size: 12.5px; color: var(--txt-muted); margin: 2px 0 0; }
 
-    .btn-secondary { background: #f8fafc; border: 1px solid #e2e8f0; color: #0284c7; padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
-    .btn-primary { background: #0284c7; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .btn-secondary { background: var(--panel-2); border: 1px solid var(--line); color: var(--accent); padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: var(--on-accent); border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
 
     .form-row { display: flex; align-items: flex-end; gap: 14px; }
     .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
-    .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
-    .form-control { height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; font-size: 13.5px; color: #0f172a; background: #ffffff; outline: none; }
-    .form-control:focus { border-color: #0284c7; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); }
+    .form-group label { font-size: 12px; font-weight: 700; color: var(--txt-soft); }
+    .form-control { height: 38px; border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 12px; font-size: 13.5px; color: var(--txt-strong); background: var(--panel); outline: none; }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); }
 
-    .info-banner { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; }
-    .badge-market-price { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 600; background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #0f766e; }
+    .info-banner { background: var(--up-soft-2); border: 1px solid var(--up-line); color: var(--up-5); padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; }
+    .badge-market-price { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 600; background-color: var(--up-soft-2); border: 1px solid var(--up-line); color: var(--teal); }
 
     /* Mode Switcher Tabs */
-    .tab-mode-container { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 6px; }
+    .tab-mode-container { display: flex; gap: 8px; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 6px; }
     .tab-mode-btn {
       padding: 8px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; border: none; cursor: pointer;
-      background: #f1f5f9; color: #64748b; transition: all 0.2s;
+      background: var(--inset); color: var(--txt-muted); transition: all 0.2s;
     }
-    .tab-mode-btn.active { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .tab-mode-btn.active { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); }
   </style>
 </head>
-<body>
+<body data-theme="dark">
 
   <!-- Top Navbar -->
   <header class="top-navbar">
@@ -105,10 +105,10 @@
     <div class="top-user-actions">
       <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
         <div style="text-align: right;">
-          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
-          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: var(--txt);"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: var(--txt-muted); text-transform: uppercase;"></div>
         </div>
-        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">ออกจากระบบ</button>
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: var(--down-soft-2); color: var(--down-2); border: 1px solid var(--down-line); border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">ออกจากระบบ</button>
       </div>
     </div>
   </header>
@@ -301,108 +301,108 @@
           </div>
 
           <!-- ผลลัพธ์โหมด 2: สรุปสิ่งที่ต้องทำตามเป้าหมาย -->
-          <div id="panel-goal-result" style="display: none; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px; padding: 18px;">
-            <div style="font-weight: 700; color: #166534; font-size: 14px; margin-bottom: 12px;" id="goal-result-heading">
+          <div id="panel-goal-result" style="display: none; background: var(--up-soft-2); border: 1.5px solid var(--up-line); border-radius: 10px; padding: 18px;">
+            <div style="font-weight: 700; color: var(--up-5); font-size: 14px; margin-bottom: 12px;" id="goal-result-heading">
               🎯 สรุปสิ่งที่ต้องทำเพื่อให้ได้ต้นทุนเป้าหมาย:
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-              <div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
-                <div style="font-size: 12px; font-weight: 700; color: #15803d;">ต้องซื้อเพิ่มอีก</div>
-                <div style="font-size: 22px; font-weight: 800; color: #15803d; margin: 4px 0 2px;" id="res-target-shares">0</div>
-                <div style="font-size: 11.5px; color: #64748b;">หุ้น</div>
+              <div style="background: var(--panel); border: 1px solid var(--up-line); border-radius: 8px; padding: 12px 16px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--up-4);">ต้องซื้อเพิ่มอีก</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--up-4); margin: 4px 0 2px;" id="res-target-shares">0</div>
+                <div style="font-size: 11.5px; color: var(--txt-muted);">หุ้น</div>
               </div>
-              <div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
-                <div style="font-size: 12px; font-weight: 700; color: #15803d;">ต้องใช้เงินประมาณ</div>
-                <div style="font-size: 22px; font-weight: 800; color: #15803d; margin: 4px 0 2px;" id="res-target-money">0.00</div>
-                <div style="font-size: 11.5px; color: #64748b;" id="res-target-money-unit">บาท (ตามราคาซื้อเพิ่ม)</div>
+              <div style="background: var(--panel); border: 1px solid var(--up-line); border-radius: 8px; padding: 12px 16px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--up-4);">ต้องใช้เงินประมาณ</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--up-4); margin: 4px 0 2px;" id="res-target-money">0.00</div>
+                <div style="font-size: 11.5px; color: var(--txt-muted);" id="res-target-money-unit">บาท (ตามราคาซื้อเพิ่ม)</div>
               </div>
             </div>
-            <div id="avgTargetNote" style="margin-top: 12px; font-size: 13px; color: #166534; font-weight: 600;"></div>
+            <div id="avgTargetNote" style="margin-top: 12px; font-size: 13px; color: var(--up-5); font-weight: 600;"></div>
           </div>
 
           <!-- ผลลัพธ์โหมด 1: ตารางสรุปเปรียบเทียบ ก่อน - หลังถัวเฉลี่ย -->
-          <div id="avgComparePanel" style="background: #ffffff; border-radius: 10px; padding: 16px; border: 1px solid #e2e8f0; margin-top: 4px;">
+          <div id="avgComparePanel" style="background: var(--panel); border-radius: 10px; padding: 16px; border: 1px solid var(--line); margin-top: 4px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--txt); display: flex; align-items: center; gap: 8px;">
                 📊 สรุปเปรียบเทียบ ก่อน - หลังถัวเฉลี่ย
               </h3>
-              <span id="avgStrategyBadge" style="background: #e6f4ea; color: #16a34a; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; border: 1px solid #b7eb8f;">
+              <span id="avgStrategyBadge" style="background: var(--mint-soft); color: var(--up); font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--mint-line);">
                 📉 ถัวลดต้นทุน ลง 0.00%
               </span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center;">
               <!-- สถานะปัจจุบัน -->
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
-                <div style="font-weight: 700; color: #64748b; font-size: 12.5px; margin-bottom: 8px;">สถานะปัจจุบัน (ก่อนถัว)</div>
+              <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 14px;">
+                <div style="font-weight: 700; color: var(--txt-muted); font-size: 12.5px; margin-bottom: 8px;">สถานะปัจจุบัน (ก่อนถัว)</div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13.5px;">
-                  <span style="color: #64748b;">จำนวนหุ้น:</span>
-                  <strong id="cmpBeforeShares" style="color: #0f172a;">-</strong>
+                  <span style="color: var(--txt-muted);">จำนวนหุ้น:</span>
+                  <strong id="cmpBeforeShares" style="color: var(--txt-strong);">-</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13.5px;">
-                  <span style="color: #64748b;">ต้นทุนเฉลี่ย:</span>
-                  <strong id="cmpBeforeAvg" style="color: #0f172a;">-</strong>
+                  <span style="color: var(--txt-muted);">ต้นทุนเฉลี่ย:</span>
+                  <strong id="cmpBeforeAvg" style="color: var(--txt-strong);">-</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
-                  <span style="color: #64748b;">มูลค่าต้นทุนรวม:</span>
-                  <strong id="cmpBeforeTotal" style="color: #0f172a;">-</strong>
+                  <span style="color: var(--txt-muted);">มูลค่าต้นทุนรวม:</span>
+                  <strong id="cmpBeforeTotal" style="color: var(--txt-strong);">-</strong>
                 </div>
               </div>
 
-              <div style="font-size: 20px; color: #94a3b8; font-weight: bold;">➔</div>
+              <div style="font-size: 20px; color: var(--txt-faint); font-weight: bold;">➔</div>
 
               <!-- สถานะใหม่ -->
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px;">
-                <div style="font-weight: 700; color: #166534; font-size: 12.5px; margin-bottom: 8px;">สถานะใหม่ (หลังถัว)</div>
+              <div style="background: var(--up-soft-2); border: 1px solid var(--up-line); border-radius: 8px; padding: 14px;">
+                <div style="font-weight: 700; color: var(--up-5); font-size: 12.5px; margin-bottom: 8px;">สถานะใหม่ (หลังถัว)</div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13.5px;">
-                  <span style="color: #166534;">จำนวนหุ้นรวม:</span>
-                  <strong id="cmpAfterShares" style="color: #15803d;">-</strong>
+                  <span style="color: var(--up-5);">จำนวนหุ้นรวม:</span>
+                  <strong id="cmpAfterShares" style="color: var(--up-4);">-</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13.5px;">
-                  <span style="color: #166534;">ต้นทุนเฉลี่ยใหม่:</span>
-                  <strong id="cmpAfterAvg" style="color: #15803d;">-</strong>
+                  <span style="color: var(--up-5);">ต้นทุนเฉลี่ยใหม่:</span>
+                  <strong id="cmpAfterAvg" style="color: var(--up-4);">-</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 13.5px;">
-                  <span style="color: #166534;">มูลค่าต้นทุนรวมใหม่:</span>
-                  <strong id="cmpAfterTotal" style="color: #15803d;">-</strong>
+                  <span style="color: var(--up-5);">มูลค่าต้นทุนรวมใหม่:</span>
+                  <strong id="cmpAfterTotal" style="color: var(--up-4);">-</strong>
                 </div>
               </div>
             </div>
 
-            <div id="avgSummaryDynamicText" style="margin-top: 12px; background: #fffbe8; border: 1px solid #ffe58f; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #594200;">
+            <div id="avgSummaryDynamicText" style="margin-top: 12px; background: var(--butter-soft); border: 1px solid var(--butter-line); padding: 10px 14px; border-radius: 8px; font-size: 13px; color: var(--butter-ink);">
               💡 กรอกราคาและจำนวนเงิน/หุ้น เพื่อเริ่มจำลองการถัวเฉลี่ย
             </div>
           </div>
         </div>
 
         <!-- แบบฟอร์มเพิ่มรายการซื้อ/ขายจำลอง -->
-        <div class="panel" style="background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+        <div class="panel" style="background: var(--panel); border-radius: 12px; padding: 20px; border: 1px solid var(--line);">
           <div style="display: grid; grid-template-columns: 120px 180px 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
             <div>
-              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">ประเภท</label>
-              <select id="trade-type" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+              <label style="font-size: 13px; color: var(--txt-muted); display: block; margin-bottom: 4px;">ประเภท</label>
+              <select id="trade-type" style="width: 100%; height: 38px; border: 1px solid var(--line-2); border-radius: 6px; padding: 0 8px;">
                 <option value="BUY">ซื้อ</option>
                 <option value="SELL">ขาย</option>
               </select>
             </div>
             <div>
-              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">วันที่</label>
-              <input type="date" id="trade-date" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+              <label style="font-size: 13px; color: var(--txt-muted); display: block; margin-bottom: 4px;">วันที่</label>
+              <input type="date" id="trade-date" style="width: 100%; height: 38px; border: 1px solid var(--line-2); border-radius: 6px; padding: 0 8px;">
             </div>
             <div>
-              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">จำนวนหุ้น</label>
-              <input type="number" id="trade-qty" placeholder="เช่น 5,000" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+              <label style="font-size: 13px; color: var(--txt-muted); display: block; margin-bottom: 4px;">จำนวนหุ้น</label>
+              <input type="number" id="trade-qty" placeholder="เช่น 5,000" style="width: 100%; height: 38px; border: 1px solid var(--line-2); border-radius: 6px; padding: 0 8px;">
             </div>
             <div>
-              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">ราคา/หุ้น</label>
-              <input type="number" step="0.01" id="trade-price" placeholder="เช่น 8.31" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+              <label style="font-size: 13px; color: var(--txt-muted); display: block; margin-bottom: 4px;">ราคา/หุ้น</label>
+              <input type="number" step="0.01" id="trade-price" placeholder="เช่น 8.31" style="width: 100%; height: 38px; border: 1px solid var(--line-2); border-radius: 6px; padding: 0 8px;">
             </div>
             <div>
-              <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 4px;">หมายเหตุ</label>
-              <input type="text" id="trade-note" placeholder="เช่น ไม้ที่ 1" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 8px;">
+              <label style="font-size: 13px; color: var(--txt-muted); display: block; margin-bottom: 4px;">หมายเหตุ</label>
+              <input type="text" id="trade-note" placeholder="เช่น ไม้ที่ 1" style="width: 100%; height: 38px; border: 1px solid var(--line-2); border-radius: 6px; padding: 0 8px;">
             </div>
             <div>
-              <button type="button" id="btn-add-trade" style="background: #0284c7; color: white; border: none; height: 38px; padding: 0 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+              <button type="button" id="btn-add-trade" style="background: var(--accent); color: var(--on-accent); border: none; height: 38px; padding: 0 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
                 เพิ่มรายการ
               </button>
             </div>
@@ -410,17 +410,17 @@
         </div>
 
         <!-- ตารางบันทึกซื้อ/ขาย และคำนวณต้นทุน -->
-        <div class="panel" style="background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+        <div class="panel" style="background: var(--panel); border-radius: 12px; padding: 20px; border: 1px solid var(--line);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">ตารางบันทึกซื้อ/ขาย และคำนวณต้นทุน</h3>
-              <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">กรณีขาย จำนวนหุ้นและมูลค่าจะถูกหักออกอัตโนมัติ แต่ต้นทุนเฉลี่ยของหุ้นที่เหลือยังคงเดิม</p>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--txt-strong);">ตารางบันทึกซื้อ/ขาย และคำนวณต้นทุน</h3>
+              <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--txt-muted);">กรณีขาย จำนวนหุ้นและมูลค่าจะถูกหักออกอัตโนมัติ แต่ต้นทุนเฉลี่ยของหุ้นที่เหลือยังคงเดิม</p>
             </div>
           </div>
 
           <table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px;">
             <thead>
-              <tr style="background: #1e3a5f; color: #fff; text-align: right;">
+              <tr style="background: var(--navy); color: var(--on-ink); text-align: right;">
                 <th style="padding: 10px; text-align: center; border-top-left-radius: 6px;">ครั้งที่</th>
                 <th style="padding: 10px; text-align: center;">ประเภท</th>
                 <th style="padding: 10px; text-align: center;">วันที่</th>
@@ -434,13 +434,13 @@
             </thead>
             <tbody id="avgCostRows"></tbody>
             <tfoot>
-              <tr style="background: #f1f5f9; font-weight: 700; border-top: 2px solid #0284c7; text-align: right;">
-                <td colspan="3" style="padding: 12px 10px; text-align: left; color: #0f172a;">สถานะพอร์ตสุทธิปัจจุบัน</td>
-                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-total-shares">0</td>
+              <tr style="background: var(--inset); font-weight: 700; border-top: 2px solid var(--accent); text-align: right;">
+                <td colspan="3" style="padding: 12px 10px; text-align: left; color: var(--txt-strong);">สถานะพอร์ตสุทธิปัจจุบัน</td>
+                <td style="padding: 12px 10px; color: var(--txt-strong);" id="tbl-total-shares">0</td>
                 <td style="padding: 12px 10px;"></td>
-                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-total-cost">0.00</td>
-                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-running-shares">0</td>
-                <td style="padding: 12px 10px; color: #0f172a;" id="tbl-final-avg">0.00</td>
+                <td style="padding: 12px 10px; color: var(--txt-strong);" id="tbl-total-cost">0.00</td>
+                <td style="padding: 12px 10px; color: var(--txt-strong);" id="tbl-running-shares">0</td>
+                <td style="padding: 12px 10px; color: var(--txt-strong);" id="tbl-final-avg">0.00</td>
                 <td></td>
               </tr>
             </tfoot>

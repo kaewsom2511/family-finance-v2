@@ -407,7 +407,7 @@ function loadFromPortfolio() {
     if (elMktDiff) {
       const diffPct = avgPrice > 0 ? ((marketPrice - avgPrice) / avgPrice) * 100 : 0;
       elMktDiff.textContent = `(${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(2)}%)`;
-      elMktDiff.style.color = diffPct >= 0 ? '#10b981' : '#ef4444';
+      elMktDiff.style.color = diffPct >= 0 ? 'var(--up-3)' : 'var(--down-3)';
     }
 
     renderTradesTable(matchedTrades, currency);
@@ -465,24 +465,24 @@ function renderTradesTable(tradesList, cur) {
     const tr = document.createElement('tr');
     const OTHER_LABELS = { DIVIDEND: 'ปันผล', SPLIT: 'ปรับหุ้น (Split)' };
     const badgeText = type === 'BUY' ? 'ซื้อ' : type === 'SELL' ? 'ขาย' : (OTHER_LABELS[rawType] || rawType);
-    const bg = type === 'BUY' ? '#e6f4ea' : type === 'SELL' ? '#fee2e2' : '#e2e8f0';
-    const col = type === 'BUY' ? '#137333' : type === 'SELL' ? '#b91c1c' : '#475569';
+    const bg = type === 'BUY' ? 'var(--mint-soft)' : type === 'SELL' ? 'var(--down-soft-2)' : 'var(--line)';
+    const col = type === 'BUY' ? 'var(--mint-ink)' : type === 'SELL' ? 'var(--down-2)' : 'var(--txt-soft)';
 
     tr.innerHTML = `
-      <td style="padding: 10px; text-align: center; color: #64748b;">${idx + 1}</td>
+      <td style="padding: 10px; text-align: center; color: var(--txt-muted);">${idx + 1}</td>
       <td style="padding: 8px 10px; text-align: center;">
         <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; background-color: ${bg}; color: ${col};">
           ${badgeText}
         </span>
       </td>
-      <td style="padding: 10px; text-align: center; color: #334155;">${dateStr}</td>
+      <td style="padding: 10px; text-align: center; color: var(--txt-mid);">${dateStr}</td>
       <td style="padding: 10px; text-align: right; font-weight: 600;">${qty.toLocaleString()}</td>
       <td style="padding: 10px; text-align: right;">${money(price, currency)}</td>
-      <td style="padding: 10px; text-align: right; color: #137333; font-weight: 600;">${type === 'OTHER' ? '-' : money(subtotal, currency)}</td>
+      <td style="padding: 10px; text-align: right; color: var(--mint-ink); font-weight: 600;">${type === 'OTHER' ? '-' : money(subtotal, currency)}</td>
       <td style="padding: 10px; text-align: right; font-weight: 600;">${runningShares.toLocaleString()}</td>
-      <td style="padding: 10px; text-align: right; font-weight: 700; color: #0284c7;">${money(curAvg, currency)}</td>
+      <td style="padding: 10px; text-align: right; font-weight: 700; color: var(--accent);">${money(curAvg, currency)}</td>
       <td style="padding: 10px; text-align: center;">
-        <button type="button" style="color: #ef4444; background: none; border: none; cursor: pointer; font-weight: 700;" onclick="removeTradeItem(${idx})">✕</button>
+        <button type="button" style="color: var(--down-3); background: none; border: none; cursor: pointer; font-weight: 700;" onclick="removeTradeItem(${idx})">✕</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -605,7 +605,7 @@ function updateTargetComparison() {
 
       if (elBadge) {
         elBadge.textContent = isCostDown ? `📉 ถัวลดต้นทุน ลง ${Math.abs(diffPct).toFixed(2)}%` : `📈 ซื้อเฉลี่ยขาขึ้น +${diffPct.toFixed(2)}%`;
-        elBadge.style.color = isCostDown ? '#16a34a' : '#d97706';
+        elBadge.style.color = isCostDown ? 'var(--up)' : 'var(--warn)';
       }
 
       const remainder = (mode === 'money' && inputVal > addMoney) ? ` (เหลืองบ ${money(inputVal - addMoney, currency)})` : '';

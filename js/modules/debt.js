@@ -296,61 +296,61 @@ window.DebtModule = {
 
     const modalHtml = `
       <div id="modal-debt-plan" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background: #fff; border-radius: 14px; width: 480px; max-width: 95vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">
+        <div style="background: var(--panel); border-radius: 14px; width: 480px; max-width: 95vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-soft); padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong);">
               ${isEdit ? '⚙️ จัดการข้อมูลหนี้ / สัญญาผ่อน' : '➕ เพิ่มสัญญาผ่อน / หนี้สินใหม่'}
             </h3>
-            <button id="btn-close-debt-modal" style="background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer;">&times;</button>
+            <button id="btn-close-debt-modal" style="background: none; border: none; font-size: 22px; color: var(--txt-faint); cursor: pointer;">&times;</button>
           </div>
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div>
-              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ชื่อรายการ</label>
-              <input type="text" id="debt-input-name" value="${name}" placeholder="เช่น ผ่อนคอนโด, ผ่อนมือถือ" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ชื่อรายการ</label>
+              <input type="text" id="debt-input-name" value="${name}" placeholder="เช่น ผ่อนคอนโด, ผ่อนมือถือ" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px; font-weight: 700;">
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1.2;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ยอดหนี้เต็ม (บาท)</label>
-                <input type="number" id="debt-input-total" value="${total}" step="any" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; font-weight: 800; color: #0f172a;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ยอดหนี้เต็ม (บาท)</label>
+                <input type="number" id="debt-input-total" value="${total}" step="any" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 14px; font-weight: 800; color: var(--txt-strong);">
               </div>
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ผ่อนต่องวด (บาท)</label>
-                <input type="number" id="debt-input-monthly" value="${monthly}" step="any" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; font-weight: 800; color: #dc2626;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ผ่อนต่องวด (บาท)</label>
+                <input type="number" id="debt-input-monthly" value="${monthly}" step="any" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 14px; font-weight: 800; color: var(--down);">
               </div>
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">งวดที่จ่ายแล้ว</label>
-                <input type="number" id="debt-input-paid-months" value="${paidM}" min="0" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">งวดที่จ่ายแล้ว</label>
+                <input type="number" id="debt-input-paid-months" value="${paidM}" min="0" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">จำนวนงวดทั้งหมด</label>
-                <input type="number" id="debt-input-total-months" value="${totalM}" min="1" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">จำนวนงวดทั้งหมด</label>
+                <input type="number" id="debt-input-total-months" value="${totalM}" min="1" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่เริ่ม</label>
-                <input type="date" id="debt-input-start" value="${start}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันที่เริ่ม</label>
+                <input type="date" id="debt-input-start" value="${start}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px;">
               </div>
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่ครบ</label>
-                <input type="date" id="debt-input-end" value="${end}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันที่ครบ</label>
+                <input type="date" id="debt-input-end" value="${end}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px;">
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px; background: var(--panel-2); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); margin-top: 4px;">
               <input type="checkbox" id="debt-check-closed" ${isClosed ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
-              <label for="debt-check-closed" style="font-size: 13px; font-weight: 700; color: #16a34a; cursor: pointer;">
+              <label for="debt-check-closed" style="font-size: 13px; font-weight: 700; color: var(--up); cursor: pointer;">
                 ✅ ปิดหนี้เรียบร้อยแล้ว (ชำระครบถ้วน)
               </label>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; border-top: 1px solid #f1f5f9; padding-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; border-top: 1px solid var(--line-soft); padding-top: 14px;">
               ${isEdit ? `
-                <button id="btn-delete-debt" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">ลบรายการ</button>
+                <button id="btn-delete-debt" style="background: var(--down-soft); color: var(--down); border: 1px solid var(--down-line); padding: 8px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">ลบรายการ</button>
               ` : '<div></div>'}
               <div style="display: flex; gap: 8px;">
-                <button id="btn-cancel-debt-modal" style="background: #fff; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-                <button id="btn-save-debt-modal" style="background: #0f172a; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">💾 บันทึก</button>
+                <button id="btn-cancel-debt-modal" style="background: var(--panel); border: 1px solid var(--line-2); padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+                <button id="btn-save-debt-modal" style="background: var(--solid-ink); color: var(--on-ink); border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">💾 บันทึก</button>
               </div>
             </div>
           </div>
@@ -464,15 +464,15 @@ window.DebtModule = {
 
     const renderTopTabs = () => `
       <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-        <button class="debt-main-tab" data-view="cards" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'cards' ? '#0284c7' : '#f1f5f9'}; color: ${this.activeViewTab === 'cards' ? '#fff' : '#475569'}; box-shadow: ${this.activeViewTab === 'cards' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
+        <button class="debt-main-tab" data-view="cards" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'cards' ? 'var(--accent)' : 'var(--inset)'}; color: ${this.activeViewTab === 'cards' ? 'var(--on-accent)' : 'var(--txt-soft)'}; box-shadow: ${this.activeViewTab === 'cards' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
           <span>💳</span> รอบบิลบัตรเครดิต & รูดใช้จ่าย
         </button>
-        <button class="debt-main-tab" data-view="debts" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'debts' ? '#0284c7' : '#f1f5f9'}; color: ${this.activeViewTab === 'debts' ? '#fff' : '#475569'}; box-shadow: ${this.activeViewTab === 'debts' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
+        <button class="debt-main-tab" data-view="debts" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'debts' ? 'var(--accent)' : 'var(--inset)'}; color: ${this.activeViewTab === 'debts' ? 'var(--on-accent)' : 'var(--txt-soft)'}; box-shadow: ${this.activeViewTab === 'debts' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
           <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน
         </button>
-        <button class="debt-main-tab" data-view="bills" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'bills' ? '#0284c7' : '#f1f5f9'}; color: ${this.activeViewTab === 'bills' ? '#fff' : '#475569'}; box-shadow: ${this.activeViewTab === 'bills' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
+        <button class="debt-main-tab" data-view="bills" style="border: none; padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: ${this.activeViewTab === 'bills' ? 'var(--accent)' : 'var(--inset)'}; color: ${this.activeViewTab === 'bills' ? 'var(--on-accent)' : 'var(--txt-soft)'}; box-shadow: ${this.activeViewTab === 'bills' ? '0 2px 4px rgba(2,132,199,0.25)' : 'none'};">
           <span>🧾</span> บิลครบกำหนด & รอบชำระ
-          ${billAlertCount ? `<span style="background: ${this.activeViewTab === 'bills' ? 'rgba(255,255,255,0.3)' : '#dc2626'}; color: #fff; border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 800;">${billAlertCount}</span>` : ''}
+          ${billAlertCount ? `<span style="background: ${this.activeViewTab === 'bills' ? 'rgba(255,255,255,0.3)' : 'var(--down)'}; color: var(--on-accent); border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 800;">${billAlertCount}</span>` : ''}
         </button>
       </div>
     `;
@@ -484,11 +484,11 @@ window.DebtModule = {
       container.innerHTML = `
         <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="background: #fffbeb; color: #b45309; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🧾</div>
+            <div style="background: var(--warn-soft); color: var(--warn-3); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🧾</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">RECURRING BILL SCHEDULE</div>
-              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">บิลครบกำหนด &amp; รอบชำระ</h1>
-              <div style="font-size: 11.5px; color: #64748b; font-weight: 600; margin-top: 2px;">นับรอบจากประวัติการจ่ายอัตโนมัติ · ไม่มีบริการภายนอก</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">RECURRING BILL SCHEDULE</div>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">บิลครบกำหนด &amp; รอบชำระ</h1>
+              <div style="font-size: 11.5px; color: var(--txt-muted); font-weight: 600; margin-top: 2px;">นับรอบจากประวัติการจ่ายอัตโนมัติ · ไม่มีบริการภายนอก</div>
             </div>
           </div>
           ${renderTopTabs()}
@@ -497,7 +497,7 @@ window.DebtModule = {
       `;
       const host = document.getElementById('bills-view-container');
       if (typeof BillModule !== 'undefined') BillModule.renderBillsView(host);
-      else if (host) host.innerHTML = '<div style="color: #dc2626; font-size: 13px; font-weight: 700;">ไม่พบโมดูลบิล (js/modules/bill.js) ในหน้านี้</div>';
+      else if (host) host.innerHTML = '<div style="color: var(--down); font-size: 13px; font-weight: 700;">ไม่พบโมดูลบิล (js/modules/bill.js) ในหน้านี้</div>';
       return;
     }
 
@@ -652,7 +652,7 @@ window.DebtModule = {
       }).join('');
 
       const cardBoxesHtml = cardStats.map((c, idx) => `
-        <div class="cc-card-item" data-index="${idx}" style="background: ${c.theme}; border-radius: 14px; padding: 20px; color: #fff; box-shadow: ${c.isActive ? '0 8px 18px -2px rgba(0,0,0,0.25), 0 0 0 3px #0284c7' : '0 4px 6px -1px rgba(0,0,0,0.1)'}; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 215px; cursor: pointer; transform: ${c.isActive ? 'scale(1.015)' : 'none'}; transition: all 0.2s;">
+        <div class="cc-card-item" data-index="${idx}" style="background: ${c.theme}; border-radius: 14px; padding: 20px; color: var(--on-ink); box-shadow: ${c.isActive ? '0 8px 18px -2px rgba(0,0,0,0.25), 0 0 0 3px var(--accent)' : '0 4px 6px -1px rgba(0,0,0,0.1)'}; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 215px; cursor: pointer; transform: ${c.isActive ? 'scale(1.015)' : 'none'}; transition: all 0.2s;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
               <div style="font-size: 11px; font-weight: 700; opacity: 0.85; letter-spacing: 0.5px;">${c.bank}</div>
@@ -680,7 +680,7 @@ window.DebtModule = {
                 <span>คงเหลือ: ฿${fmt(c.available)}</span>
               </div>
               <div style="height: 5px; background: rgba(255,255,255,0.25); border-radius: 3px; overflow: hidden;">
-                <div style="width: ${c.utilPct}%; height: 100%; background: #fff; border-radius: 3px;"></div>
+                <div style="width: ${c.utilPct}%; height: 100%; background: var(--panel); border-radius: 3px;"></div>
               </div>
             </div>
           </div>
@@ -690,7 +690,7 @@ window.DebtModule = {
             <div>⏰ ครบกำหนดชำระ: <strong>ทุกวันที่ ${c.dueDay}</strong></div>
           </div>
 
-          <button class="btn-edit-cc-card" data-id="${c.id}" style="margin-top: 10px; width: 100%; background: rgba(255,255,255,0.95); color: #0f172a; border: none; padding: 7px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+          <button class="btn-edit-cc-card" data-id="${c.id}" style="margin-top: 10px; width: 100%; background: rgba(255,255,255,0.95); color: var(--solid-ink); border: none; padding: 7px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
             ✏️ แก้ไขวงเงินและรอบบิล
           </button>
         </div>
@@ -702,39 +702,39 @@ window.DebtModule = {
         const isIncome = t.type === 'รายรับ' || t.type === 'เงินคืน';
         const isInstallment = t.type === 'ผ่อนชำระ';
 
-        let badgeBg = '#fef2f2';
-        let badgeColor = '#dc2626';
+        let badgeBg = 'var(--down-soft)';
+        let badgeColor = 'var(--down)';
         let typeLabel = t.type || 'รายจ่าย';
 
         if (isInstallment) {
-          badgeBg = '#fff7ed';
-          badgeColor = '#ea580c';
+          badgeBg = 'var(--warn-soft-2)';
+          badgeColor = 'var(--orange)';
         } else if (isIncome) {
-          badgeBg = '#ecfdf5';
-          badgeColor = '#059669';
+          badgeBg = 'var(--up-soft)';
+          badgeColor = 'var(--up-2)';
         } else if (isBill) {
-          badgeBg = '#fef3c7';
-          badgeColor = '#d97706';
+          badgeBg = 'var(--amber-soft)';
+          badgeColor = 'var(--warn)';
         }
 
         const amtSign = isIncome ? `+${fmt(t.amount)}` : `-${fmt(t.amount)}`;
-        const amtColor = isIncome ? '#059669' : '#dc2626';
+        const amtColor = isIncome ? 'var(--up-2)' : 'var(--down)';
 
         return `
-          <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-            <td style="padding: 12px 14px; font-size: 13px; color: #334155; white-space: nowrap;">${this.formatDateTh(t.date)}</td>
+          <tr style="border-bottom: 1px solid var(--line-soft); transition: background 0.15s;" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background='transparent'">
+            <td style="padding: 12px 14px; font-size: 13px; color: var(--txt-mid); white-space: nowrap;">${this.formatDateTh(t.date)}</td>
             <td style="padding: 12px 14px; white-space: nowrap;">
-              <span style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeColor}33; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-block;">
+              <span style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid var(--line); font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-block;">
                 ${typeLabel}
               </span>
             </td>
-            <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap;">${t.category || t.categoryDetail || '-'}</td>
+            <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: var(--txt-mid); white-space: nowrap;">${t.category || t.categoryDetail || '-'}</td>
             <td style="padding: 12px 14px; font-size: 13.5px; font-weight: 800; color: ${amtColor}; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">
               ${amtSign}
             </td>
-            <td style="padding: 12px 14px; font-size: 13px; color: #475569; white-space: nowrap;">${t.account || t.accountName || curCard.name}</td>
-            <td style="padding: 12px 14px; font-size: 13px; color: #64748b;">${t.detail || t.desc || t.note || t.memo || t.description || '-'}</td>
-            <td style="padding: 12px 14px; font-size: 13px; color: #94a3b8; text-align: center;">-</td>
+            <td style="padding: 12px 14px; font-size: 13px; color: var(--txt-soft); white-space: nowrap;">${t.account || t.accountName || curCard.name}</td>
+            <td style="padding: 12px 14px; font-size: 13px; color: var(--txt-muted);">${t.detail || t.desc || t.note || t.memo || t.description || '-'}</td>
+            <td style="padding: 12px 14px; font-size: 13px; color: var(--txt-faint); text-align: center;">-</td>
           </tr>
         `;
       }).join('');
@@ -743,12 +743,12 @@ window.DebtModule = {
         <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
           
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="background: #fef3c7; color: #d97706; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">💳</div>
+            <div style="background: var(--amber-soft); color: var(--warn); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">💳</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CREDIT CARDS & DEBT MANAGEMENT</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">CREDIT CARDS & DEBT MANAGEMENT</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">รอบบิลบัตรเครดิต & หนี้สิน</h1>
-                <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${cards.length} ใบ</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">รอบบิลบัตรเครดิต & หนี้สิน</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${cards.length} ใบ</span>
               </div>
             </div>
           </div>
@@ -756,58 +756,58 @@ window.DebtModule = {
           ${renderTopTabs()}
 
           <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 24px;">
-            <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔴 หนี้ค้างชำระรวม (Total Debt)</div>
-              <div class="card-value" style="font-size: 22px; font-weight: 900; color: #dc2626;">฿${fmt(totalDebtAllCards)}</div>
-              <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">ยอดรูดสะสมที่ต้องชำระรอบนี้</div>
+            <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🔴 หนี้ค้างชำระรวม (Total Debt)</div>
+              <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--down);">฿${fmt(totalDebtAllCards)}</div>
+              <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">ยอดรูดสะสมที่ต้องชำระรอบนี้</div>
             </div>
 
-            <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🛡️ วงเงินคงเหลือรวม (Available Credit)</div>
-              <div class="card-value" style="font-size: 22px; font-weight: 900; color: #059669;">฿${fmt(totalAvailAll)}</div>
-              <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">จากวงเงินรวม ฿${fmt(totalLimitAllCards)}</div>
+            <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🛡️ วงเงินคงเหลือรวม (Available Credit)</div>
+              <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--up-2);">฿${fmt(totalAvailAll)}</div>
+              <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">จากวงเงินรวม ฿${fmt(totalLimitAllCards)}</div>
             </div>
 
-            <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">📊 อัตราการใช้วงเงิน (Credit Utilization)</div>
-              <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0284c7;">${totalUtilPct}%</div>
-              <div class="card-subtext" style="font-size: 11px; color: #0284c7; margin-top: 6px;">เกณฑ์แนะนำควรต่ำกว่า 30-40%</div>
+            <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">📊 อัตราการใช้วงเงิน (Credit Utilization)</div>
+              <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--accent);">${totalUtilPct}%</div>
+              <div class="card-subtext" style="font-size: 11px; color: var(--accent); margin-top: 6px;">เกณฑ์แนะนำควรต่ำกว่า 30-40%</div>
             </div>
 
-            <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">💳 บัตรที่เปิดใช้งาน</div>
-              <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0f172a;">${cards.length} ใบ</div>
-              <div class="card-subtext" style="font-size: 11px; color: #16a34a; margin-top: 6px;">ชำระเต็มจำนวน ไม่มีดอกเบี้ยสะสม</div>
+            <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">💳 บัตรที่เปิดใช้งาน</div>
+              <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--txt-strong);">${cards.length} ใบ</div>
+              <div class="card-subtext" style="font-size: 11px; color: var(--up); margin-top: 6px;">ชำระเต็มจำนวน ไม่มีดอกเบี้ยสะสม</div>
             </div>
           </div>
 
-          <h3 style="margin: 0 0 14px; font-size: 15px; font-weight: 800; color: #0f172a;">บัตรเครดิต & รอบบิลของคุณ (${cards.length} ใบ):</h3>
+          <h3 style="margin: 0 0 14px; font-size: 15px; font-weight: 800; color: var(--txt-strong);">บัตรเครดิต & รอบบิลของคุณ (${cards.length} ใบ):</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 26px;">
             ${cardBoxesHtml}
           </div>
 
-          <div style="background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1.5px solid var(--line); border-radius: 14px; padding: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
               <div>
-                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong); display: flex; align-items: center; gap: 6px;">
                   <span>🧾</span> รายการรูดใช้จ่ายบัตรเครดิต (${curCard ? curCard.name : 'ไม่มีบัตร'})
                 </h3>
-                <div style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
-                  รอบบิล: <strong>${startCycleDate}</strong> ถึง <strong>${endCycleDate}</strong> | ครบกำหนดชำระ: <strong style="color: #dc2626;">${dueDate}</strong>
+                <div style="font-size: 12.5px; color: var(--txt-muted); margin-top: 4px;">
+                  รอบบิล: <strong>${startCycleDate}</strong> ถึง <strong>${endCycleDate}</strong> | ครบกำหนดชำระ: <strong style="color: var(--down);">${dueDate}</strong>
                 </div>
               </div>
 
               <div style="display: flex; gap: 10px; align-items: center;">
                 <div>
-                  <label style="display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">บัตรเครดิต</label>
-                  <select id="cc-select-card-dropdown" style="padding: 7px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">
+                  <label style="display: block; font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-bottom: 3px;">บัตรเครดิต</label>
+                  <select id="cc-select-card-dropdown" style="padding: 7px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--txt-strong); background: var(--panel); cursor: pointer;">
                     ${cards.length > 0 ? cards.map((c, i) => `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${c.name}</option>`).join('') : '<option value="">ไม่มีบัตรเครดิต</option>'}
                   </select>
                 </div>
 
                 <div>
-                  <label style="display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">รอบบิล</label>
-                  <select id="cc-select-month-dropdown" style="padding: 7px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">
+                  <label style="display: block; font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-bottom: 3px;">รอบบิล</label>
+                  <select id="cc-select-month-dropdown" style="padding: 7px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--txt-strong); background: var(--panel); cursor: pointer;">
                     ${monthOptionsHtml}
                   </select>
                 </div>
@@ -815,31 +815,31 @@ window.DebtModule = {
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-              <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; background: #fafafa;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 6px;">ช่วงรอบบิล</div>
-                <div style="font-size: 15px; font-weight: 800; color: #0f172a;">${this.formatDateTh(startCycleDate)} - ${this.formatDateTh(endCycleDate)}</div>
+              <div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--panel-flat);">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 6px;">ช่วงรอบบิล</div>
+                <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">${this.formatDateTh(startCycleDate)} - ${this.formatDateTh(endCycleDate)}</div>
               </div>
 
-              <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; background: #fafafa;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 6px;">ยอดใช้บัตร</div>
-                <div style="font-size: 18px; font-weight: 900; color: #dc2626;">฿${fmt(cardUsageTotal)}</div>
+              <div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--panel-flat);">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 6px;">ยอดใช้บัตร</div>
+                <div style="font-size: 18px; font-weight: 900; color: var(--down);">฿${fmt(cardUsageTotal)}</div>
               </div>
 
-              <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; background: #fafafa;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 6px;">เครดิตคืนเข้าบัตร</div>
-                <div style="font-size: 18px; font-weight: 900; color: #059669;">฿${fmt(creditRefundTotal)}</div>
+              <div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--panel-flat);">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 6px;">เครดิตคืนเข้าบัตร</div>
+                <div style="font-size: 18px; font-weight: 900; color: var(--up-2);">฿${fmt(creditRefundTotal)}</div>
               </div>
 
-              <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; background: #fafafa;">
-                <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 6px;">ยอดใช้สุทธิ</div>
-                <div style="font-size: 18px; font-weight: 900; color: #dc2626;">฿${fmt(netUsageTotal)}</div>
+              <div style="border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--panel-flat);">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-bottom: 6px;">ยอดใช้สุทธิ</div>
+                <div style="font-size: 18px; font-weight: 900; color: var(--down);">฿${fmt(netUsageTotal)}</div>
               </div>
             </div>
 
-            <div style="overflow-x: auto; border: 1px solid #f1f5f9; border-radius: 10px;">
+            <div style="overflow-x: auto; border: 1px solid var(--line-soft); border-radius: 10px;">
               <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 12px; font-weight: 700; background: #f8fafc;">
+                  <tr style="border-bottom: 2px solid var(--line); color: var(--txt-soft); font-size: 12px; font-weight: 700; background: var(--panel-2);">
                     <th class="th-sortable" data-field="date" style="padding: 12px 14px; white-space: nowrap; cursor: pointer; user-select: none;">
                       วันที่ ${this.sortField === 'date' ? (this.sortOrder === 'desc' ? '🔽' : '🔼') : '↕️'}
                     </th>
@@ -854,7 +854,7 @@ window.DebtModule = {
                   </tr>
                 </thead>
                 <tbody>
-                  ${rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 36px; color: #94a3b8; font-size: 13.5px;">ไม่มีรายการใช้จ่ายในรอบบิลนี้</td></tr>'}
+                  ${rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 36px; color: var(--txt-faint); font-size: 13.5px;">ไม่มีรายการใช้จ่ายในรอบบิลนี้</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -883,54 +883,54 @@ window.DebtModule = {
       let endCellHtml = '';
       if (isComplete) {
         endCellHtml = `
-          <div style="display: inline-flex; flex-direction: column; align-items: center; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 16px;">
-            <span style="color: #059669; font-size: 11px; font-weight: 800; line-height: 1.2;">ปิดหนี้แล้ว</span>
-            <span style="color: #047857; font-size: 10.5px; font-weight: 600; line-height: 1.2;">${this.formatDateTh(d.closedDate || d.endDate)}</span>
+          <div style="display: inline-flex; flex-direction: column; align-items: center; background: var(--up-soft); border: 1px solid var(--up-line-2); padding: 3px 8px; border-radius: 16px;">
+            <span style="color: var(--up-2); font-size: 11px; font-weight: 800; line-height: 1.2;">ปิดหนี้แล้ว</span>
+            <span style="color: var(--up-4); font-size: 10.5px; font-weight: 600; line-height: 1.2;">${this.formatDateTh(d.closedDate || d.endDate)}</span>
           </div>
         `;
       } else {
-        endCellHtml = `<span style="font-weight: 700; color: #0f172a; font-size: 12.5px;">${this.formatDateTh(d.endDate)}</span>`;
+        endCellHtml = `<span style="font-weight: 700; color: var(--txt-strong); font-size: 12.5px;">${this.formatDateTh(d.endDate)}</span>`;
       }
 
-      const barColor = isComplete ? '#10b981' : '#f97316';
-      const dotColor = isComplete ? '#10b981' : '#ea580c';
+      const barColor = isComplete ? 'var(--up-3)' : 'var(--orange)';
+      const dotColor = isComplete ? 'var(--up-3)' : 'var(--orange)';
 
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-          <td style="padding: 12px 14px; font-weight: 800; color: #0f172a; font-size: 13.5px; white-space: nowrap;">
+        <tr style="border-bottom: 1px solid var(--line-soft); transition: background 0.15s;" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background='transparent'">
+          <td style="padding: 12px 14px; font-weight: 800; color: var(--txt-strong); font-size: 13.5px; white-space: nowrap;">
             ${d.name}
           </td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #0f172a; font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums;">
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: var(--txt-strong); font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums;">
             ${fmt(d.totalDebt)}
           </td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #0f172a; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums;">
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: var(--txt-strong); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums;">
             ${fmt(d.monthlyPayment)}
           </td>
-          <td style="padding: 12px 14px; text-align: center; color: #475569; font-size: 12px; font-weight: 600; white-space: nowrap;">
+          <td style="padding: 12px 14px; text-align: center; color: var(--txt-soft); font-size: 12px; font-weight: 600; white-space: nowrap;">
             ${this.formatDateTh(d.startDate)}
           </td>
           <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
             ${endCellHtml}
           </td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #059669; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums;">
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: var(--up-2); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums;">
             ${fmt(d.paidAmount)}
           </td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: ${remaining > 0 ? '#dc2626' : '#64748b'}; font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums;">
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: ${remaining > 0 ? 'var(--down)' : 'var(--txt-muted)'}; font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums;">
             ${fmt(remaining)}
           </td>
-          <td style="padding: 12px 14px; text-align: center; font-weight: 800; color: #0f172a; font-size: 12.5px; white-space: nowrap;">
+          <td style="padding: 12px 14px; text-align: center; font-weight: 800; color: var(--txt-strong); font-size: 12.5px; white-space: nowrap;">
             ${String(d.paidMonths).padStart(2, '0')}/${String(d.totalMonths).padStart(2, '0')}
           </td>
           <td style="padding: 12px 14px; width: 100px; vertical-align: middle;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="width: 7px; height: 7px; border-radius: 50%; background: ${dotColor}; flex-shrink: 0;"></span>
-              <div style="flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; width: 60px;">
+              <div style="flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; width: 60px;">
                 <div style="width: ${pct}%; height: 100%; background: ${barColor}; border-radius: 3px;"></div>
               </div>
             </div>
           </td>
           <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
-            <button class="btn-manage-debt" data-id="${d.id}" style="background: #1e293b; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            <button class="btn-manage-debt" data-id="${d.id}" style="background: var(--solid-slate-3); color: var(--on-ink); border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
               <span>⚙️️</span> จัดการ
             </button>
           </td>
@@ -943,18 +943,18 @@ window.DebtModule = {
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #fdf2f8; color: #be185d; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🏷️</div>
+            <div style="background: var(--pink-soft); color: var(--pink-ink); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🏷️</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">DEBT & INSTALLMENT TRACKER</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">DEBT & INSTALLMENT TRACKER</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ภาระหนี้สิน & สัญญาผ่อนชำระ</h1>
-                <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${debts.length} สัญญา</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">ภาระหนี้สิน & สัญญาผ่อนชำระ</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${debts.length} สัญญา</span>
               </div>
             </div>
           </div>
 
           <div>
-            <button id="btn-open-add-debt" style="background: #0284c7; color: #fff; border: none; font-weight: 700; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            <button id="btn-open-add-debt" style="background: var(--accent); color: var(--on-accent); border: none; font-weight: 700; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
               <span>➕</span> เพิ่มสัญญาผ่อนใหม่
             </button>
           </div>
@@ -963,30 +963,30 @@ window.DebtModule = {
         ${renderTopTabs()}
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 22px;">
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔴 หนี้สินคงค้างทั้งหมด (Remaining Debt)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #dc2626;">฿${fmt(totalRemainingDebt)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">ยอดหนี้ที่ต้องชำระจนจบสัญญา</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🔴 หนี้สินคงค้างทั้งหมด (Remaining Debt)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--down);">฿${fmt(totalRemainingDebt)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">ยอดหนี้ที่ต้องชำระจนจบสัญญา</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">⚡ ภาระผ่อนต่องวดปัจจุบัน (Monthly Burden)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0284c7;">฿${fmt(totalMonthlyBurden)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #0284c7; margin-top: 6px;">ยอดที่ต้องจ่ายในแต่ละเดือน</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">⚡ ภาระผ่อนต่องวดปัจจุบัน (Monthly Burden)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--accent);">฿${fmt(totalMonthlyBurden)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--accent); margin-top: 6px;">ยอดที่ต้องจ่ายในแต่ละเดือน</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🎉 ปิดหนี้สำเร็จแล้ว (Closed Contracts)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #059669;">${closedCount} รายการ</div>
-            <div class="card-subtext" style="font-size: 11px; color: #16a34a; margin-top: 6px;">ผ่อนหมดครบงวดเรียบร้อย</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🎉 ปิดหนี้สำเร็จแล้ว (Closed Contracts)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--up-2);">${closedCount} รายการ</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--up); margin-top: 6px;">ผ่อนหมดครบงวดเรียบร้อย</div>
           </div>
         </div>
 
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden;">
           <div style="overflow-x: auto; width: 100%;">
             <table class="custom-table" style="width: 100%; min-width: 900px; border-collapse: collapse; font-size: 13px; text-align: left;">
               <thead>
-                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 12px; font-weight: 800;">
+                <tr style="background: var(--panel-2); border-bottom: 2px solid var(--line); color: var(--txt-soft); font-size: 12px; font-weight: 800;">
                   <th style="padding: 12px 14px; white-space: nowrap;">รายการ</th>
                   <th style="padding: 12px 14px; text-align: right; white-space: nowrap;">ยอดหนี้</th>
                   <th style="padding: 12px 14px; text-align: right; white-space: nowrap;">ผ่อน/เดือน</th>
@@ -1000,7 +1000,7 @@ window.DebtModule = {
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml || '<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">ยังไม่มีรายการหนี้สินหรือสัญญาผ่อนชำระ</td></tr>'}
+                ${rowsHtml || '<tr><td colspan="10" style="text-align: center; padding: 30px; color: var(--txt-faint);">ยังไม่มีรายการหนี้สินหรือสัญญาผ่อนชำระ</td></tr>'}
               </tbody>
             </table>
           </div>

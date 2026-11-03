@@ -8,49 +8,49 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
-    body { margin: 0; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+    body { margin: 0; background-color: var(--panel-2); color: var(--txt-strong); display: flex; flex-direction: column; min-height: 100vh; }
     
     .top-navbar {
-      height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0;
+      height: 60px; background: var(--panel); border-bottom: 1px solid var(--line);
       display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
       position: sticky; top: 0; z-index: 50;
     }
-    .brand-logo { font-size: 20px; font-weight: 800; color: #0284c7; text-decoration: none; display: flex; align-items: center; gap: 6px; }
-    .brand-logo span { color: #0f172a; }
+    .brand-logo { font-size: 20px; font-weight: 800; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .brand-logo span { color: var(--txt-strong); }
     .top-user-actions { display: flex; align-items: center; gap: 14px; }
 
     .app-layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
     .sidebar {
-      width: 240px; background: #ffffff; border-right: 1px solid #e2e8f0;
+      width: 240px; background: var(--panel); border-right: 1px solid var(--line);
       padding: 16px 10px; display: flex; flex-direction: column; gap: 14px;
       flex-shrink: 0; user-select: none;
     }
     .sidebar-section-title {
-      font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+      font-size: 11px; font-weight: 700; color: var(--txt-faint); text-transform: uppercase;
       letter-spacing: 0.5px; padding: 8px 10px 4px;
     }
     .sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
     .sidebar-link {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-      border-radius: 8px; color: #475569; text-decoration: none; font-size: 13.5px; font-weight: 700;
+      border-radius: 8px; color: var(--txt-soft); text-decoration: none; font-size: 13.5px; font-weight: 700;
       transition: all 0.15s ease;
     }
-    .sidebar-link:hover { background: #f8fafc; color: #0f172a; }
-    .sidebar-link.active { background: #f0f9ff; color: #0284c7; font-weight: 800; border-left: 3px solid #0284c7; border-radius: 0 8px 8px 0; }
+    .sidebar-link:hover { background: var(--panel-2); color: var(--txt-strong); }
+    .sidebar-link.active { background: var(--accent-softer); color: var(--accent); font-weight: 800; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; }
     
     .content-area { flex: 1; padding: 28px 36px; overflow-y: auto; text-align: left; }
 
     /* Modal Form Styling */
     .role-option-card {
       display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
-      border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; margin-bottom: 8px;
+      border: 1px solid var(--line); border-radius: 10px; cursor: pointer; margin-bottom: 8px;
       transition: all 0.15s ease;
     }
-    .role-option-card:hover { border-color: #94a3b8; background: #f8fafc; }
-    .role-option-card.selected { border-color: #0284c7; background: #f0f9ff; }
+    .role-option-card:hover { border-color: var(--txt-faint); background: var(--panel-2); }
+    .role-option-card.selected { border-color: var(--accent); background: var(--accent-softer); }
   </style>
 </head>
-<body>
+<body data-theme="dark">
 
   <!-- Top Navbar -->
   <header class="top-navbar">
@@ -59,10 +59,10 @@
     <div class="top-user-actions">
       <div id="userProfileNav" style="display: none; align-items: center; gap: 12px;">
         <div style="text-align: right;">
-          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: #1e293b;"></div>
-          <div id="navUserRole" style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;"></div>
+          <div id="navUserEmail" style="font-size: 0.875rem; font-weight: 600; color: var(--txt);"></div>
+          <div id="navUserRole" style="font-size: 0.75rem; color: var(--txt-muted); text-transform: uppercase;"></div>
         </div>
-        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
+        <button type="button" onclick="handleSignOut()" style="padding: 6px 12px; background: var(--down-soft-2); color: var(--down-2); border: 1px solid var(--down-line); border-radius: 6px; font-size: 0.825rem; font-weight: 500; cursor: pointer;">
           ออกจากระบบ
         </button>
       </div>
@@ -125,52 +125,52 @@
 
   <!-- Modal Popup แก้ไขข้อมูลสมาชิก -->
   <div id="editMemberModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: #ffffff; width: 92%; max-width: 440px; border-radius: 16px; padding: 26px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
+    <div style="background: var(--panel); width: 92%; max-width: 440px; border-radius: 16px; padding: 26px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--txt-strong); display: flex; align-items: center; gap: 8px;">
           <span>✏️</span> จัดการข้อมูลสมาชิก
         </h3>
-        <button onclick="SettingsModule.closeEditModal()" style="border: none; background: transparent; font-size: 20px; color: #94a3b8; cursor: pointer;">✕</button>
+        <button onclick="SettingsModule.closeEditModal()" style="border: none; background: transparent; font-size: 20px; color: var(--txt-faint); cursor: pointer;">✕</button>
       </div>
 
       <input type="hidden" id="modalUserId">
 
       <div style="margin-bottom: 16px;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">อีเมลบัญชี</label>
-        <div id="modalUserEmail" style="font-size: 14px; color: #334155; font-weight: 600; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-bottom: 4px; text-transform: uppercase;">อีเมลบัญชี</label>
+        <div id="modalUserEmail" style="font-size: 14px; color: var(--txt-mid); font-weight: 600; padding: 8px 12px; background: var(--panel-2); border-radius: 8px; border: 1px solid var(--line);"></div>
       </div>
 
       <div style="margin-bottom: 18px;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">ชื่อที่ใช้เรียก</label>
-        <input type="text" id="modalFullName" placeholder="ระบุชื่อ เช่น แม่, ลูกสาว" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-bottom: 6px; text-transform: uppercase;">ชื่อที่ใช้เรียก</label>
+        <input type="text" id="modalFullName" placeholder="ระบุชื่อ เช่น แม่, ลูกสาว" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 8px; font-size: 14px; outline: none;">
       </div>
 
       <div style="margin-bottom: 24px;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">สิทธิ์การใช้งาน (ROLE)</label>
+        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-bottom: 8px; text-transform: uppercase;">สิทธิ์การใช้งาน (ROLE)</label>
         
         <label class="role-option-card" id="cardRoleAdmin" onclick="SettingsModule.selectRoleInModal('admin')">
           <input type="radio" name="modalRole" id="radioRoleAdmin" value="admin" style="margin-top: 3px;">
           <div>
-            <div style="font-weight: 700; font-size: 13.5px; color: #0284c7;">🛡️ ผู้ดูแลระบบ (ADMIN)</div>
-            <div style="font-size: 12px; color: #64748b;">เห็นข้อมูลการเงินรวมทั้งบ้าน และจัดการสมาชิกได้</div>
+            <div style="font-weight: 700; font-size: 13.5px; color: var(--accent);">🛡️ ผู้ดูแลระบบ (ADMIN)</div>
+            <div style="font-size: 12px; color: var(--txt-muted);">เห็นข้อมูลการเงินรวมทั้งบ้าน และจัดการสมาชิกได้</div>
           </div>
         </label>
 
         <label class="role-option-card" id="cardRoleMember" onclick="SettingsModule.selectRoleInModal('member')">
           <input type="radio" name="modalRole" id="radioRoleMember" value="member" style="margin-top: 3px;">
           <div>
-            <div style="font-weight: 700; font-size: 13.5px; color: #334155;">👤 สมาชิกทั่วไป (MEMBER)</div>
-            <div style="font-size: 12px; color: #64748b;">เข้าถึงเฉพาะพอร์ตและบันทึกส่วนตัวเท่านั้น</div>
+            <div style="font-weight: 700; font-size: 13.5px; color: var(--txt-mid);">👤 สมาชิกทั่วไป (MEMBER)</div>
+            <div style="font-size: 12px; color: var(--txt-muted);">เข้าถึงเฉพาะพอร์ตและบันทึกส่วนตัวเท่านั้น</div>
           </div>
         </label>
       </div>
 
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button onclick="SettingsModule.closeEditModal()" style="padding: 9px 16px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer;">
+        <button onclick="SettingsModule.closeEditModal()" style="padding: 9px 16px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--txt-soft); cursor: pointer;">
           ยกเลิก
         </button>
-        <button id="btnSaveMember" onclick="SettingsModule.saveMemberChanges()" style="padding: 9px 18px; background: #0284c7; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; color: #ffffff; cursor: pointer;">
+        <button id="btnSaveMember" onclick="SettingsModule.saveMemberChanges()" style="padding: 9px 18px; background: var(--accent); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--on-accent); cursor: pointer;">
           💾 บันทึกการเปลี่ยนแปลง
         </button>
       </div>

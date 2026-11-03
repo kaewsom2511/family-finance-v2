@@ -246,7 +246,7 @@ var DashboardModule = {
     if (cardPortValEl) cardPortValEl.innerText = this.formatTHB(totalPortMarketValTHB);
     if (cardPortProfitEl) {
       const sign = portProfitTHB >= 0 ? '+' : '';
-      const color = portProfitTHB >= 0 ? '#16a34a' : '#dc2626';
+      const color = portProfitTHB >= 0 ? 'var(--up)' : 'var(--down)';
       cardPortProfitEl.style.color = color;
       cardPortProfitEl.innerText = `กำไรสะสม: ${sign}${this.formatTHB(portProfitTHB)} (${sign}${portProfitPct.toFixed(2)}%)`;
     }
@@ -273,16 +273,21 @@ var DashboardModule = {
     const barContainer = document.querySelector('#grand-total-net-worth div[style*="height: 10px"]');
     if (barContainer) {
       barContainer.innerHTML = `
-        <div style="width: ${pThai}%; background: #6366f1;" title="หุ้นไทย & REITs (${pThai}%)"></div>
-        <div style="width: ${pFund}%; background: #10b981;" title="กองทุนรวม (${pFund}%)"></div>
-        <div style="width: ${pForeign}%; background: #0284c7;" title="หุ้นสหรัฐฯ (${pForeign}%)"></div>
-        <div style="width: ${pCash}%; background: #f59e0b;" title="เงินสดในบัญชี (${pCash}%)"></div>
+        <div style="width: ${pThai}%; background: var(--indigo);" title="หุ้นไทย & REITs (${pThai}%)"></div>
+        <div style="width: ${pFund}%; background: var(--up-3);" title="กองทุนรวม (${pFund}%)"></div>
+        <div style="width: ${pForeign}%; background: var(--accent);" title="หุ้นสหรัฐฯ (${pForeign}%)"></div>
+        <div style="width: ${pCash}%; background: var(--warn-2);" title="เงินสดในบัญชี (${pCash}%)"></div>
       `;
     }
   },
 
   renderDashboardCharts() {
     setTimeout(() => {
+      // Chart.js วาดลง canvas จึงไม่รู้ค่า var() — ตั้งสี default จากโทเคนของธีมปัจจุบัน
+      if (typeof Chart !== 'undefined') {
+        Chart.defaults.color = ThemeColor.get('--txt-muted', '#64748b');
+        Chart.defaults.borderColor = ThemeColor.get('--line', '#e2e8f0');
+      }
       // 1. กราฟโดนัท: โครงสร้างสินทรัพย์และภาระหนี้สินรวม (รวมหนี้บัตร + หนี้สัญญาผ่อนชำระ)
       const ctxDonut = document.getElementById('dashboardAllocationDonutChart');
       if (ctxDonut && typeof Chart !== 'undefined') {
@@ -323,12 +328,12 @@ var DashboardModule = {
 
             // บรรทัดบน: ยอดความมั่งคั่งสุทธิตัวเลขเต็ม
             ctx.font = '800 18px "Sarabun", sans-serif';
-            ctx.fillStyle = '#0284c7';
+            ctx.fillStyle = ThemeColor.get('--accent', '#0284c7');
             ctx.fillText(`฿${Math.round(netWorthVal).toLocaleString('th-TH')}`, centerX, centerY - 9);
 
             // บรรทัดล่าง: สัดส่วนปลอดหนี้
             ctx.font = '700 11.5px "Sarabun", sans-serif';
-            ctx.fillStyle = '#16a34a';
+            ctx.fillStyle = ThemeColor.get('--up', '#16a34a');
             ctx.fillText(`ปลอดหนี้ ${pctNetWorthRatio.toFixed(2)}%`, centerX, centerY + 13);
 
             ctx.restore();
@@ -344,7 +349,7 @@ var DashboardModule = {
             const centerX = (chartArea.left + chartArea.right) / 2;
             const centerY = (chartArea.top + chartArea.bottom) / 2;
 
-            const textColors = ['#0284c7', '#059669', '#ea580c'];
+            const textColors = [ThemeColor.get('--accent', '#0284c7'), ThemeColor.get('--up-2', '#059669'), ThemeColor.get('--orange', '#ea580c')];
 
             meta.data.forEach((element, index) => {
               const val = Number(chart.data.datasets[0].data[index]).toFixed(2);
@@ -364,12 +369,12 @@ var DashboardModule = {
               ctx.moveTo(startX, startY);
               ctx.lineTo(turnX, turnY);
               ctx.lineTo(endX, turnY);
-              ctx.strokeStyle = '#94a3b8';
+              ctx.strokeStyle = ThemeColor.get('--txt-faint', '#94a3b8');
               ctx.lineWidth = 1.2;
               ctx.stroke();
 
               ctx.font = '700 11.5px "Sarabun", sans-serif';
-              ctx.fillStyle = textColors[index] || '#334155';
+              ctx.fillStyle = textColors[index] || ThemeColor.get('--txt-mid', '#334155');
               ctx.textAlign = isRightSide ? 'left' : 'right';
               ctx.textBaseline = 'middle';
               ctx.fillText(isRightSide ? ` ${val}%` : `${val}% `, endX, turnY);
@@ -388,9 +393,9 @@ var DashboardModule = {
             ],
             datasets: [{
               data: [pctInvest, pctCash, pctDebt],
-              backgroundColor: ['#0284c7', '#10b981', '#f97316'],
+              backgroundColor: [ThemeColor.get('--accent', '#0284c7'), ThemeColor.get('--up-3', '#10b981'), ThemeColor.get('--orange', '#f97316')],
               borderWidth: 2,
-              borderColor: '#ffffff',
+              borderColor: ThemeColor.get('--panel', '#ffffff'),
               hoverOffset: 6
             }]
           },
@@ -439,7 +444,7 @@ var DashboardModule = {
                   const text = '฿' + Number(value).toLocaleString('th-TH');
                   ctx.save();
                   ctx.font = '700 11.5px "Sarabun", sans-serif';
-                  ctx.fillStyle = '#475569';
+                  ctx.fillStyle = ThemeColor.get('--txt-soft', '#475569');
                   ctx.textAlign = 'left';
                   ctx.textBaseline = 'middle';
                   ctx.fillText(text, bar.x + 8, bar.y);
@@ -457,7 +462,7 @@ var DashboardModule = {
             datasets: [{
               label: 'ยอดสะสม (บาท)',
               data: [250000, 150642, 120000, 96000, 108000],
-              backgroundColor: '#8b5cf6',
+              backgroundColor: ThemeColor.get('--violet', '#8b5cf6'),
               borderRadius: 6
             }]
           },
@@ -482,7 +487,7 @@ var DashboardModule = {
                 ticks: {
                   callback: (val) => '฿' + Number(val).toLocaleString('th-TH')
                 },
-                grid: { color: '#f1f5f9' }
+                grid: { color: ThemeColor.get('--line', '#f1f5f9') }
               },
               y: {
                 grid: { display: false },

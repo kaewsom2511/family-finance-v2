@@ -332,12 +332,12 @@ var CashFlowModule = {
       const id = el.id || '';
       
       el.style.background = 'transparent';
-      el.style.color = '#334155';
+      el.style.color = 'var(--txt-mid)';
       el.style.fontWeight = '600';
 
       const activate = () => {
-        el.style.background = '#e0f2fe';
-        el.style.color = '#0284c7';
+        el.style.background = 'var(--accent-soft)';
+        el.style.color = 'var(--accent)';
         el.style.fontWeight = '700';
       };
 
@@ -467,8 +467,8 @@ var CashFlowModule = {
         this.filterType = tabBtn.dataset.type;
         document.querySelectorAll('.tx-type-tab').forEach(b => {
           const isAct = b.dataset.type === this.filterType;
-          b.style.background = isAct ? '#fff' : 'transparent';
-          b.style.color = isAct ? '#0284c7' : '#64748b';
+          b.style.background = isAct ? 'var(--panel)' : 'transparent';
+          b.style.color = isAct ? 'var(--accent)' : 'var(--txt-muted)';
           b.style.boxShadow = isAct ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
         });
         this.renderTableOnly();
@@ -731,24 +731,24 @@ var CashFlowModule = {
 
     const modalHtml = `
       <div id="modal-add-transaction" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background: #fff; border-radius: 14px; width: 440px; max-width: 95vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: left;">
+        <div style="background: var(--panel); border-radius: 14px; width: 440px; max-width: 95vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: left;">
           
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-soft); padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong);">
               ${isEdit ? '✏️ แก้ไขรายการธุรกรรม' : '➕ เพิ่มรายการธุรกรรม'}
             </h3>
-            <button id="btn-close-tx-modal" style="background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer;">&times;</button>
+            <button id="btn-close-tx-modal" style="background: none; border: none; font-size: 22px; color: var(--txt-faint); cursor: pointer;">&times;</button>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่</label>
-                <input type="date" id="modal-tx-date" value="${tx.date}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันที่</label>
+                <input type="date" id="modal-tx-date" value="${tx.date}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px;">
               </div>
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ประเภท</label>
-                <select id="modal-tx-type" onchange="CashFlowModule.updateModalCategories(this.value)" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">ประเภท</label>
+                <select id="modal-tx-type" onchange="CashFlowModule.updateModalCategories(this.value)" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
                   <option value="รายรับ" ${currentTypeKey === 'รายรับ' ? 'selected' : ''}>🟢 รายรับ</option>
                   <option value="รายจ่าย" ${currentTypeKey === 'รายจ่าย' ? 'selected' : ''}>🔴 รายจ่าย</option>
                   <option value="บิล" ${currentTypeKey === 'บิล' ? 'selected' : ''}>🧾 บิล</option>
@@ -761,71 +761,71 @@ var CashFlowModule = {
 
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">หมวดหมู่ย่อย</label>
-                <select id="modal-tx-category" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">หมวดหมู่ย่อย</label>
+                <select id="modal-tx-category" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700; background: var(--panel);">
                   ${catOptionsHtml}
                 </select>
               </div>
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">จำนวนเงิน</label>
-                <input type="number" id="modal-tx-amount" step="any" value="${tx.amount}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid #0284c7; border-radius: 6px; font-size: 14px; font-weight: 800;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">จำนวนเงิน</label>
+                <input type="number" id="modal-tx-amount" step="any" value="${tx.amount}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid var(--accent); border-radius: 6px; font-size: 14px; font-weight: 800;">
               </div>
             </div>
 
             <div>
-              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">รายละเอียด</label>
-              <input type="text" id="modal-tx-desc" value="${this.getItemDetail(tx)}" placeholder="รายละเอียดเพิ่มเติม..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">รายละเอียด</label>
+              <input type="text" id="modal-tx-desc" value="${this.getItemDetail(tx)}" placeholder="รายละเอียดเพิ่มเติม..." style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13.5px;">
             </div>
-            <div id="box-debt-link" style="display: ${currentTypeKey === 'หนี้สิน' ? 'flex' : 'none'}; flex-direction: column; gap: 8px; background: #fff7ed; padding: 10px 12px; border-radius: 8px; border: 1px solid #fed7aa; margin-top: 10px;">
+            <div id="box-debt-link" style="display: ${currentTypeKey === 'หนี้สิน' ? 'flex' : 'none'}; flex-direction: column; gap: 8px; background: var(--warn-soft-2); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--orange-line); margin-top: 10px;">
               <div>
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">สัญญาที่ชำระ</label>
-                <select id="modal-debt-contract" onchange="CashFlowModule.onDebtContractChange()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 13px; font-weight: 800; color: #9a3412; outline: none; background: #fff;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--orange); margin-bottom: 3px;">สัญญาที่ชำระ</label>
+                <select id="modal-debt-contract" onchange="CashFlowModule.onDebtContractChange()" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid var(--orange); border-radius: 6px; font-size: 13px; font-weight: 800; color: var(--orange); outline: none; background: var(--panel);">
                   ${debtContractOpts}
                   <option value="__new__" ${debtContractOpts ? '' : 'selected'}>➕ สร้างสัญญาผ่อนใหม่…</option>
                 </select>
               </div>
-              <div id="modal-debt-contract-hint" style="font-size: 12px; font-weight: 700; color: #c2410c; line-height: 1.5;"></div>
+              <div id="modal-debt-contract-hint" style="font-size: 12px; font-weight: 700; color: var(--orange); line-height: 1.5;"></div>
               <div id="box-debt-terms" style="display: none; gap: 10px; align-items: center;">
                 <div style="flex: 1;">
-                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">จำนวนงวดผ่อน (เดือน)</label>
-                  <input type="number" id="modal-debt-terms-input" value="6" min="1" max="360" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid #ea580c; border-radius: 6px; font-size: 13px; font-weight: 800; color: #9a3412; outline: none; background: #fff;">
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--orange); margin-bottom: 3px;">จำนวนงวดผ่อน (เดือน)</label>
+                  <input type="number" id="modal-debt-terms-input" value="6" min="1" max="360" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1.5px solid var(--orange); border-radius: 6px; font-size: 13px; font-weight: 800; color: var(--orange); outline: none; background: var(--panel);">
                 </div>
                 <div style="flex: 1.2;">
-                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #9a3412; margin-bottom: 3px;">ผ่อนเฉลี่ยต่องวด</label>
-                  <div id="modal-debt-monthly-preview" style="font-size: 14px; font-weight: 900; color: #c2410c; padding-top: 4px;">฿0.00 / เดือน</div>
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--orange); margin-bottom: 3px;">ผ่อนเฉลี่ยต่องวด</label>
+                  <div id="modal-debt-monthly-preview" style="font-size: 14px; font-weight: 900; color: var(--orange); padding-top: 4px;">฿0.00 / เดือน</div>
                 </div>
               </div>
             </div>
 
             <div id="box-single-account" style="display: ${isTransfer ? 'none' : 'block'};">
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">บัญชี</label>
-                <select id="modal-tx-account" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">บัญชี</label>
+                <select id="modal-tx-account" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px;">
                   ${renderAccOpts(currentAcc)}
                 </select>
               </div>
             </div>
 
-            <div id="box-transfer-account" style="display: ${isTransfer ? 'flex' : 'none'}; flex-direction: column; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div id="box-transfer-account" style="display: ${isTransfer ? 'flex' : 'none'}; flex-direction: column; gap: 10px; background: var(--panel-2); padding: 12px; border-radius: 8px; border: 1px solid var(--line);">
               <div style="display: flex; gap: 10px;">
                 <div style="flex: 1;">
-                  <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">บัญชีต้นทาง</label>
-                  <select id="modal-tx-from-account" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                  <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">บัญชีต้นทาง</label>
+                  <select id="modal-tx-from-account" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px;">
                     ${renderAccOpts(fromAcc)}
                   </select>
                 </div>
                 <div style="flex: 1;">
-                  <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">บัญชีปลายทาง</label>
-                  <select id="modal-tx-to-account" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                  <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">บัญชีปลายทาง</label>
+                  <select id="modal-tx-to-account" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px;">
                     ${renderAccOpts(toAcc)}
                   </select>
                 </div>
               </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; border-top: 1px solid #f1f5f9; padding-top: 14px;">
-              <button id="btn-cancel-modal-tx" style="background: #fff; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-              <button id="btn-save-modal-tx" style="background: #0284c7; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; border-top: 1px solid var(--line-soft); padding-top: 14px;">
+              <button id="btn-cancel-modal-tx" style="background: var(--panel); border: 1px solid var(--line-2); padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+              <button id="btn-save-modal-tx" style="background: var(--accent); color: var(--on-accent); border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">
                 ${isEdit ? '💾 บันทึกการแก้ไข' : '➕ เพิ่มรายการ'}
               </button>
             </div>
@@ -1048,7 +1048,7 @@ var CashFlowModule = {
     const remaining = Math.max(0, Math.round((totalDebt - paidAmount) * 100) / 100);
     const done = (totalDebt > 0 && paidAmount >= totalDebt) || (totalMonths > 0 && paidMonths >= totalMonths);
     return `บันทึกแล้วเป็นงวด ${paidMonths}/${totalMonths || '-'} · คงเหลือ ฿${fmt(remaining)}`
-      + (done ? ' · <span style="color:#059669;">ปิดหนี้ครบสัญญา</span>' : '');
+      + (done ? ' · <span style="color:var(--up-2);">ปิดหนี้ครบสัญญา</span>' : '');
   },
 
   // เลือกสัญญาที่มีอยู่ → แสดงค่างวดและงวดที่จ่ายแล้ว (บันทึกรายการแล้วนับงวดต่อให้)
@@ -1080,7 +1080,7 @@ var CashFlowModule = {
     const totalMonths = parseInt(debt.totalMonths, 10) || 0;
     const remaining = Math.max(0, (debt.totalDebt || 0) - (debt.paidAmount || 0));
     hint.innerHTML = `ค่างวดตามสัญญา <b>฿${fmt(debt.monthlyPayment)}</b> · จ่ายแล้ว ${paidMonths}/${totalMonths} งวด · คงเหลือ ฿${fmt(remaining)}`
-      + (debt.isClosed ? ' · <span style="color:#dc2626;">สัญญานี้ปิดแล้ว</span>' : ` · ${this.debtSaveProjection(debt)}`);
+      + (debt.isClosed ? ' · <span style="color:var(--down);">สัญญานี้ปิดแล้ว</span>' : ` · ${this.debtSaveProjection(debt)}`);
 
     // กรอกค่างวดของสัญญาให้ถ้าช่องจำนวนเงินยังว่าง หรือยังค่าเดิมที่กรอกให้อยู่ (ไม่ทับตัวเลขที่ผู้ใช้พิมพ์เอง)
     if (amountEl) {
@@ -1148,43 +1148,43 @@ var CashFlowModule = {
 
     const modalHtml = `
       <div id="modal-edit-bank-balance" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 99999; animation: fadeIn 0.15s ease-out;">
-        <div style="background: #ffffff; border-radius: 20px; width: 420px; max-width: 92vw; padding: 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: left; font-family: inherit;">
+        <div style="background: var(--panel); border-radius: 20px; width: 420px; max-width: 92vw; padding: 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: left; font-family: inherit;">
           
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="background: #e0f2fe; color: #0284c7; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🏦</div>
+              <div style="background: var(--accent-soft); color: var(--accent); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🏦</div>
               <div>
-                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">แก้ไขยอดเริ่มต้น</h3>
-                <div style="font-size: 12px; color: #64748b; font-weight: 600;">บัญชี: ${accName}</div>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--txt-strong);">แก้ไขยอดเริ่มต้น</h3>
+                <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600;">บัญชี: ${accName}</div>
               </div>
             </div>
-            <button id="btn-close-edit-bank" style="background: transparent; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px; line-height: 1;">✕</button>
+            <button id="btn-close-edit-bank" style="background: transparent; border: none; font-size: 20px; color: var(--txt-faint); cursor: pointer; padding: 4px; line-height: 1;">✕</button>
           </div>
 
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-bottom: 6px;">
+          <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--txt-muted); margin-bottom: 6px;">
               <span>ยอดเริ่มต้นเดิม:</span>
-              <strong style="color: #0f172a;">฿${curInitial.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+              <strong style="color: var(--txt-strong);">฿${curInitial.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
             </div>
-            <div style="font-size: 11px; color: #94a3b8; line-height: 1.4;">
+            <div style="font-size: 11px; color: var(--txt-faint); line-height: 1.4;">
               * ยอดเงินก้อนตั้งต้นก่อนเริ่มนับรวมประวัติธุรกรรม เงินเข้า/เงินออก ทั้งหมด
             </div>
           </div>
 
           <div style="margin-bottom: 22px;">
-            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+            <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--txt-mid); margin-bottom: 8px;">
               กำหนดยอดเริ่มต้นใหม่ (บาท)
             </label>
             <input type="number" step="any" id="input-new-bank-balance" value="${curInitial}" 
-              style="width: 100%; box-sizing: border-box; padding: 12px 14px; border: 2px solid #0284c7; border-radius: 10px; font-size: 18px; font-weight: 800; color: #0f172a; outline: none; background: #fff;"
+              style="width: 100%; box-sizing: border-box; padding: 12px 14px; border: 2px solid var(--accent); border-radius: 10px; font-size: 18px; font-weight: 800; color: var(--txt-strong); outline: none; background: var(--panel);"
               autofocus>
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <button id="btn-cancel-edit-bank" style="background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 9px 18px; font-size: 13px; font-weight: 700; color: #475569; cursor: pointer;">
+            <button id="btn-cancel-edit-bank" style="background: var(--panel); border: 1.5px solid var(--line-2); border-radius: 10px; padding: 9px 18px; font-size: 13px; font-weight: 700; color: var(--txt-soft); cursor: pointer;">
               ยกเลิก
             </button>
-            <button id="btn-save-edit-bank" style="background: #0284c7; border: none; border-radius: 10px; padding: 9px 24px; font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);">
+            <button id="btn-save-edit-bank" style="background: var(--accent); border: none; border-radius: 10px; padding: 9px 24px; font-size: 13px; font-weight: 800; color: var(--on-accent); cursor: pointer; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);">
               💾 บันทึกยอดใหม่
             </button>
           </div>
@@ -1252,21 +1252,21 @@ var CashFlowModule = {
       const isDebt = t.type === 'หนี้สิน';
       const isTransfer = t.type === 'โอนระหว่างบัญชี' || t.type === 'โอนเงิน';
 
-      let badgeBg = '#fef2f2';
-      let badgeColor = '#dc2626';
+      let badgeBg = 'var(--down-soft)';
+      let badgeColor = 'var(--down)';
 
       if (isIncome) {
-        badgeBg = '#ecfdf5';
-        badgeColor = '#16a34a';
+        badgeBg = 'var(--up-soft)';
+        badgeColor = 'var(--up)';
       } else if (isInvest) {
-        badgeBg = '#eff6ff';
-        badgeColor = '#0284c7';
+        badgeBg = 'var(--blue-soft)';
+        badgeColor = 'var(--accent)';
       } else if (isDebt) {
-        badgeBg = '#fef2f2';
-        badgeColor = '#ea580c';
+        badgeBg = 'var(--down-soft)';
+        badgeColor = 'var(--orange)';
       } else if (isTransfer) {
-        badgeBg = '#f1f5f9';
-        badgeColor = '#475569';
+        badgeBg = 'var(--inset)';
+        badgeColor = 'var(--txt-soft)';
       }
 
       const sign = isIncome ? '+' : (isTransfer ? '↔' : '-');
@@ -1274,26 +1274,26 @@ var CashFlowModule = {
       const accountText = this.getItemAccount(t) || '-';
 
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 14px; color: #64748b; font-size: 12.5px; white-space: nowrap;">${t.date}</td>
+        <tr style="border-bottom: 1px solid var(--line-soft);">
+          <td style="padding: 12px 14px; color: var(--txt-muted); font-size: 12.5px; white-space: nowrap;">${t.date}</td>
           <td style="padding: 12px 14px; white-space: nowrap;">
             <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px;">
               ${t.type}
             </span>
           </td>
-          <td style="padding: 12px 14px; font-size: 13px; color: #334155; font-weight: 600; white-space: nowrap;">${t.category}</td>
+          <td style="padding: 12px 14px; font-size: 13px; color: var(--txt-mid); font-weight: 600; white-space: nowrap;">${t.category}</td>
           <td style="padding: 12px 14px; text-align: right; font-weight: 900; font-size: 14px; color: ${badgeColor}; font-variant-numeric: tabular-nums; white-space: nowrap;">
             ${sign}฿${formatBaht(t.amount)}
           </td>
-          <td style="padding: 12px 14px; font-size: 12.5px; color: #475569; white-space: nowrap;">
+          <td style="padding: 12px 14px; font-size: 12.5px; color: var(--txt-soft); white-space: nowrap;">
             ${accountText}
           </td>
-          <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: #0f172a;">
+          <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: var(--txt-strong);">
             ${detailText}
           </td>
           <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
-            <button type="button" class="btn-edit-tx" data-id="${t.id}" onclick="CashFlowModule.openTransactionModal('${t.id}')" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
-            <button type="button" class="btn-delete-tx" data-id="${t.id}" onclick="if(confirm('ยืนยันลบรายการธุรกรรมนี้?')){ const s = CashFlowModule.getState(); s.transactions = (s.transactions || []).filter(x => String(x.id) !== String('${t.id}')); CashFlowModule.saveState(s); CashFlowModule.render(); }" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
+            <button type="button" class="btn-edit-tx" data-id="${t.id}" onclick="CashFlowModule.openTransactionModal('${t.id}')" style="background: none; border: none; color: var(--accent-2); cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
+            <button type="button" class="btn-delete-tx" data-id="${t.id}" onclick="if(confirm('ยืนยันลบรายการธุรกรรมนี้?')){ const s = CashFlowModule.getState(); s.transactions = (s.transactions || []).filter(x => String(x.id) !== String('${t.id}')); CashFlowModule.saveState(s); CashFlowModule.render(); }" style="background: none; border: none; color: var(--txt-faint); cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
           </td>
         </tr>
       `;
@@ -1303,17 +1303,17 @@ var CashFlowModule = {
     if (isOverLimit) {
       rowsHtml += `
         <tr>
-          <td colspan="7" style="text-align: center; padding: 14px; background: #f8fafc;">
-            <button type="button" onclick="CashFlowModule.displayLimit = (CashFlowModule.displayLimit || 100) + 200; CashFlowModule.renderTableOnly();" style="background: #0284c7; color: #fff; border: none; padding: 8px 24px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <td colspan="7" style="text-align: center; padding: 14px; background: var(--panel-2);">
+            <button type="button" onclick="CashFlowModule.displayLimit = (CashFlowModule.displayLimit || 100) + 200; CashFlowModule.renderTableOnly();" style="background: var(--accent); color: var(--on-accent); border: none; padding: 8px 24px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
               📥 โหลดรายการเพิ่มเติมอีก (+200)
             </button>
-            <span style="margin-left: 10px; font-size: 12px; color: #64748b;">(เหลืออีก ${totalCount - limit} รายการ)</span>
+            <span style="margin-left: 10px; font-size: 12px; color: var(--txt-muted);">(เหลืออีก ${totalCount - limit} รายการ)</span>
           </td>
         </tr>
       `;
     }
 
-    tbody.innerHTML = rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--txt-faint);">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
   },
   viewMonthDetails(year, month) {
     const pad = n => String(n).padStart(2, '0');
@@ -1407,37 +1407,37 @@ var CashFlowModule = {
 
     const rowsHtml = monthlyData.map(d => {
       const rowStyle = d.isFuture 
-        ? 'opacity: 0.45; background-color: #fafafa;' 
+        ? 'opacity: 0.45; background-color: var(--panel-flat);' 
         : 'cursor: pointer; transition: background 0.15s;';
-      const rowHover = d.isFuture ? '' : 'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'"';
+      const rowHover = d.isFuture ? '' : 'onmouseover="this.style.background=\'var(--inset)\'" onmouseout="this.style.background=\'\'"';
       const clickAction = d.isFuture ? '' : `onclick="CashFlowModule.viewMonthDetails(${year}, ${d.monthNum})"`;
 
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9; ${rowStyle}" ${rowHover} ${clickAction} title="${d.isFuture ? 'ยังไม่มีข้อมูล' : 'คลิกเพื่อดูรายการแยกย่อยของเดือนนี้'}">
-          <td style="padding: 12px 14px; font-weight: 700; color: #0f172a;">${d.month} ${year + 543}</td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #16a34a;">${d.hasData ? formatInt(d.inc) : '-'}</td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #dc2626;">${d.hasData ? formatInt(d.exp) : '-'}</td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: #0284c7;">${d.hasData ? formatInt(d.inv) : '-'}</td>
-          <td style="padding: 12px 14px; text-align: right; font-weight: 900; color: ${d.net >= 0 ? '#0284c7' : '#dc2626'};">${d.hasData ? formatInt(d.net) : '-'}</td>
+        <tr style="border-bottom: 1px solid var(--line-soft); ${rowStyle}" ${rowHover} ${clickAction} title="${d.isFuture ? 'ยังไม่มีข้อมูล' : 'คลิกเพื่อดูรายการแยกย่อยของเดือนนี้'}">
+          <td style="padding: 12px 14px; font-weight: 700; color: var(--txt-strong);">${d.month} ${year + 543}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: var(--up);">${d.hasData ? formatInt(d.inc) : '-'}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: var(--down);">${d.hasData ? formatInt(d.exp) : '-'}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: var(--accent);">${d.hasData ? formatInt(d.inv) : '-'}</td>
+          <td style="padding: 12px 14px; text-align: right; font-weight: 900; color: ${d.net >= 0 ? 'var(--accent)' : 'var(--down)'};">${d.hasData ? formatInt(d.net) : '-'}</td>
         </tr>
       `;
     }).join('');
 
     const tableFooterHtml = `
-      <tfoot style="border-top: 2px solid #cbd5e1; background: #f8fafc; font-size: 13px;">
-        <tr style="font-weight: 700; border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 12px 14px; color: #0f172a;">รวมทั้งปี (${activeMonthCount} เดือน)</td>
-          <td style="padding: 12px 14px; text-align: right; color: #16a34a; font-weight: 800;">${formatInt(totalYearIncome)}</td>
-          <td style="padding: 12px 14px; text-align: right; color: #dc2626; font-weight: 800;">${formatInt(totalYearExpense)}</td>
-          <td style="padding: 12px 14px; text-align: right; color: #0284c7; font-weight: 800;">${formatInt(totalYearInvest)}</td>
-          <td style="padding: 12px 14px; text-align: right; color: ${totalYearNet >= 0 ? '#0284c7' : '#dc2626'}; font-weight: 900;">${formatInt(totalYearNet)}</td>
+      <tfoot style="border-top: 2px solid var(--line-2); background: var(--panel-2); font-size: 13px;">
+        <tr style="font-weight: 700; border-bottom: 1px solid var(--line);">
+          <td style="padding: 12px 14px; color: var(--txt-strong);">รวมทั้งปี (${activeMonthCount} เดือน)</td>
+          <td style="padding: 12px 14px; text-align: right; color: var(--up); font-weight: 800;">${formatInt(totalYearIncome)}</td>
+          <td style="padding: 12px 14px; text-align: right; color: var(--down); font-weight: 800;">${formatInt(totalYearExpense)}</td>
+          <td style="padding: 12px 14px; text-align: right; color: var(--accent); font-weight: 800;">${formatInt(totalYearInvest)}</td>
+          <td style="padding: 12px 14px; text-align: right; color: ${totalYearNet >= 0 ? 'var(--accent)' : 'var(--down)'}; font-weight: 900;">${formatInt(totalYearNet)}</td>
         </tr>
-        <tr style="color: #64748b; font-size: 12px;">
+        <tr style="color: var(--txt-muted); font-size: 12px;">
           <td style="padding: 10px 14px; font-weight: 600;">เฉลี่ยต่อเดือน (${activeMonthCount} ด.)</td>
           <td style="padding: 10px 14px; text-align: right; font-weight: 700;">${formatInt(avgIncome)}</td>
           <td style="padding: 10px 14px; text-align: right; font-weight: 700;">${formatInt(avgExpense)}</td>
           <td style="padding: 10px 14px; text-align: right; font-weight: 700;">${formatInt(avgInvest)}</td>
-          <td style="padding: 10px 14px; text-align: right; color: ${avgNet >= 0 ? '#0284c7' : '#dc2626'}; font-weight: 800;">${formatInt(avgNet)}</td>
+          <td style="padding: 10px 14px; text-align: right; color: ${avgNet >= 0 ? 'var(--accent)' : 'var(--down)'}; font-weight: 800;">${formatInt(avgNet)}</td>
         </tr>
       </tfoot>
     `;
@@ -1447,76 +1447,76 @@ var CashFlowModule = {
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #e0e7ff; color: #4338ca; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🗓️</div>
+            <div style="background: var(--indigo-soft); color: var(--indigo-ink); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">🗓️</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">ANNUAL CASH FLOW REPORT</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">ANNUAL CASH FLOW REPORT</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สรุปรายเดือน & สรุปภาพรวมรายปี</h1>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">สรุปรายเดือน & สรุปภาพรวมรายปี</h1>
               </div>
             </div>
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <div style="display: flex; background: #f1f5f9; padding: 3px; border-radius: 8px; margin-right: 6px;">
-              <button class="btn-switch-cashflow-view" data-view="daily" style="border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: #64748b;">
+            <div style="display: flex; background: var(--inset); padding: 3px; border-radius: 8px; margin-right: 6px;">
+              <button class="btn-switch-cashflow-view" data-view="daily" style="border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--txt-muted);">
                 📋 บันทึกรายวัน
               </button>
-              <button class="btn-switch-cashflow-view" data-view="annual" style="border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.06);">
+              <button class="btn-switch-cashflow-view" data-view="annual" style="border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--panel); color: var(--txt-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.06);">
                 📊 สรุปรายปี
               </button>
             </div>
 
-            <button id="btn-prev-year" type="button" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">◀ ปีก่อนหน้า</button>
-<span style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 0 8px;">ปี ${year} (พ.ศ. ${year + 543})</span>
-<button id="btn-next-year" type="button" style="background: #fff; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">ปีถัดไป ▶</button>
+            <button id="btn-prev-year" type="button" style="background: var(--panel); border: 1px solid var(--line-2); padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">◀ ปีก่อนหน้า</button>
+<span style="font-size: 15px; font-weight: 800; color: var(--txt-strong); padding: 0 8px;">ปี ${year} (พ.ศ. ${year + 543})</span>
+<button id="btn-next-year" type="button" style="background: var(--panel); border: 1px solid var(--line-2); padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">ปีถัดไป ▶</button>
           </div>
         </div>
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🟢 รายรับทั้งปี (Total Income)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #16a34a;">${formatInt(totalYearIncome)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ ${formatInt(avgIncome)}</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🟢 รายรับทั้งปี (Total Income)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--up);">${formatInt(totalYearIncome)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">เฉลี่ยเดือนละ ${formatInt(avgIncome)}</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔴 รายจ่ายทั้งปี (Total Expense)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #dc2626;">${formatInt(totalYearExpense)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เฉลี่ยเดือนละ ${formatInt(avgExpense)}</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🔴 รายจ่ายทั้งปี (Total Expense)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--down);">${formatInt(totalYearExpense)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">เฉลี่ยเดือนละ ${formatInt(avgExpense)}</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔵 กระแสเงินสดสุทธิทั้งปี</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: ${netYearSavings >= 0 ? '#0284c7' : '#dc2626'};">${formatInt(netYearSavings)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">เงินสดคงเหลือสุทธิรอบปี</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🔵 กระแสเงินสดสุทธิทั้งปี</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: ${netYearSavings >= 0 ? 'var(--accent)' : 'var(--down)'};">${formatInt(netYearSavings)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">เงินสดคงเหลือสุทธิรอบปี</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🚀 ยอดสะสมเงินออม/ลงทุน</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0284c7;">${formatInt(totalYearInvest)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">สะสมเข้าพอร์ตและ สอท.</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🚀 ยอดสะสมเงินออม/ลงทุน</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--accent);">${formatInt(totalYearInvest)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">สะสมเข้าพอร์ตและ สอท.</div>
           </div>
         </div>
 
         <!-- กล่องกราฟแท่งเปรียบเทียบรายเดือน -->
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong); display: flex; align-items: center; gap: 8px;">
               <span>📊</span> ภาพรวมกระแสเงินสดรายเดือน (เปรียบเทียบ รับ - จ่าย - ลงทุน)
             </h3>
-            <span style="font-size: 12px; color: #64748b; font-weight: 600;">หน่วย: บาท</span>
+            <span style="font-size: 12px; color: var(--txt-muted); font-weight: 600;">หน่วย: บาท</span>
           </div>
           <div style="height: 280px; position: relative;">
             <canvas id="annualCashflowBarChart"></canvas>
           </div>
         </div>
 
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 800; color: #0f172a;">📊 ตารางแจกแจงรายรับ-รายจ่าย รายเดือน (ปี ${year})</h3>
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 800; color: var(--txt-strong);">📊 ตารางแจกแจงรายรับ-รายจ่าย รายเดือน (ปี ${year})</h3>
           <div style="overflow-x: auto;">
             <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
               <thead>
-                <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px;">
+                <tr style="border-bottom: 2px solid var(--line); color: var(--txt-muted); font-size: 12px;">
                   <th style="padding: 12px 14px; text-align: left;">เดือน</th>
                   <th style="padding: 12px 14px; text-align: right;">รายรับ</th>
                   <th style="padding: 12px 14px; text-align: right;">รายจ่าย</th>
@@ -1534,14 +1534,14 @@ var CashFlowModule = {
 
         <!-- Accordion Matrix แจกแจงตามหมวดหมู่ 5 กลุ่ม -->
         <div style="margin-top: 24px;">
-          <h3 style="margin: 0 0 14px; font-size: 16px; font-weight: 800; color: #0f172a;">📂 แจกแจงตามหมวดหมู่</h3>
+          <h3 style="margin: 0 0 14px; font-size: 16px; font-weight: 800; color: var(--txt-strong);">📂 แจกแจงตามหมวดหมู่</h3>
           <div style="display: flex; flex-direction: column; gap: 12px;">
             ${[
-              { key: 'รายรับ', label: 'รายรับ', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-              { key: 'รายจ่าย', label: 'รายจ่าย', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-              { key: 'บิล', label: 'บิล', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-              { key: 'เงินออมและลงทุน', label: 'ออม & ลงทุน', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-              { key: 'หนี้สิน', label: 'หนี้สิน', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' }
+              { key: 'รายรับ', label: 'รายรับ', color: 'var(--up)', bg: 'var(--up-soft-2)', border: 'var(--up-line)' },
+              { key: 'รายจ่าย', label: 'รายจ่าย', color: 'var(--down)', bg: 'var(--down-soft)', border: 'var(--down-line)' },
+              { key: 'บิล', label: 'บิล', color: 'var(--warn)', bg: 'var(--warn-soft)', border: 'var(--warn-line)' },
+              { key: 'เงินออมและลงทุน', label: 'ออม & ลงทุน', color: 'var(--violet)', bg: 'var(--purple-soft)', border: 'var(--purple-line)' },
+              { key: 'หนี้สิน', label: 'หนี้สิน', color: 'var(--accent)', bg: 'var(--accent-softer)', border: 'var(--accent-line)' }
             ].map(g => {
               const txInGroup = yearTx.filter(t => {
                 const ty = (t.type || '').trim();
@@ -1563,7 +1563,7 @@ var CashFlowModule = {
               const catList = Object.keys(catMap).sort((a, b) => catMap[b].total - catMap[a].total);
 
               return `
-                <div style="border: 1px solid ${g.border}; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                <div style="border: 1px solid ${g.border}; border-radius: 12px; overflow: hidden; background: var(--panel); box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                   <div onclick="const b=document.getElementById('matrix-body-${g.key}'); const isH=b.style.display==='none'; b.style.display=isH?'block':'none';" 
                        style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: ${g.bg}; cursor: pointer; user-select: none;">
                     <span style="font-weight: 800; color: ${g.color}; font-size: 14.5px;">${g.label}</span>
@@ -1575,19 +1575,19 @@ var CashFlowModule = {
                   <div id="matrix-body-${g.key}" style="display: ${g.key === 'รายรับ' ? 'block' : 'none'}; overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 860px;">
                       <thead>
-                        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569;">
-                          <th style="padding: 8px 12px; text-align: left; position: sticky; left: 0; background: #f8fafc; z-index: 2; min-width: 140px;">รายการ</th>
+                        <tr style="background: var(--panel-2); border-bottom: 1px solid var(--line); color: var(--txt-soft);">
+                          <th style="padding: 8px 12px; text-align: left; position: sticky; left: 0; background: var(--panel-2); z-index: 2; min-width: 140px;">รายการ</th>
                           ${months.map(m => `<th style="padding: 8px 6px; text-align: right; min-width: 58px;">${m}</th>`).join('')}
-                          <th style="padding: 8px 10px; text-align: right; min-width: 80px; font-weight: 800; background: #f1f5f9; position: sticky; right: 0;">รวมทั้งปี</th>
+                          <th style="padding: 8px 10px; text-align: right; min-width: 80px; font-weight: 800; background: var(--inset); position: sticky; right: 0;">รวมทั้งปี</th>
                         </tr>
                       </thead>
                       <tbody>
-                        ${catList.length === 0 ? `<tr><td colspan="14" style="text-align: center; padding: 16px; color: #94a3b8;">ไม่มีรายการในหมวดนี้</td></tr>` : ''}
+                        ${catList.length === 0 ? `<tr><td colspan="14" style="text-align: center; padding: 16px; color: var(--txt-faint);">ไม่มีรายการในหมวดนี้</td></tr>` : ''}
                         ${catList.map(cat => `
-                          <tr style="border-bottom: 1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-                            <td style="padding: 8px 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #fff; z-index: 1;">${cat}</td>
-                            ${catMap[cat].months.map(val => `<td style="padding: 8px 6px; text-align: right; color: ${val > 0 ? '#334155' : '#cbd5e1'}; font-weight: ${val > 0 ? '600' : 'normal'};">${formatIntPlain(val)}</td>`).join('')}
-                            <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${g.color}; background: #fafafa; position: sticky; right: 0;">${formatIntPlain(catMap[cat].total)}</td>
+                          <tr style="border-bottom: 1px solid var(--line-soft);" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''">
+                            <td style="padding: 8px 12px; font-weight: 700; color: var(--txt); position: sticky; left: 0; background: var(--panel); z-index: 1;">${cat}</td>
+                            ${catMap[cat].months.map(val => `<td style="padding: 8px 6px; text-align: right; color: ${val > 0 ? 'var(--txt-mid)' : 'var(--txt-faint)'}; font-weight: ${val > 0 ? '600' : 'normal'};">${formatIntPlain(val)}</td>`).join('')}
+                            <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${g.color}; background: var(--panel-flat); position: sticky; right: 0;">${formatIntPlain(catMap[cat].total)}</td>
                           </tr>
                         `).join('')}
                       </tbody>
@@ -1610,6 +1610,9 @@ var CashFlowModule = {
         window._annualCashflowChartInstance.destroy();
       }
 
+      Chart.defaults.color = ThemeColor.get('--txt-muted', '#64748b');
+      Chart.defaults.borderColor = ThemeColor.get('--line', '#e2e8f0');
+
       window._annualCashflowChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1618,19 +1621,19 @@ var CashFlowModule = {
             {
               label: 'รายรับ',
               data: monthlyData.map(d => d.inc),
-              backgroundColor: '#16a34a',
+              backgroundColor: ThemeColor.get('--up', '#16a34a'),
               borderRadius: 4
             },
             {
               label: 'รายจ่ายรวม',
               data: monthlyData.map(d => d.exp),
-              backgroundColor: '#dc2626',
+              backgroundColor: ThemeColor.get('--down', '#dc2626'),
               borderRadius: 4
             },
             {
               label: 'เงินออม/ลงทุน',
               data: monthlyData.map(d => d.inv),
-              backgroundColor: '#0284c7',
+              backgroundColor: ThemeColor.get('--accent', '#0284c7'),
               borderRadius: 4
             }
           ]
@@ -1782,37 +1785,37 @@ var CashFlowModule = {
       totalEstAnnualInterest += estInterest;
 
       return `
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
               <div style="display: flex; gap: 10px; align-items: center;">
-                <div style="background: ${a.color}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">${a.code}</div>
+                <div style="background: ${a.color}; color: ${ThemeColor.inkOn(a.color)}; font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">${a.code}</div>
                 <div>
-                  <div style="font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2;">${a.name}</div>
-                  <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">${a.sub}</div>
+                  <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong); line-height: 1.2;">${a.name}</div>
+                  <div style="font-size: 11px; color: var(--txt-faint); font-weight: 600;">${a.sub}</div>
                 </div>
               </div>
-              <span style="background: #f0fdf4; color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">ดอกเบี้ย ${a.interestRate.toFixed(2)}%</span>
+              <span style="background: var(--up-soft-2); color: var(--up); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">ดอกเบี้ย ${a.interestRate.toFixed(2)}%</span>
             </div>
 
-            <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">ยอดเงินคงเหลือ</div>
-            <div style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; text-transform: uppercase;">ยอดเงินคงเหลือ</div>
+            <div style="font-size: 24px; font-weight: 900; color: var(--txt-strong); margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
               ฿${formatBaht(currentBal)}
             </div>
 
-            <div style="font-size: 11.5px; border-top: 1px dashed #f1f5f9; padding-top: 8px;">
+            <div style="font-size: 11.5px; border-top: 1px dashed var(--line-soft); padding-top: 8px;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                <span style="color: #64748b;">ดอกเบี้ยประมาณการ/ปี:</span>
-                <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">+฿${formatBaht(estInterest)}</strong>
+                <span style="color: var(--txt-muted);">ดอกเบี้ยประมาณการ/ปี:</span>
+                <strong style="color: var(--up); font-variant-numeric: tabular-nums;">+฿${formatBaht(estInterest)}</strong>
               </div>
               <div style="display: flex; justify-content: space-between;">
-                <span style="color: #64748b;">วัตถุประสงค์:</span>
-                <strong style="color: #334155; text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.purpose}</strong>
+                <span style="color: var(--txt-muted);">วัตถุประสงค์:</span>
+                <strong style="color: var(--txt-mid); text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.purpose}</strong>
               </div>
             </div>
           </div>
 
-          <button class="btn-edit-bank-balance" data-id="${a.id}" data-name="${a.name}" data-balance="${currentBal}" style="width: 100%; margin-top: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <button class="btn-edit-bank-balance" data-id="${a.id}" data-name="${a.name}" data-balance="${currentBal}" style="width: 100%; margin-top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: var(--txt-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <span>✏️</span> แก้ไขยอด
           </button>
         </div>
@@ -1823,47 +1826,47 @@ var CashFlowModule = {
     const cardsHtml2 = digitalAccountsMaster.map(renderCard).join('');
 
     const cardsHtml3 = creditCardsMaster.length ? creditCardsMaster.map(c => `
-      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <div style="display: flex; gap: 10px; align-items: center;">
-              <div style="background: ${c.color}; color: #ffffff; font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">${c.code}</div>
+              <div style="background: ${c.color}; color: ${ThemeColor.inkOn(c.color)}; font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">${c.code}</div>
               <div>
-                <div style="font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2;">${c.name}</div>
-                <div style="font-size: 11px; color: #dc2626; font-weight: 700;">${c.cutOff}</div>
+                <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong); line-height: 1.2;">${c.name}</div>
+                <div style="font-size: 11px; color: var(--down); font-weight: 700;">${c.cutOff}</div>
               </div>
             </div>
-            <span style="background: ${c.billed ? '#fef3c7' : '#ecfdf5'}; color: ${c.billed ? '#d97706' : '#16a34a'}; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+            <span style="background: ${c.billed ? 'var(--amber-soft)' : 'var(--up-soft)'}; color: ${c.billed ? 'var(--warn)' : 'var(--up)'}; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
               ${c.billed ? 'รอชำระรอบนี้' : '✓ เคลียร์บิลแล้ว'}
             </span>
           </div>
 
-          <div style="font-size: 10.5px; color: #64748b; font-weight: 700; text-transform: uppercase;">ยอดรอตัดจ่ายรอบบิลนี้</div>
-          <div style="font-size: 24px; font-weight: 900; color: ${c.debt > 0 ? '#ea580c' : '#16a34a'}; margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
+          <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; text-transform: uppercase;">ยอดรอตัดจ่ายรอบบิลนี้</div>
+          <div style="font-size: 24px; font-weight: 900; color: ${c.debt > 0 ? 'var(--orange)' : 'var(--up)'}; margin: 4px 0 12px 0; font-variant-numeric: tabular-nums;">
             ฿${formatBaht(c.debt)}
           </div>
 
-          <div style="font-size: 11.5px; border-top: 1px dashed #f1f5f9; padding-top: 8px;">
+          <div style="font-size: 11.5px; border-top: 1px dashed var(--line-soft); padding-top: 8px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-              <span style="color: #64748b;">ยอดรูดสะสม:</span>
-              <strong style="color: #dc2626; font-variant-numeric: tabular-nums;">฿${formatBaht(c.charged)}</strong>
+              <span style="color: var(--txt-muted);">ยอดรูดสะสม:</span>
+              <strong style="color: var(--down); font-variant-numeric: tabular-nums;">฿${formatBaht(c.charged)}</strong>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-              <span style="color: #64748b;">ชำระแล้ว:</span>
-              <strong style="color: #16a34a; font-variant-numeric: tabular-nums;">฿${formatBaht(c.paid)}</strong>
+              <span style="color: var(--txt-muted);">ชำระแล้ว:</span>
+              <strong style="color: var(--up); font-variant-numeric: tabular-nums;">฿${formatBaht(c.paid)}</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #64748b;">เงื่อนไขบัตร:</span>
-              <strong style="color: #334155; text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.note}</strong>
+              <span style="color: var(--txt-muted);">เงื่อนไขบัตร:</span>
+              <strong style="color: var(--txt-mid); text-align: right; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.note}</strong>
             </div>
           </div>
         </div>
 
-        <button onclick="window.location.hash='#credit-cards'" style="width: 100%; margin-top: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <button onclick="window.location.hash='#credit-cards'" style="width: 100%; margin-top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px; font-size: 12px; font-weight: 700; color: var(--txt-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <span>✏️</span> แก้ไขวันตัดยอด
         </button>
       </div>
-    `).join('') : '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; font-size: 13px; font-weight: 600; padding: 26px; border: 1.5px dashed #e2e8f0; border-radius: 12px;">ยังไม่มีบัตรเครดิตในระบบ — เริ่มเพิ่มบัตรได้ที่หน้า "รอบบิลบัตรเครดิต & รูดใช้จ่าย"</div>';
+    `).join('') : '<div style="grid-column: 1 / -1; text-align: center; color: var(--txt-faint); font-size: 13px; font-weight: 600; padding: 26px; border: 1.5px dashed var(--line); border-radius: 12px;">ยังไม่มีบัตรเครดิตในระบบ — เริ่มเพิ่มบัตรได้ที่หน้า "รอบบิลบัตรเครดิต & รูดใช้จ่าย"</div>';
 
     // สมาชิกคำนวณจากยอดจริงของตัวเอง ส่วนยอดคงที่ด้านล่างเป็นของผู้ดูแล
     const totalCardDebt = creditCardsMaster.reduce((s, c) => s + (parseFloat(c.debt) || 0), 0);
@@ -1883,84 +1886,84 @@ var CashFlowModule = {
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🏦</div>
+            <div style="background: var(--accent-soft); color: var(--accent); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🏦</div>
             <div>
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CASH & EMERGENCY FUND</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">CASH & EMERGENCY FUND</div>
               <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">สมุดบัญชีเงินฝาก${isMember ? '' : ' พ่อ'}</h1>
-                <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">รวม ${18 + creditCardsMaster.length} บัญชี</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">สมุดบัญชีเงินฝาก${isMember ? '' : ' พ่อ'}</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">รวม ${18 + creditCardsMaster.length} บัญชี</span>
               </div>
             </div>
           </div>
-          <button type="button" onclick="CashFlowModule.exportFullBackup()" style="background: #fff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <button type="button" onclick="CashFlowModule.exportFullBackup()" style="background: var(--panel); border: 1.5px solid var(--line-2); border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: var(--txt-mid); cursor: pointer; display: flex; align-items: center; gap: 6px;">
             <span>📤</span> ส่งออก JSON
           </button>
         </div>
 
         <!-- 4 กล่องสถิติและเงินสำรองฉุกเฉิน -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 28px;">
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 12px; font-weight: 700; color: var(--txt-soft); display: flex; align-items: center; gap: 6px;">
               <span>📊</span> สภาพคล่องสุทธิ (เงินฝากคงเหลือ)
             </div>
-            <div style="font-size: 28px; font-weight: 900; color: #059669; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
+            <div style="font-size: 28px; font-weight: 900; color: var(--up-2); margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
               ฿${formatBaht(netLiquidity)}
             </div>
-            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
+            <div style="border-top: 1px dashed var(--line-soft); padding-top: 8px; font-size: 11.5px; color: var(--txt-muted);">
               เงินฝาก: ฿${isMember ? formatBaht(totalBankBalance) : '421,257.31'} • บิลบัตร: ฿${isMember ? formatBaht(totalCardDebt) : '11,723.28'}
             </div>
           </div>
 
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-size: 12px; font-weight: 700; color: #0284c7; display: flex; align-items: center; gap: 6px;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 6px;">
                 <span>🛡️</span> เงินสำรองฉุกเฉิน (Emergency Buffer)
               </div>
-              ${isMember ? '' : '<span style="font-size: 11px; color: #16a34a; font-weight: 700; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>'}
+              ${isMember ? '' : '<span style="font-size: 11px; color: var(--up); font-weight: 700; background: var(--up-soft-2); padding: 2px 6px; border-radius: 4px;">เกษียณ 01/10/72 (36 ด.)</span>'}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 6px 0;">
-              <div style="font-size: 26px; font-weight: 900; color: #0284c7;">${bufferMonths} <span style="font-size: 14px; font-weight: 700; color: #64748b;">/ 12 เดือน</span></div>
-              <span style="font-size: 14px; font-weight: 800; color: #0284c7;">${bufferPct}%</span>
+              <div style="font-size: 26px; font-weight: 900; color: var(--accent);">${bufferMonths} <span style="font-size: 14px; font-weight: 700; color: var(--txt-muted);">/ 12 เดือน</span></div>
+              <span style="font-size: 14px; font-weight: 800; color: var(--accent);">${bufferPct}%</span>
             </div>
-            <div style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-              <div style="width: ${bufferPct}%; height: 100%; background: #0284c7; border-radius: 3px;"></div>
+            <div style="height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+              <div style="width: ${bufferPct}%; height: 100%; background: var(--accent); border-radius: 3px;"></div>
             </div>
-            <div style="font-size: 11px; color: #64748b; display: flex; justify-content: space-between;">
+            <div style="font-size: 11px; color: var(--txt-muted); display: flex; justify-content: space-between;">
               <span>สอท. ฿${formatBaht(coopBuffer)}</span>
               <span>เป้าหมาย ฿${formatBaht(targetBuffer)}</span>
             </div>
-            ${isMember ? '' : `<div style="font-size: 11px; color: #ea580c; font-weight: 700; margin-top: 4px;">
+            ${isMember ? '' : `<div style="font-size: 11px; color: var(--orange); font-weight: 700; margin-top: 4px;">
               ⚡ 33 เดือนเต็มเป้า (ทันก่อนเกษียณ 3 เดือน)
             </div>`}
           </div>
 
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 12px; font-weight: 700; color: var(--txt-soft); display: flex; align-items: center; gap: 6px;">
               <span>🎁</span> ดอกเบี้ยรับสะสม/ปี (Est. Interest)
             </div>
-            <div style="font-size: 28px; font-weight: 900; color: #16a34a; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
+            <div style="font-size: 28px; font-weight: 900; color: var(--up); margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">
               +฿${isMember ? formatBaht(totalEstAnnualInterest) : '8,029.73'}
             </div>
-            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
+            <div style="border-top: 1px dashed var(--line-soft); padding-top: 8px; font-size: 11.5px; color: var(--txt-muted);">
               เฉลี่ยเดือนละ +฿${isMember ? formatBaht(totalEstAnnualInterest / 12) : '669.14'}
             </div>
           </div>
 
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 12px; font-weight: 700; color: var(--txt-soft); display: flex; align-items: center; gap: 6px;">
               <span>📁</span> บัญชีในระบบ
             </div>
-            <div style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 10px 0 6px 0;">
+            <div style="font-size: 28px; font-weight: 900; color: var(--txt-strong); margin: 10px 0 6px 0;">
               ${18 + creditCardsMaster.length} บัญชี
             </div>
-            <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">
+            <div style="border-top: 1px dashed var(--line-soft); padding-top: 8px; font-size: 11.5px; color: var(--txt-muted);">
               เงินฝาก & ดิจิทัล 18 บัญชี • บัตรเครดิต ${creditCardsMaster.length} ใบ
             </div>
           </div>
         </div>
 
         <!-- ตอนที่ 1: 11 บัญชีเงินฝากและเงินสด -->
-        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="font-size: 16px; font-weight: 800; color: var(--txt-strong); margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
           <span>🏦</span> สมุดบัญชีเงินฝากและเงินสด (11 บัญชี)
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
@@ -1968,18 +1971,18 @@ var CashFlowModule = {
         </div>
 
         <!-- ตอนที่ 2: 7 บัญชีดิจิทัล -->
-        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="font-size: 16px; font-weight: 800; color: var(--txt-strong); margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
           <span>🌐</span> บัญชีเงินฝาก Internet & ดิจิทัลดอกเบี้ยสูง (7 บัญชี)
-          <span style="font-size: 12px; color: #64748b; font-weight: normal;">Dime, ME Save, Next Saving, B-You Max และบัญชีประจำ</span>
+          <span style="font-size: 12px; color: var(--txt-muted); font-weight: normal;">Dime, ME Save, Next Saving, B-You Max และบัญชีประจำ</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px;">
           ${cardsHtml2}
         </div>
 
         <!-- ตอนที่ 3: 3 บัตรเครดิต -->
-        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+        <div style="font-size: 16px; font-weight: 800; color: var(--txt-strong); margin: 26px 0 16px 0; display: flex; align-items: center; gap: 8px;">
           <span>💳</span> บัตรเครดิตและวงเงินรอชำระรอบนี้ (${creditCardsMaster.length} บัญชี)
-          <span style="font-size: 12px; color: #64748b; font-weight: normal;">ติดตามยอดรูดและวันตัดรอบบิล</span>
+          <span style="font-size: 12px; color: var(--txt-muted); font-weight: normal;">ติดตามยอดรูดและวันตัดรอบบิล</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
           ${cardsHtml3}
@@ -2133,27 +2136,27 @@ var CashFlowModule = {
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="background: #e0f2fe; color: #0284c7; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">💎</div>
+            <div style="background: var(--accent-soft); color: var(--accent); width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">💎</div>
             <div>
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH & RETIREMENT ALLOCATION</div>
-              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ภาพรวมการออม การลงทุน & สินทรัพย์รวม</h1>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH & RETIREMENT ALLOCATION</div>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">ภาพรวมการออม การลงทุน & สินทรัพย์รวม</h1>
             </div>
           </div>
-          <button type="button" onclick="CashFlowModule.openEditPvdModal()" style="background: #0284c7; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
+          <button type="button" onclick="CashFlowModule.openEditPvdModal()" style="background: var(--accent); color: var(--on-accent); border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
             <span>✏️</span> ปรับปรุงยอดสินทรัพย์ (PVD / สอท. / RMF)
           </button>
         </div>
 
         <!-- Banner สินทรัพย์รวม -->
-        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 22px 26px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.18); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="background: linear-gradient(135deg, var(--solid-ink) 0%, var(--solid-slate-3) 100%); color: var(--on-ink); border-radius: 16px; padding: 22px 26px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.18); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
-            <div style="font-size: 12px; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">👑 สินทรัพย์รวมทั้งหมด (Total Assets)</div>
-            <div style="font-size: 32px; font-weight: 900; color: #38bdf8; margin: 4px 0 2px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalAssets)}</div>
-            <div style="font-size: 12px; color: #cbd5e1;">สินทรัพย์ 4 เสาหลัก: เงินสดธนาคาร + สหกรณ์ สอท. + เกษียณระยะยาว + พอร์ตตลาดทุน • ยังไม่หักหนี้สิน (บัตรเครดิต/สินเชื่อ) และไม่รวมมูลค่าอสังหาริมทรัพย์</div>
+            <div style="font-size: 12px; color: var(--on-ink-muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">👑 สินทรัพย์รวมทั้งหมด (Total Assets)</div>
+            <div style="font-size: 32px; font-weight: 900; color: var(--accent-bright); margin: 4px 0 2px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalAssets)}</div>
+            <div style="font-size: 12px; color: var(--txt-faint);">สินทรัพย์ 4 เสาหลัก: เงินสดธนาคาร + สหกรณ์ สอท. + เกษียณระยะยาว + พอร์ตตลาดทุน • ยังไม่หักหนี้สิน (บัตรเครดิต/สินเชื่อ) และไม่รวมมูลค่าอสังหาริมทรัพย์</div>
           </div>
           <div style="text-align: right; background: rgba(255,255,255,0.06); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">อัปเดตข้อมูลล่าสุด</div>
-            <div style="font-size: 14px; font-weight: 800; color: #f8fafc; margin-top: 2px;">${wealthExtras.updatedDate || '-'}</div>
+            <div style="font-size: 11px; color: var(--on-ink-muted); font-weight: 600;">อัปเดตข้อมูลล่าสุด</div>
+            <div style="font-size: 14px; font-weight: 800; color: var(--on-ink); margin-top: 2px;">${wealthExtras.updatedDate || '-'}</div>
           </div>
         </div>
 
@@ -2161,120 +2164,120 @@ var CashFlowModule = {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 26px;">
           
           <!-- เสาหลัก 1 -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 12px; color: #64748b; font-weight: 700;">💵 เงินฝาก & สภาพคล่อง</span>
-              <span style="background: #ecfdf5; color: #059669; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p1Pct}%</span>
+              <span style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">💵 เงินฝาก & สภาพคล่อง</span>
+              <span style="background: var(--up-soft); color: var(--up-2); font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p1Pct}%</span>
             </div>
-            <div style="font-size: 24px; font-weight: 900; color: #059669; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalBankCash)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">เงินสด + เงินฝากธนาคาร ${depositAccountCount} บัญชี</div>
+            <div style="font-size: 24px; font-weight: 900; color: var(--up-2); margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalBankCash)}</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 4px;">เงินสด + เงินฝากธนาคาร ${depositAccountCount} บัญชี</div>
           </div>
 
           <!-- เสาหลัก 2 -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 12px; color: #64748b; font-weight: 700;">🏛️ สหกรณ์ออมทรัพย์ (สอท.)</span>
-              <span style="background: #f0fdf4; color: #16a34a; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p2Pct}%</span>
+              <span style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">🏛️ สหกรณ์ออมทรัพย์ (สอท.)</span>
+              <span style="background: var(--up-soft-2); color: var(--up); font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p2Pct}%</span>
             </div>
-            <div style="font-size: 24px; font-weight: 900; color: #15803d; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalCoop)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+            <div style="font-size: 24px; font-weight: 900; color: var(--up-4); margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalCoop)}</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 4px;">
               ออมทรัพย์ ฿${Number(coopSavingBal).toLocaleString('en-US', {maximumFractionDigits: 0})} • ทุนเรือนหุ้น ฿${Number(wealthExtras.coopShareVal || 0).toLocaleString('en-US', {maximumFractionDigits: 0})}
             </div>
           </div>
 
           <!-- เสาหลัก 3 -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 12px; color: #64748b; font-weight: 700;">🛡️ เกษียณระยะยาว (PVD & RMF)</span>
-              <span style="background: #e0e7ff; color: #4338ca; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p3Pct}%</span>
+              <span style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">🛡️ เกษียณระยะยาว (PVD & RMF)</span>
+              <span style="background: var(--indigo-soft); color: var(--indigo-ink); font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p3Pct}%</span>
             </div>
-            <div style="font-size: 24px; font-weight: 900; color: #4338ca; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalRetirement)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">
+            <div style="font-size: 24px; font-weight: 900; color: var(--indigo-ink); margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalRetirement)}</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 4px;">
               PVD ฿${Number(wealthExtras.totalPvd).toLocaleString('en-US', {maximumFractionDigits: 0})} • RMF ฿${Number(wealthExtras.rmfVal || 0).toLocaleString('en-US', {maximumFractionDigits: 0})}
             </div>
           </div>
 
           <!-- เสาหลัก 4 -->
-          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 12px; color: #64748b; font-weight: 700;">📈 ตลาดหุ้น & ETFs ตลาดโลก</span>
-              <span style="background: #e0f2fe; color: #0284c7; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p4Pct}%</span>
+              <span style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">📈 ตลาดหุ้น & ETFs ตลาดโลก</span>
+              <span style="background: var(--accent-soft); color: var(--accent); font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${p4Pct}%</span>
             </div>
-            <div style="font-size: 24px; font-weight: 900; color: #0284c7; margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalStockValue)}</div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม (ไม่รวม RMF) • ${hasLiveStockValue ? (totalStockValue > 0 ? 'มูลค่าตลาดปัจจุบัน' : 'ยังไม่มีข้อมูลพอร์ต') : 'ยอดสำรอง'}</div>
+            <div style="font-size: 24px; font-weight: 900; color: var(--accent); margin: 4px 0; font-variant-numeric: tabular-nums;">${formatBaht(totalStockValue)}</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 4px;">BLS, US ETFs, Dime, กองทุนรวม (ไม่รวม RMF) • ${hasLiveStockValue ? (totalStockValue > 0 ? 'มูลค่าตลาดปัจจุบัน' : 'ยังไม่มีข้อมูลพอร์ต') : 'ยอดสำรอง'}</div>
           </div>
 
         </div>
 
         <!-- รายละเอียดกองทุนสำรองเลี้ยงชีพ PVD -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong); display: flex; align-items: center; gap: 8px;">
               <span>🏢</span> รายละเอียดกองทุนสำรองเลี้ยงชีพ (Provident Fund)
             </h3>
-            <span style="font-size: 11.5px; color: #4338ca; font-weight: 700; background: #e0e7ff; padding: 3px 10px; border-radius: 6px;">
+            <span style="font-size: 11.5px; color: var(--indigo-ink); font-weight: 700; background: var(--indigo-soft); padding: 3px 10px; border-radius: 6px;">
               ผลตอบแทนสะสม +฿${Number(wealthExtras.earnings).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </span>
           </div>
           
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; background: var(--panel-2); padding: 18px; border-radius: 12px; border: 1px solid var(--line);">
             <div>
-              <div style="font-size: 12px; color: #64748b; font-weight: 700;">1. เงินสะสมของสมาชิก (เงินเรา)</div>
-              <div style="font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.memberAccum)}</div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">สะสมเข้ากองทุน</div>
+              <div style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">1. เงินสะสมของสมาชิก (เงินเรา)</div>
+              <div style="font-size: 20px; font-weight: 900; color: var(--txt-strong); margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.memberAccum)}</div>
+              <div style="font-size: 11px; color: var(--txt-faint); margin-top: 2px;">สะสมเข้ากองทุน</div>
             </div>
             <div>
-              <div style="font-size: 12px; color: #64748b; font-weight: 700;">2. เงินสมทบจากนายจ้าง (บริษัทให้)</div>
-              <div style="font-size: 20px; font-weight: 900; color: #16a34a; margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.employerMatch)}</div>
-              <div style="font-size: 11px; color: #16a34a; margin-top: 2px;">บริษัทช่วยสมทบเพิ่ม</div>
+              <div style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">2. เงินสมทบจากนายจ้าง (บริษัทให้)</div>
+              <div style="font-size: 20px; font-weight: 900; color: var(--up); margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.employerMatch)}</div>
+              <div style="font-size: 11px; color: var(--up); margin-top: 2px;">บริษัทช่วยสมทบเพิ่ม</div>
             </div>
             <div>
-              <div style="font-size: 12px; color: #64748b; font-weight: 700;">3. ผลประโยชน์สะสมทั้งหมด</div>
-              <div style="font-size: 20px; font-weight: 900; color: #0284c7; margin-top: 4px; font-variant-numeric: tabular-nums;">+${formatBaht(wealthExtras.earnings)}</div>
-              <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">ผลตอบแทนจากการลงทุน</div>
+              <div style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">3. ผลประโยชน์สะสมทั้งหมด</div>
+              <div style="font-size: 20px; font-weight: 900; color: var(--accent); margin-top: 4px; font-variant-numeric: tabular-nums;">+${formatBaht(wealthExtras.earnings)}</div>
+              <div style="font-size: 11px; color: var(--accent); margin-top: 2px;">ผลตอบแทนจากการลงทุน</div>
             </div>
-            <div style="border-left: 2px solid #e2e8f0; padding-left: 16px;">
-              <div style="font-size: 12px; color: #4338ca; font-weight: 700;">มูลค่าสุทธิปัจจุบัน (NAV)</div>
-              <div style="font-size: 22px; font-weight: 900; color: #4338ca; margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.totalPvd)}</div>
-              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">ยอดเงินก้อน ณ ปัจจุบัน</div>
+            <div style="border-left: 2px solid var(--line); padding-left: 16px;">
+              <div style="font-size: 12px; color: var(--indigo-ink); font-weight: 700;">มูลค่าสุทธิปัจจุบัน (NAV)</div>
+              <div style="font-size: 22px; font-weight: 900; color: var(--indigo-ink); margin-top: 4px; font-variant-numeric: tabular-nums;">${formatBaht(wealthExtras.totalPvd)}</div>
+              <div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">ยอดเงินก้อน ณ ปัจจุบัน</div>
             </div>
           </div>
         </div>
 
         <!-- แถบสัดส่วน Asset Allocation Breakdown -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">📊 สัดส่วนพอร์ตสินทรัพย์ 4 เสาหลัก (Asset Allocation)</h3>
-            <span style="font-size: 12px; color: #64748b; font-weight: 700;">100% ครบทุกบัญชี</span>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong);">📊 สัดส่วนพอร์ตสินทรัพย์ 4 เสาหลัก (Asset Allocation)</h3>
+            <span style="font-size: 12px; color: var(--txt-muted); font-weight: 700;">100% ครบทุกบัญชี</span>
           </div>
 
-          <div style="height: 14px; background: #f1f5f9; border-radius: 7px; overflow: hidden; display: flex; margin-bottom: 16px;">
-            <div style="width: ${p1Pct}%; background: #059669;" title="เงินฝากธนาคาร ${p1Pct}%"></div>
-            <div style="width: ${p2Pct}%; background: #15803d;" title="สหกรณ์ สอท. ${p2Pct}%"></div>
-            <div style="width: ${p3Pct}%; background: #4338ca;" title="เกษียณระยะยาว ${p3Pct}%"></div>
-            <div style="width: ${p4Pct}%; background: #0284c7;" title="ตลาดหุ้น & ETFs ${p4Pct}%"></div>
+          <div style="height: 14px; background: var(--inset); border-radius: 7px; overflow: hidden; display: flex; margin-bottom: 16px;">
+            <div style="width: ${p1Pct}%; background: var(--up-2);" title="เงินฝากธนาคาร ${p1Pct}%"></div>
+            <div style="width: ${p2Pct}%; background: var(--up-4);" title="สหกรณ์ สอท. ${p2Pct}%"></div>
+            <div style="width: ${p3Pct}%; background: var(--indigo-ink);" title="เกษียณระยะยาว ${p3Pct}%"></div>
+            <div style="width: ${p4Pct}%; background: var(--accent);" title="ตลาดหุ้น & ETFs ${p4Pct}%"></div>
           </div>
 
           <div style="display: flex; gap: 20px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="width: 12px; height: 12px; background: #059669; border-radius: 3px; display: inline-block;"></span>
-              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">เงินฝากธนาคาร (${p1Pct}%)</span>
-              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalBankCash)}</span>
+              <span style="width: 12px; height: 12px; background: var(--up-2); border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: var(--txt-mid); font-weight: 700;">เงินฝากธนาคาร (${p1Pct}%)</span>
+              <span style="font-size: 12.5px; color: var(--txt-muted);">${formatBaht(totalBankCash)}</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="width: 12px; height: 12px; background: #15803d; border-radius: 3px; display: inline-block;"></span>
-              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">สหกรณ์ สอท. (${p2Pct}%)</span>
-              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalCoop)}</span>
+              <span style="width: 12px; height: 12px; background: var(--up-4); border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: var(--txt-mid); font-weight: 700;">สหกรณ์ สอท. (${p2Pct}%)</span>
+              <span style="font-size: 12.5px; color: var(--txt-muted);">${formatBaht(totalCoop)}</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="width: 12px; height: 12px; background: #4338ca; border-radius: 3px; display: inline-block;"></span>
-              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">เกษียณ PVD & RMF (${p3Pct}%)</span>
-              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalRetirement)}</span>
+              <span style="width: 12px; height: 12px; background: var(--indigo-ink); border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: var(--txt-mid); font-weight: 700;">เกษียณ PVD & RMF (${p3Pct}%)</span>
+              <span style="font-size: 12.5px; color: var(--txt-muted);">${formatBaht(totalRetirement)}</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="width: 12px; height: 12px; background: #0284c7; border-radius: 3px; display: inline-block;"></span>
-              <span style="font-size: 12.5px; color: #334155; font-weight: 700;">ตลาดหุ้น & ETFs (${p4Pct}%)</span>
-              <span style="font-size: 12.5px; color: #64748b;">${formatBaht(totalStockValue)}</span>
+              <span style="width: 12px; height: 12px; background: var(--accent); border-radius: 3px; display: inline-block;"></span>
+              <span style="font-size: 12.5px; color: var(--txt-mid); font-weight: 700;">ตลาดหุ้น & ETFs (${p4Pct}%)</span>
+              <span style="font-size: 12.5px; color: var(--txt-muted);">${formatBaht(totalStockValue)}</span>
             </div>
           </div>
         </div>
@@ -2311,63 +2314,63 @@ var CashFlowModule = {
 
     const modalHtml = `
       <div id="modal-edit-pvd" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 99999; font-family: 'Sarabun', sans-serif;">
-        <div style="background: #fff; border-radius: 16px; width: 480px; max-width: 95vw; padding: 24px; text-align: left; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+        <div style="background: var(--panel); border-radius: 16px; width: 480px; max-width: 95vw; padding: 24px; text-align: left; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
           
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="background: #e0e7ff; color: #4338ca; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">💎</div>
-              <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">ปรับปรุงยอดสินทรัพย์ (PVD, สอท., RMF)</h3>
+              <div style="background: var(--indigo-soft); color: var(--indigo-ink); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">💎</div>
+              <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--txt-strong);">ปรับปรุงยอดสินทรัพย์ (PVD, สอท., RMF)</h3>
             </div>
-            <button type="button" onclick="document.getElementById('modal-edit-pvd').remove()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">✕</button>
+            <button type="button" onclick="document.getElementById('modal-edit-pvd').remove()" style="background: none; border: none; font-size: 20px; color: var(--txt-faint); cursor: pointer;">✕</button>
           </div>
           
           <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px;">
             
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
-              <div style="font-size: 12px; font-weight: 800; color: #4338ca; margin-bottom: 10px;">🏢 ข้อมูลกองทุนสำรองเลี้ยงชีพ (PVD)</div>
+            <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 800; color: var(--indigo-ink); margin-bottom: 10px;">🏢 ข้อมูลกองทุนสำรองเลี้ยงชีพ (PVD)</div>
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div>
-                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 3px;">1. เงินสะสมของพนักงาน (บาท)</label>
-                  <input type="number" step="0.01" id="pvd-member-accum" value="${extras.memberAccum}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-soft); margin-bottom: 3px;">1. เงินสะสมของพนักงาน (บาท)</label>
+                  <input type="number" step="0.01" id="pvd-member-accum" value="${extras.memberAccum}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid var(--line-2); border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: var(--panel);">
                 </div>
                 <div>
-                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 3px;">2. เงินสมทบนายจ้าง (บาท)</label>
-                  <input type="number" step="0.01" id="pvd-employer-match" value="${extras.employerMatch}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-soft); margin-bottom: 3px;">2. เงินสมทบนายจ้าง (บาท)</label>
+                  <input type="number" step="0.01" id="pvd-employer-match" value="${extras.employerMatch}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid var(--line-2); border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: var(--panel);">
                 </div>
                 <div>
-                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 3px;">3. ผลประโยชน์สะสมทั้งหมด (บาท)</label>
-                  <input type="number" step="0.01" id="pvd-earnings" value="${extras.earnings}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                  <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--txt-soft); margin-bottom: 3px;">3. ผลประโยชน์สะสมทั้งหมด (บาท)</label>
+                  <input type="number" step="0.01" id="pvd-earnings" value="${extras.earnings}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid var(--line-2); border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: var(--panel);">
                 </div>
               </div>
             </div>
 
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 14px;">
-              <div style="font-size: 12px; font-weight: 800; color: #15803d; margin-bottom: 8px;">🏛️ สหกรณ์ออมทรัพย์ (สอท.)</div>
+            <div style="background: var(--up-soft-2); border: 1px solid var(--up-line); border-radius: 10px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 800; color: var(--up-4); margin-bottom: 8px;">🏛️ สหกรณ์ออมทรัพย์ (สอท.)</div>
               <div>
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #166534; margin-bottom: 3px;">ทุนเรือนหุ้น สอท. (บาท)</label>
-                <input type="number" step="0.01" id="coop-share-val" value="${extras.coopShareVal || 0}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #86efac; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
-                <div style="font-size: 10.5px; color: #15803d; margin-top: 3px;">* ส่วนเงินฝากออมทรัพย์ สอท. ระบบเชื่อมโยงให้ตรงกับบัญชีอัตโนมัติ</div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--up-5); margin-bottom: 3px;">ทุนเรือนหุ้น สอท. (บาท)</label>
+                <input type="number" step="0.01" id="coop-share-val" value="${extras.coopShareVal || 0}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid var(--up-line-3); border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: var(--panel);">
+                <div style="font-size: 10.5px; color: var(--up-4); margin-top: 3px;">* ส่วนเงินฝากออมทรัพย์ สอท. ระบบเชื่อมโยงให้ตรงกับบัญชีอัตโนมัติ</div>
               </div>
             </div>
 
-            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 14px;">
-              <div style="font-size: 12px; font-weight: 800; color: #1d4ed8; margin-bottom: 8px;">🛡️ กองทุนรวมเพื่อการเกษียณ (RMF)</div>
+            <div style="background: var(--blue-soft); border: 1px solid var(--blue-line); border-radius: 10px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 800; color: var(--blue-ink); margin-bottom: 8px;">🛡️ กองทุนรวมเพื่อการเกษียณ (RMF)</div>
               <div>
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #1e40af; margin-bottom: 3px;">มูลค่ากองทุน INVX RMF ปัจจุบัน (บาท)</label>
-                <input type="number" step="0.01" id="rmf-val" value="${extras.rmfVal || 0}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid #93c5fd; border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: #fff;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: var(--blue-2); margin-bottom: 3px;">มูลค่ากองทุน INVX RMF ปัจจุบัน (บาท)</label>
+                <input type="number" step="0.01" id="rmf-val" value="${extras.rmfVal || 0}" placeholder="0.00" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1.5px solid var(--blue-border); border-radius: 6px; font-size: 13.5px; font-weight: 700; outline: none; background: var(--panel);">
               </div>
             </div>
 
             <div>
-              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันที่อัปเดตข้อมูลตาม Statement</label>
-              <input type="date" id="wealth-update-date" value="${extras.updatedDate || new Date().toISOString().slice(0, 10)}" style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันที่อัปเดตข้อมูลตาม Statement</label>
+              <input type="date" id="wealth-update-date" value="${extras.updatedDate || new Date().toISOString().slice(0, 10)}" style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 13px; outline: none;">
             </div>
 
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" onclick="document.getElementById('modal-edit-pvd').remove()" style="background: #fff; border: 1.5px solid #cbd5e1; padding: 8px 18px; border-radius: 8px; font-weight: 700; color: #475569; cursor: pointer;">ยกเลิก</button>
-            <button type="button" id="btn-save-wealth-extras" style="background: #0284c7; color: #fff; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 4px rgba(2,132,199,0.3);">💾 บันทึกยอดทั้งหมด</button>
+            <button type="button" onclick="document.getElementById('modal-edit-pvd').remove()" style="background: var(--panel); border: 1.5px solid var(--line-2); padding: 8px 18px; border-radius: 8px; font-weight: 700; color: var(--txt-soft); cursor: pointer;">ยกเลิก</button>
+            <button type="button" id="btn-save-wealth-extras" style="background: var(--accent); color: var(--on-accent); border: none; padding: 8px 22px; border-radius: 8px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 4px rgba(2,132,199,0.3);">💾 บันทึกยอดทั้งหมด</button>
           </div>
         </div>
       </div>
@@ -2423,7 +2426,7 @@ var CashFlowModule = {
       if (typeof PortfolioModule !== 'undefined' && typeof PortfolioModule.renderDividendTracker === 'function') {
         PortfolioModule.renderDividendTracker(container);
       } else {
-        container.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b; font-weight: 700;">กำลังเรียกข้อมูลรายงานเงินปันผล...</div>';
+        container.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--txt-muted); font-weight: 700;">กำลังเรียกข้อมูลรายงานเงินปันผล...</div>';
       }
       return;
     }
@@ -2538,11 +2541,11 @@ var CashFlowModule = {
       return `
         <div style="margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px;">
-            <span style="color: #334155; font-weight: 700;">${cat}</span>
-            <span style="color: #64748b; font-weight: 600;">฿${formatBaht(amt)} (${pct}%)</span>
+            <span style="color: var(--txt-mid); font-weight: 700;">${cat}</span>
+            <span style="color: var(--txt-muted); font-weight: 600;">฿${formatBaht(amt)} (${pct}%)</span>
           </div>
-          <div style="height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden;">
-            <div style="width: ${pct}%; height: 100%; background: #ef4444; border-radius: 3px;"></div>
+          <div style="height: 6px; background: var(--inset); border-radius: 3px; overflow: hidden;">
+            <div style="width: ${pct}%; height: 100%; background: var(--down-3); border-radius: 3px;"></div>
           </div>
         </div>
       `;
@@ -2554,21 +2557,21 @@ var CashFlowModule = {
       const isDebt = t.type === 'หนี้สิน';
       const isTransfer = t.type === 'โอนระหว่างบัญชี' || t.type === 'โอนเงิน';
 
-      let badgeBg = '#fef2f2';
-      let badgeColor = '#dc2626';
+      let badgeBg = 'var(--down-soft)';
+      let badgeColor = 'var(--down)';
 
       if (isIncome) {
-        badgeBg = '#ecfdf5';
-        badgeColor = '#16a34a';
+        badgeBg = 'var(--up-soft)';
+        badgeColor = 'var(--up)';
       } else if (isInvest) {
-        badgeBg = '#eff6ff';
-        badgeColor = '#0284c7';
+        badgeBg = 'var(--blue-soft)';
+        badgeColor = 'var(--accent)';
       } else if (isDebt) {
-        badgeBg = '#fef2f2';
-        badgeColor = '#ea580c';
+        badgeBg = 'var(--down-soft)';
+        badgeColor = 'var(--orange)';
       } else if (isTransfer) {
-        badgeBg = '#f1f5f9';
-        badgeColor = '#475569';
+        badgeBg = 'var(--inset)';
+        badgeColor = 'var(--txt-soft)';
       }
 
       const sign = isIncome ? '+' : (isTransfer ? '↔' : '-');
@@ -2576,30 +2579,30 @@ var CashFlowModule = {
       const accountText = this.getItemAccount(t) || '-';
 
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 14px; color: #64748b; font-size: 12.5px; white-space: nowrap;">${t.date}</td>
+        <tr style="border-bottom: 1px solid var(--line-soft);">
+          <td style="padding: 12px 14px; color: var(--txt-muted); font-size: 12.5px; white-space: nowrap;">${t.date}</td>
           <td style="padding: 12px 14px; white-space: nowrap;">
             <span style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px;">
               ${t.type}
             </span>
           </td>
-          <td style="padding: 12px 14px; font-size: 13px; color: #334155; font-weight: 600; white-space: nowrap;">${t.category}</td>
+          <td style="padding: 12px 14px; font-size: 13px; color: var(--txt-mid); font-weight: 600; white-space: nowrap;">${t.category}</td>
           <td style="padding: 12px 14px; text-align: right; font-weight: 900; font-size: 14px; color: ${badgeColor}; font-variant-numeric: tabular-nums; white-space: nowrap;">
             ${sign}฿${formatBaht(t.amount)}
           </td>
-          <td style="padding: 12px 14px; font-size: 12.5px; color: #475569; white-space: nowrap;">
+          <td style="padding: 12px 14px; font-size: 12.5px; color: var(--txt-soft); white-space: nowrap;">
             ${accountText}
           </td>
-          <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: #0f172a;">
+          <td style="padding: 12px 14px; font-size: 13px; font-weight: 600; color: var(--txt-strong);">
             ${detailText}
           </td>
           <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
-            <button type="button" class="btn-edit-tx" data-id="${t.id}" onclick="CashFlowModule.openTransactionModal('${t.id}')" style="background: none; border: none; color: #0ea5e9; cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
-            <button type="button" class="btn-delete-tx" data-id="${t.id}" onclick="if(confirm('ยืนยันลบรายการธุรกรรมนี้?')){ const s = CashFlowModule.getState(); s.transactions = (s.transactions || []).filter(x => String(x.id) !== String('${t.id}')); CashFlowModule.saveState(s); CashFlowModule.render(); }" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
+            <button type="button" class="btn-edit-tx" data-id="${t.id}" onclick="CashFlowModule.openTransactionModal('${t.id}')" style="background: none; border: none; color: var(--accent-2); cursor: pointer; font-size: 14px; margin-right: 6px;" title="แก้ไขรายการ">✏️</button>
+            <button type="button" class="btn-delete-tx" data-id="${t.id}" onclick="if(confirm('ยืนยันลบรายการธุรกรรมนี้?')){ const s = CashFlowModule.getState(); s.transactions = (s.transactions || []).filter(x => String(x.id) !== String('${t.id}')); CashFlowModule.saveState(s); CashFlowModule.render(); }" style="background: none; border: none; color: var(--txt-faint); cursor: pointer; font-size: 14px;" title="ลบรายการ">🗑️</button>
           </td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--txt-faint);">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
 
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
@@ -2607,53 +2610,53 @@ var CashFlowModule = {
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #fef9c3; color: #854d0e; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">💰</div>
+            <div style="background: var(--yellow-soft); color: var(--yellow-ink); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">💰</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CASH FLOW & EXPENSE TRACKER</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">CASH FLOW & EXPENSE TRACKER</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">บันทึกรายรับ-รายจ่าย & กระแสเงินสด</h1>
-                <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">อัตราการออม ${savingRate}%</span>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">บันทึกรายรับ-รายจ่าย & กระแสเงินสด</h1>
+                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">อัตราการออม ${savingRate}%</span>
               </div>
             </div>
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <div style="display: inline-flex; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 3px;">
-              <button type="button" class="btn-toggle-period" data-period="monthly" onclick="CashFlowModule.setPeriodType('monthly')" style="border: none; background: ${this.currentPeriodType !== 'payroll' ? '#f1f5f9' : 'transparent'}; color: #0f172a; font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <div style="display: inline-flex; background: var(--panel); border: 1.5px solid var(--line-2); border-radius: 8px; padding: 3px;">
+              <button type="button" class="btn-toggle-period" data-period="monthly" onclick="CashFlowModule.setPeriodType('monthly')" style="border: none; background: ${this.currentPeriodType !== 'payroll' ? 'var(--inset)' : 'transparent'}; color: var(--txt-strong); font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                 <span>📅</span> เดือนปฏิทิน (1-สิ้นเดือน)
               </button>
-              <button type="button" class="btn-toggle-period" data-period="payroll" onclick="CashFlowModule.setPeriodType('payroll')" style="border: none; background: ${this.currentPeriodType === 'payroll' ? '#f1f5f9' : 'transparent'}; color: #0f172a; font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn-toggle-period" data-period="payroll" onclick="CashFlowModule.setPeriodType('payroll')" style="border: none; background: ${this.currentPeriodType === 'payroll' ? 'var(--inset)' : 'transparent'}; color: var(--txt-strong); font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                 <span>💼</span> รอบเงินเดือน (26 - 25)
               </button>
             </div>
 
-            <input type="month" id="cashflow-month-picker" value="${this.selectedMonth || '2026-10'}" onchange="CashFlowModule.onMonthChange(this.value)" style="border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 700; color: #0f172a; outline: none; background: #ffffff; cursor: pointer;">
+            <input type="month" id="cashflow-month-picker" value="${this.selectedMonth || '2026-10'}" onchange="CashFlowModule.onMonthChange(this.value)" style="border: 1.5px solid var(--line-2); border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 700; color: var(--txt-strong); outline: none; background: var(--panel); cursor: pointer;">
             
             <div style="position: relative; display: inline-block;">
-              <button type="button" onclick="const m = document.getElementById('data-action-dropdown'); m.style.display = (m.style.display === 'none' || !m.style.display) ? 'block' : 'none';" style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+              <button type="button" onclick="const m = document.getElementById('data-action-dropdown'); m.style.display = (m.style.display === 'none' || !m.style.display) ? 'block' : 'none';" style="background: var(--panel); border: 1.5px solid var(--line-2); border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: var(--txt-mid); cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
                 <span>🔄</span> จัดการข้อมูล ▾
               </button>
               
-              <div id="data-action-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); width: 220px; z-index: 1000; overflow: hidden; text-align: left;">
-                <div style="padding: 6px 12px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; background: #f8fafc; border-bottom: 1px solid #f1f5f9;">ส่งออก (Export)</div>
-                <a href="javascript:void(0)" onclick="CashFlowModule.exportFullBackup(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #1e293b; text-decoration: none; border-bottom: 1px solid #f8fafc;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+              <div id="data-action-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); width: 220px; z-index: 1000; overflow: hidden; text-align: left;">
+                <div style="padding: 6px 12px; font-size: 11px; font-weight: 800; color: var(--txt-faint); text-transform: uppercase; background: var(--panel-2); border-bottom: 1px solid var(--line-soft);">ส่งออก (Export)</div>
+                <a href="javascript:void(0)" onclick="CashFlowModule.exportFullBackup(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--txt); text-decoration: none; border-bottom: 1px solid var(--panel-2);" onmouseover="this.style.background='var(--inset)'" onmouseout="this.style.background='transparent'">
                   <span>📤</span> สำรองข้อมูลระบบ (.JSON)
                 </a>
-                <a href="javascript:void(0)" onclick="CashFlowModule.exportTransactionsCSV(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #059669; text-decoration: none;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                <a href="javascript:void(0)" onclick="CashFlowModule.exportTransactionsCSV(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--up-2); text-decoration: none;" onmouseover="this.style.background='var(--inset)'" onmouseout="this.style.background='transparent'">
                   <span>📊</span> ส่งออกรายการ (.CSV / Excel)
                 </a>
 
-                <div style="padding: 6px 12px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #f1f5f9;">นำเข้า (Import)</div>
-                <a href="javascript:void(0)" onclick="CashFlowModule.importFullBackup(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #1e293b; text-decoration: none; border-bottom: 1px solid #f8fafc;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                <div style="padding: 6px 12px; font-size: 11px; font-weight: 800; color: var(--txt-faint); text-transform: uppercase; background: var(--panel-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line-soft);">นำเข้า (Import)</div>
+                <a href="javascript:void(0)" onclick="CashFlowModule.importFullBackup(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--txt); text-decoration: none; border-bottom: 1px solid var(--panel-2);" onmouseover="this.style.background='var(--inset)'" onmouseout="this.style.background='transparent'">
                   <span>📥</span> นำเข้าข้อมูลสำรอง (.JSON)
                 </a>
-                <a href="javascript:void(0)" onclick="CashFlowModule.importTransactionsCSV(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #0284c7; text-decoration: none;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                <a href="javascript:void(0)" onclick="CashFlowModule.importTransactionsCSV(); document.getElementById('data-action-dropdown').style.display='none';" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none;" onmouseover="this.style.background='var(--inset)'" onmouseout="this.style.background='transparent'">
                   <span>📑</span> นำเข้ารายการจาก (.CSV)
                 </a>
               </div>
             </div>
 
-            <button id="btn-open-add-tx" type="button" onclick="CashFlowModule.openTransactionModal()" style="background: #0284c7; color: #fff; border: none; font-weight: 700; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
+            <button id="btn-open-add-tx" type="button" onclick="CashFlowModule.openTransactionModal()" style="background: var(--accent); color: var(--on-accent); border: none; font-weight: 700; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
               <span>➕</span> บันทึกธุรกรรม
             </button>
           </div>
@@ -2661,42 +2664,42 @@ var CashFlowModule = {
 
         <!-- 4 กล่องสถิติ -->
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🟢 รายรับทั้งหมด (Total Income)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #16a34a;">฿${formatBaht(totalIncome)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">${this.selectedMonth ? 'ประจำรอบที่เลือก' : 'รวมทั้งหมดทุกช่วงเวลา'}</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🟢 รายรับทั้งหมด (Total Income)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--up);">฿${formatBaht(totalIncome)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">${this.selectedMonth ? 'ประจำรอบที่เลือก' : 'รวมทั้งหมดทุกช่วงเวลา'}</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔴 รายจ่ายรวม (Expense + Bill + Debt)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #dc2626;">฿${formatBaht(totalExpense)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">คิดเป็น ${totalIncome > 0 ? ((totalExpense / totalIncome) * 100).toFixed(0) : 0}% ของรายรับ</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🔴 รายจ่ายรวม (Expense + Bill + Debt)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--down);">฿${formatBaht(totalExpense)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">คิดเป็น ${totalIncome > 0 ? ((totalExpense / totalIncome) * 100).toFixed(0) : 0}% ของรายรับ</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🔵 กระแสเงินสดสุทธิ (Net Savings)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: ${netSavings >= 0 ? '#0284c7' : '#dc2626'};">฿${formatBaht(netSavings)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">สภาพคล่องคงเหลือที่นำไปต่อยอดได้</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🔵 กระแสเงินสดสุทธิ (Net Savings)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: ${netSavings >= 0 ? 'var(--accent)' : 'var(--down)'};">฿${formatBaht(netSavings)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">สภาพคล่องคงเหลือที่นำไปต่อยอดได้</div>
           </div>
 
-          <div class="stat-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div class="card-label" style="font-size: 11.5px; color: #64748b; margin-bottom: 6px; font-weight: 600;">🚀 โอนเข้าออมและลงทุน (Invested)</div>
-            <div class="card-value" style="font-size: 22px; font-weight: 900; color: #0284c7;">฿${formatBaht(totalInvest)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: #64748b; margin-top: 6px;">DCA หุ้น กองทุน และ สอท.</div>
+          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🚀 โอนเข้าออมและลงทุน (Invested)</div>
+            <div class="card-value" style="font-size: 22px; font-weight: 900; color: var(--accent);">฿${formatBaht(totalInvest)}</div>
+            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">DCA หุ้น กองทุน และ สอท.</div>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 18px; align-items: start;">
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-              <h3 id="tx-count-label" style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">
+              <h3 id="tx-count-label" style="margin: 0; font-size: 15px; font-weight: 800; color: var(--txt-strong);">
                 รายการธุรกรรม (${filteredTx.length} รายการ)
               </h3>
 
-              <div style="display: flex; background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px; border-radius: 6px;">
+              <div style="display: flex; background: var(--panel-2); border: 1px solid var(--line); padding: 2px; border-radius: 6px;">
                 ${['ทั้งหมด', 'รายจ่าย', 'รายรับ', 'ลงทุน', 'หนี้สิน', 'โอนระหว่างบัญชี'].map(type => `
-                  <button type="button" class="tx-type-tab" data-type="${type}" onclick="CashFlowModule.filterType='${type}'; CashFlowModule.renderTableOnly();" style="border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; background: ${this.filterType === type ? '#fff' : 'transparent'}; color: ${this.filterType === type ? '#0284c7' : '#64748b'}; box-shadow: ${this.filterType === type ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'};">
+                  <button type="button" class="tx-type-tab" data-type="${type}" onclick="CashFlowModule.filterType='${type}'; CashFlowModule.renderTableOnly();" style="border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; background: ${this.filterType === type ? 'var(--panel)' : 'transparent'}; color: ${this.filterType === type ? 'var(--accent)' : 'var(--txt-muted)'}; box-shadow: ${this.filterType === type ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'};">
                     ${type}
                   </button>
                 `).join('')}
@@ -2704,20 +2707,20 @@ var CashFlowModule = {
             </div>
 
             <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
-              <input type="text" id="tx-search-input" value="${this.searchQuery}" oninput="CashFlowModule.searchQuery = this.value.trim().toLowerCase(); CashFlowModule.renderTableOnly();" placeholder="🔍 ค้นหา: เช่น กองทุน, คอนโด..." style="flex: 1; min-width: 160px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+              <input type="text" id="tx-search-input" value="${this.searchQuery}" oninput="CashFlowModule.searchQuery = this.value.trim().toLowerCase(); CashFlowModule.renderTableOnly();" placeholder="🔍 ค้นหา: เช่น กองทุน, คอนโด..." style="flex: 1; min-width: 160px; padding: 6px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12.5px;">
 
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--txt-muted);">
                 <span>วันที่:</span>
-                <input type="date" id="tx-date-from" value="${this.dateFrom}" onchange="CashFlowModule.dateFrom = this.value; CashFlowModule.renderTableOnly();" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                <input type="date" id="tx-date-from" value="${this.dateFrom}" onchange="CashFlowModule.dateFrom = this.value; CashFlowModule.renderTableOnly();" style="padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px;">
                 <span>ถึง</span>
-                <input type="date" id="tx-date-to" value="${this.dateTo}" onchange="CashFlowModule.dateTo = this.value; CashFlowModule.renderTableOnly();" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                <input type="date" id="tx-date-to" value="${this.dateTo}" onchange="CashFlowModule.dateTo = this.value; CashFlowModule.renderTableOnly();" style="padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px;">
               </div>
 
-              <button type="button" id="btn-filter-this-month" onclick="const n = new Date(); CashFlowModule.selectedMonth = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0'); CashFlowModule.filterType = 'ทั้งหมด'; CashFlowModule.dateFrom = ''; CashFlowModule.dateTo = ''; CashFlowModule.searchQuery = ''; CashFlowModule.render();" style="background: ${this.selectedMonth ? '#0284c7' : '#f1f5f9'}; color: ${this.selectedMonth ? '#fff' : '#475569'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              <button type="button" id="btn-filter-this-month" onclick="const n = new Date(); CashFlowModule.selectedMonth = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0'); CashFlowModule.filterType = 'ทั้งหมด'; CashFlowModule.dateFrom = ''; CashFlowModule.dateTo = ''; CashFlowModule.searchQuery = ''; CashFlowModule.render();" style="background: ${this.selectedMonth ? 'var(--accent)' : 'var(--inset)'}; color: ${this.selectedMonth ? 'var(--on-accent)' : 'var(--txt-soft)'}; border: 1px solid var(--line-2); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
                 📅 เดือนนี้
               </button>
 
-              <button type="button" id="btn-filter-all-time" onclick="CashFlowModule.selectedMonth = null; CashFlowModule.filterType = 'ทั้งหมด'; CashFlowModule.dateFrom = ''; CashFlowModule.dateTo = ''; CashFlowModule.searchQuery = ''; CashFlowModule.render();" style="background: ${!this.selectedMonth ? '#0f172a' : '#f1f5f9'}; color: ${!this.selectedMonth ? '#fff' : '#475569'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              <button type="button" id="btn-filter-all-time" onclick="CashFlowModule.selectedMonth = null; CashFlowModule.filterType = 'ทั้งหมด'; CashFlowModule.dateFrom = ''; CashFlowModule.dateTo = ''; CashFlowModule.searchQuery = ''; CashFlowModule.render();" style="background: ${!this.selectedMonth ? 'var(--solid-ink)' : 'var(--inset)'}; color: ${!this.selectedMonth ? 'var(--on-ink)' : 'var(--txt-soft)'}; border: 1px solid var(--line-2); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
                 🌐 ดูทั้งหมด
               </button>
             </div>
@@ -2725,7 +2728,7 @@ var CashFlowModule = {
             <div style="overflow-x: auto;">
               <table class="custom-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 12px;">
+                  <tr style="border-bottom: 2px solid var(--line); color: var(--txt-muted); font-size: 12px;">
                     <th id="th-sort-date" style="padding: 10px 14px; text-align: left; white-space: nowrap; cursor: pointer; user-select: none;">
                       วันที่ ${this.sortOrder === 'asc' ? '🔼' : '🔽'}
                     </th>
@@ -2745,12 +2748,12 @@ var CashFlowModule = {
 
           </div>
 
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <h3 style="margin: 0 0 14px; font-size: 15px; font-weight: 800; color: #0f172a;">📊 สัดส่วนรายจ่ายแยกหมวดหมู่</h3>
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <h3 style="margin: 0 0 14px; font-size: 15px; font-weight: 800; color: var(--txt-strong);">📊 สัดส่วนรายจ่ายแยกหมวดหมู่</h3>
             <div>
-              ${categoryBreakdownHtml || '<div style="color: #94a3b8; font-size: 12.5px;">ไม่มีข้อมูลรายจ่ายในรอบนี้</div>'}
+              ${categoryBreakdownHtml || '<div style="color: var(--txt-faint); font-size: 12.5px;">ไม่มีข้อมูลรายจ่ายในรอบนี้</div>'}
             </div>
-            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e2e8f0; font-size: 11.5px; color: #64748b;">
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--txt-muted);">
               💡 รายการในรอบนี้รวมบิล ผ่อนคอนโด และค่าใช้จ่ายจริงทั้งหมด
             </div>
           </div>
@@ -2945,61 +2948,61 @@ var CashFlowModule = {
     // โครงสร้าง HTML
     var html = '<div style="width: 100%; max-width: 1200px; margin: 0 auto; text-align: left; font-family: \'Sarabun\', sans-serif;">'
       + '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">'
-      + '  <div style="background: #fef3c7; color: #d97706; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">💳</div>'
+      + '  <div style="background: var(--amber-soft); color: var(--warn); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">💳</div>'
       + '  <div>'
-      + '    <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">CREDIT CARDS & DEBT MANAGEMENT</div>'
+      + '    <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">CREDIT CARDS & DEBT MANAGEMENT</div>'
       + '    <div style="display: flex; align-items: center; gap: 10px;">'
-      + '      <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">รอบบิลบัตรเครดิต & หหนี้สิน</h1>'
-      + '      <span style="background: #f1f5f9; color: #475569; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">3 ใบ</span>'
+      + '      <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">รอบบิลบัตรเครดิต & หหนี้สิน</h1>'
+      + '      <span style="background: var(--inset); color: var(--txt-soft); font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">3 ใบ</span>'
       + '    </div>'
       + '  </div>'
       + '</div>'
       // แท็บสลับหน้า
       + '<div style="display: flex; gap: 10px; margin-bottom: 22px;">'
-      + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: none; background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
+      + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: none; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
       + '    <span>💳</span> รอบบิลบัตรเครดิต & รูดใช้จ่าย'
       + '  </button>'
-      + '  <button onclick="window.location.hash=\'#debts\'; CashFlowModule.currentView=\'debts\'; CashFlowModule.render();" style="border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">'
+      + '  <button onclick="window.location.hash=\'#debts\'; CashFlowModule.currentView=\'debts\'; CashFlowModule.render();" style="border: 1.5px solid var(--line-2); background: var(--panel); color: var(--txt-soft); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">'
       + '    <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน'
       + '  </button>'
       + '</div>'
       // 4 การ์ดสถิติรวม
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 26px;">'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
-      + '      <span style="color: #dc2626;">🔴</span> หนี้ค้างชำระรวม (Total Debt)'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">'
+      + '      <span style="color: var(--down);">🔴</span> หนี้ค้างชำระรวม (Total Debt)'
       + '    </div>'
-      + '    <div style="font-size: 26px; font-weight: 900; color: #dc2626; font-variant-numeric: tabular-nums;">' + formatBaht(totalDebt) + '</div>'
-      + '    <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">ยอดรูดสะสมที่ต้องชำระรอบนี้</div>'
+      + '    <div style="font-size: 26px; font-weight: 900; color: var(--down); font-variant-numeric: tabular-nums;">' + formatBaht(totalDebt) + '</div>'
+      + '    <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 6px;">ยอดรูดสะสมที่ต้องชำระรอบนี้</div>'
       + '  </div>'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
-      + '      <span style="color: #16a34a;">🛡️</span> วงเงินคงเหลือรวม (Available Credit)'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">'
+      + '      <span style="color: var(--up);">🛡️</span> วงเงินคงเหลือรวม (Available Credit)'
       + '    </div>'
-      + '    <div style="font-size: 26px; font-weight: 900; color: #16a34a; font-variant-numeric: tabular-nums;">' + formatBaht(totalAvailable) + '</div>'
-      + '    <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">จากวงเงินรวม ' + formatBaht(totalLimit) + '</div>'
+      + '    <div style="font-size: 26px; font-weight: 900; color: var(--up); font-variant-numeric: tabular-nums;">' + formatBaht(totalAvailable) + '</div>'
+      + '    <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 6px;">จากวงเงินรวม ' + formatBaht(totalLimit) + '</div>'
       + '  </div>'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">'
       + '      <span>📊</span> อัตราการใช้วงเงิน (Credit Utilization)'
       + '    </div>'
-      + '    <div style="font-size: 26px; font-weight: 900; color: #0284c7; font-variant-numeric: tabular-nums;">' + overallUtilization + '%</div>'
-      + '    <div style="font-size: 11.5px; color: #0284c7; font-weight: 600; margin-top: 6px;">เกณฑ์แนะนำควรต่ำกว่า 30-40%</div>'
+      + '    <div style="font-size: 26px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums;">' + overallUtilization + '%</div>'
+      + '    <div style="font-size: 11.5px; color: var(--accent); font-weight: 600; margin-top: 6px;">เกณฑ์แนะนำควรต่ำกว่า 30-40%</div>'
       + '  </div>'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">'
       + '      <span>💳</span> บัตรที่เปิดใช้งาน'
       + '    </div>'
-      + '    <div style="font-size: 26px; font-weight: 900; color: #0f172a;">3 ใบ</div>'
-      + '    <div style="font-size: 11.5px; color: #16a34a; font-weight: 700; margin-top: 6px;">ชำระเต็มจำนวน ไม่มีดอกเบี้ยสะสม</div>'
+      + '    <div style="font-size: 26px; font-weight: 900; color: var(--txt-strong);">3 ใบ</div>'
+      + '    <div style="font-size: 11.5px; color: var(--up); font-weight: 700; margin-top: 6px;">ชำระเต็มจำนวน ไม่มีดอกเบี้ยสะสม</div>'
       + '  </div>'
       + '</div>'
       // การ์ดบัตรเครดิต 3 ใบ
-      + '<div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 14px;">บัตรเครดิต & รอบบิลของคุณ (3 ใบ):</div>'
+      + '<div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 14px;">บัตรเครดิต & รอบบิลของคุณ (3 ใบ):</div>'
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 28px;">';
 
     processedCards.forEach(function(card) {
-      html += '<div style="background: ' + card.gradient + '; border-radius: 18px; padding: 22px 22px 18px 22px; color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; justify-content: space-between;">'
+      html += '<div style="background: ' + card.gradient + '; border-radius: 18px; padding: 22px 22px 18px 22px; color: var(--on-ink); box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; justify-content: space-between;">'
         + '  <div>'
         + '    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">'
         + '      <div>'
@@ -3028,7 +3031,7 @@ var CashFlowModule = {
         + '      <span style="display: flex; align-items: center; gap: 4px;">⏰ ครบกำหนดชำระ: ทุกวันที่ ' + card.dueDay + '</span>'
         + '    </div>'
         + '  </div>'
-        + '  <button onclick="CashFlowModule.openEditCardModal(\'' + card.id + '\')" style="margin-top: 14px; width: 100%; background: #ffffff; color: #0f172a; border: none; border-radius: 8px; padding: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">'
+        + '  <button onclick="CashFlowModule.openEditCardModal(\'' + card.id + '\')" style="margin-top: 14px; width: 100%; background: var(--panel); color: var(--txt-strong); border: none; border-radius: 8px; padding: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">'
         + '    <span>✏</span> แก้ไขวงเงินและรอบบิล'
         + '  </button>'
         + '</div>';
@@ -3041,46 +3044,46 @@ var CashFlowModule = {
 
     var rowsHtml = '';
     if (displayTxList.length === 0) {
-      rowsHtml = '<tr><td colspan="4" style="text-align: center; padding: 28px; color: #94a3b8; font-size: 13px;">ไม่มีรายการรูดใช้จ่ายบัตร ' + activeCardData.name + ' ในรอบนี้</td></tr>';
+      rowsHtml = '<tr><td colspan="4" style="text-align: center; padding: 28px; color: var(--txt-faint); font-size: 13px;">ไม่มีรายการรูดใช้จ่ายบัตร ' + activeCardData.name + ' ในรอบนี้</td></tr>';
     } else {
       displayTxList.forEach(function(t) {
         var amt = parseFloat(t.amount) || 0;
         var detailText = self.getItemDetail ? self.getItemDetail(t) : (t.detail || t.desc || '-');
         var catText = t.category || 'ทั่วไป';
         var isPayment = (catText === 'จ่ายบัตรเครดิต' || t.type === 'รายรับ');
-        var amtColor = isPayment ? '#16a34a' : '#dc2626';
+        var amtColor = isPayment ? 'var(--up)' : 'var(--down)';
         var sign = isPayment ? '+฿' : '-฿';
 
-        rowsHtml += '<tr style="border-bottom: 1px solid #f8fafc;">'
-          + '  <td style="padding: 12px 14px; color: #64748b; font-size: 12.5px; white-space: nowrap;">' + (t.date || '-') + '</td>'
-          + '  <td style="padding: 12px 14px; font-weight: 700; color: #0f172a;">' + detailText + '</td>'
-          + '  <td style="padding: 12px 14px; color: #475569; font-size: 12.5px;">' + catText + '</td>'
+        rowsHtml += '<tr style="border-bottom: 1px solid var(--panel-2);">'
+          + '  <td style="padding: 12px 14px; color: var(--txt-muted); font-size: 12.5px; white-space: nowrap;">' + (t.date || '-') + '</td>'
+          + '  <td style="padding: 12px 14px; font-weight: 700; color: var(--txt-strong);">' + detailText + '</td>'
+          + '  <td style="padding: 12px 14px; color: var(--txt-soft); font-size: 12.5px;">' + catText + '</td>'
           + '  <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: ' + amtColor + '; font-variant-numeric: tabular-nums;">' + sign + formatBaht(amt).replace('฿', '') + '</td>'
           + '</tr>';
       });
     }
 
     html += '</div>'
-      + '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '<div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
       + '  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">'
       + '    <div>'
-      + '      <div style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">'
+      + '      <div style="font-size: 16px; font-weight: 800; color: var(--txt-strong); display: flex; align-items: center; gap: 8px;">'
       + '        <span>🧾</span> รายการรูดใช้จ่ายบัตรเครดิต (' + activeCardData.name + ')'
       + '      </div>'
-      + '      <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 4px;">'
-      + '        รอบบิล: ' + rangeStr + ' | ครบกำหนดชำระ: <strong style="color: #dc2626;">' + dueStr + '</strong>'
+      + '      <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-top: 4px;">'
+      + '        รอบบิล: ' + rangeStr + ' | ครบกำหนดชำระ: <strong style="color: var(--down);">' + dueStr + '</strong>'
       + '      </div>'
       + '    </div>'
       + '    <div style="display: flex; gap: 10px; align-items: center;">'
       + '      <div>'
-      + '        <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">บัตรเครดิต</div>'
-      + '        <select onchange="window._selectedCreditCardId=this.value; CashFlowModule.renderCreditCardsView();" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">'
+      + '        <div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-bottom: 3px;">บัตรเครดิต</div>'
+      + '        <select onchange="window._selectedCreditCardId=this.value; CashFlowModule.renderCreditCardsView();" style="border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: var(--txt-strong); background: var(--panel); cursor: pointer;">'
       +            cardOptionsHtml
       + '        </select>'
       + '      </div>'
       + '      <div>'
-      + '        <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;">รอบบิล</div>'
-      + '        <select onchange="window._selectedCreditCardMonth=this.value; CashFlowModule.renderCreditCardsView();" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #0f172a; background: #fff; cursor: pointer;">'
+      + '        <div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-bottom: 3px;">รอบบิล</div>'
+      + '        <select onchange="window._selectedCreditCardMonth=this.value; CashFlowModule.renderCreditCardsView();" style="border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; color: var(--txt-strong); background: var(--panel); cursor: pointer;">'
       +            monthOptionsHtml
       + '        </select>'
       + '      </div>'
@@ -3088,28 +3091,28 @@ var CashFlowModule = {
       + '  </div>'
       // กล่องสรุป 4 กล่อง (ช่วงรอบบิล, ยอดใช้บัตร, เครดิตคืนเข้าบัตร, ยอดใช้สุทธิ)
       + '  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">'
-      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
-      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">ช่วงรอบบิล</div>'
-      + '      <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-top: 4px;">' + rangeStr + '</div>'
+      + '    <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: var(--txt-muted); font-weight: 700;">ช่วงรอบบิล</div>'
+      + '      <div style="font-size: 14px; font-weight: 800; color: var(--txt-strong); margin-top: 4px;">' + rangeStr + '</div>'
       + '    </div>'
-      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
-      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">ยอดใช้บัตร</div>'
-      + '      <div style="font-size: 18px; font-weight: 900; color: #dc2626; margin-top: 2px;">' + formatBaht(billedExpenses) + '</div>'
+      + '    <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: var(--txt-muted); font-weight: 700;">ยอดใช้บัตร</div>'
+      + '      <div style="font-size: 18px; font-weight: 900; color: var(--down); margin-top: 2px;">' + formatBaht(billedExpenses) + '</div>'
       + '    </div>'
-      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
-      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">เครดิตคืนเข้าบัตร</div>'
-      + '      <div style="font-size: 18px; font-weight: 900; color: #16a34a; margin-top: 2px;">' + formatBaht(billedCredits) + '</div>'
+      + '    <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: var(--txt-muted); font-weight: 700;">เครดิตคืนเข้าบัตร</div>'
+      + '      <div style="font-size: 18px; font-weight: 900; color: var(--up); margin-top: 2px;">' + formatBaht(billedCredits) + '</div>'
       + '    </div>'
-      + '    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">'
-      + '      <div style="font-size: 11px; color: #64748b; font-weight: 700;">ยอดใช้สุทธิ</div>'
-      + '      <div style="font-size: 18px; font-weight: 900; color: #dc2626; margin-top: 2px;">' + formatBaht(billedNet) + '</div>'
+      + '    <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px;">'
+      + '      <div style="font-size: 11px; color: var(--txt-muted); font-weight: 700;">ยอดใช้สุทธิ</div>'
+      + '      <div style="font-size: 18px; font-weight: 900; color: var(--down); margin-top: 2px;">' + formatBaht(billedNet) + '</div>'
       + '    </div>'
       + '  </div>'
       // ตารางรายการธุรกรรม
       + '  <div style="overflow-x: auto;">'
       + '    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">'
       + '      <thead>'
-      + '        <tr style="border-bottom: 2px solid #f1f5f9; text-align: left; color: #64748b; font-size: 12px;">'
+      + '        <tr style="border-bottom: 2px solid var(--line-soft); text-align: left; color: var(--txt-muted); font-size: 12px;">'
       + '          <th style="padding: 10px 14px; width: 16%;">วันที่</th>'
       + '          <th style="padding: 10px 14px; width: 44%;">รายละเอียด</th>'
       + '          <th style="padding: 10px 14px; width: 22%;">หมวดหมู่</th>'
@@ -3280,56 +3283,56 @@ var CashFlowModule = {
       + '<div style="width: 100%; max-width: 1100px; margin: 0 auto; text-align: left; font-family: \'Sarabun\', -apple-system, BlinkMacSystemFont, sans-serif;">'
       + '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">'
       + '  <div style="display: flex; align-items: center; gap: 14px;">'
-      + '    <div style="background: #fef2f2; color: #dc2626; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🏷️</div>'
+      + '    <div style="background: var(--down-soft); color: var(--down); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🏷️</div>'
       + '    <div>'
-      + '      <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">DEBT & INSTALLMENT TRACKER</div>'
+      + '      <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">DEBT & INSTALLMENT TRACKER</div>'
       + '      <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;">'
-      + '        <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">ภาระหนี้สิน & สัญญาผ่อนชำระ</h1>'
-      + '        <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">' + contracts.length + ' สัญญา</span>'
+      + '        <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">ภาระหนี้สิน & สัญญาผ่อนชำระ</h1>'
+      + '        <span style="background: var(--inset); color: var(--txt-soft); font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;">' + contracts.length + ' สัญญา</span>'
       + '      </div>'
       + '    </div>'
       + '  </div>'
-      + '  <button onclick="CashFlowModule.openAddContractModal()" style="background: #0284c7; color: #ffffff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
+      + '  <button onclick="CashFlowModule.openAddContractModal()" style="background: var(--accent); color: var(--on-accent); border: none; border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
       + '    <span style="font-size: 16px; line-height: 1;">+</span> เพิ่มสัญญาผ่อนใหม่'
       + '  </button>'
       + '</div>'
          // แถบปุ่มสลับแท็บ (หน้าสัญญาผ่อน: ปุ่มขวาสีฟ้า)
       + '<div style="display: flex; gap: 10px; margin-bottom: 22px;">'
-      + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">'
+      + '  <button onclick="window.location.hash=\'#credit-cards\'; CashFlowModule.currentView=\'credit-cards\'; CashFlowModule.render();" style="border: 1.5px solid var(--line-2); background: var(--panel); color: var(--txt-soft); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">'
       + '    <span>💳</span> รอบบิลบัตรเครดิต & รูดใช้จ่าย'
       + '  </button>'
-      + '  <button onclick="window.location.hash=\'#debts\'; CashFlowModule.currentView=\'debts\'; CashFlowModule.render();" style="border: none; background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
+      + '  <button onclick="window.location.hash=\'#debts\'; CashFlowModule.currentView=\'debts\'; CashFlowModule.render();" style="border: none; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">'
       + '    <span>🏷️</span> สัญญาผ่อนชำระ & หนี้สิน'
       + '  </button>'
       + '</div>'
       + '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;">'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: gap: 8px; font-size: 12px; font-weight: 700; color: #475569;">'
-      + '      <span style="color: #dc2626;">🔴</span> หนี้สินคงค้างทั้งหมด (Remaining Debt)'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: gap: 8px; font-size: 12px; font-weight: 700; color: var(--txt-soft);">'
+      + '      <span style="color: var(--down);">🔴</span> หนี้สินคงค้างทั้งหมด (Remaining Debt)'
       + '    </div>'
-      + '    <div style="font-size: 28px; font-weight: 900; color: #dc2626; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">฿' + formatNum(totalRemaining) + '</div>'
-      + '    <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #64748b;">ยอดหนี้ที่ต้องชำระจนจบสัญญา</div>'
+      + '    <div style="font-size: 28px; font-weight: 900; color: var(--down); margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">฿' + formatNum(totalRemaining) + '</div>'
+      + '    <div style="border-top: 1px dashed var(--line-soft); padding-top: 8px; font-size: 11.5px; color: var(--txt-muted);">ยอดหนี้ที่ต้องชำระจนจบสัญญา</div>'
       + '  </div>'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569;">'
-      + '      <span style="color: #0284c7;">⚡</span> ภาระผ่อนต่องวดปัจจุบัน (Monthly Burden)'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--txt-soft);">'
+      + '      <span style="color: var(--accent);">⚡</span> ภาระผ่อนต่องวดปัจจุบัน (Monthly Burden)'
       + '    </div>'
-      + '    <div style="font-size: 28px; font-weight: 900; color: #0284c7; margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">฿' + formatNum(monthlyBurden) + '</div>'
-      + '    <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #0284c7; font-weight: 600;">ยอดที่ต้องจ่ายในแต่ละเดือน</div>'
+      + '    <div style="font-size: 28px; font-weight: 900; color: var(--accent); margin: 10px 0 6px 0; font-variant-numeric: tabular-nums;">฿' + formatNum(monthlyBurden) + '</div>'
+      + '    <div style="border-top: 1px dashed var(--line-soft); padding-top: 8px; font-size: 11.5px; color: var(--accent); font-weight: 600;">ยอดที่ต้องจ่ายในแต่ละเดือน</div>'
       + '  </div>'
-      + '  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
-      + '    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569;">'
+      + '  <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--txt-soft);">'
       + '      <span>🎉</span> ปิดหนี้สำเร็จแล้ว (Closed Contracts)'
       + '    </div>'
-      + '    <div style="font-size: 28px; font-weight: 900; color: #059669; margin: 10px 0 6px 0;">' + closedCount + ' รายการ</div>'
-      + '    <div style="border-top: 1px dashed #f1f5f9; padding-top: 8px; font-size: 11.5px; color: #059669; font-weight: 700;">ผ่อนหมดครบงวดเรียบร้อย</div>'
+      + '    <div style="font-size: 28px; font-weight: 900; color: var(--up-2); margin: 10px 0 6px 0;">' + closedCount + ' รายการ</div>'
+      + '    <div style="border-top: 1px dashed var(--line-soft); padding-top: 8px; font-size: 11.5px; color: var(--up-2); font-weight: 700;">ผ่อนหมดครบงวดเรียบร้อย</div>'
       + '  </div>'
       + '</div>'
-      + '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
+      + '<div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">'
       + '  <div style="overflow-x: auto;">'
       + '    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">'
       + '      <thead>'
-      + '        <tr style="border-bottom: 2px solid #f1f5f9; color: #475569; font-size: 12.5px; font-weight: 700;">'
+      + '        <tr style="border-bottom: 2px solid var(--line-soft); color: var(--txt-soft); font-size: 12.5px; font-weight: 700;">'
       + '          <th style="padding: 16px 20px; width: 18%;">รายการ</th>'
       + '          <th style="padding: 16px 14px; text-align: right; width: 14%;">ยอดหนี้</th>'
       + '          <th style="padding: 16px 14px; text-align: right; width: 14%;">ผ่อน/เดือน</th>'
@@ -3343,26 +3346,26 @@ var CashFlowModule = {
 
     contracts.forEach(function(row) {
       var isClosed = row.isClosed || row.remaining <= 0;
-      var remainingColor = isClosed ? '#64748b' : '#dc2626';
+      var remainingColor = isClosed ? 'var(--txt-muted)' : 'var(--down)';
 
-      html += '<tr style="border-bottom: 1px solid #f1f5f9;">'
-        + '  <td style="padding: 16px 20px; font-weight: 700; color: #0f172a;">' + row.name + '</td>'
-        + '  <td style="padding: 16px 14px; text-align: right; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums;">' + formatNum(row.totalDebt) + '</td>'
-        + '  <td style="padding: 16px 14px; text-align: right; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums;">' + formatNum(row.monthly) + '</td>'
-        + '  <td style="padding: 16px 14px; text-align: center; color: #475569; font-size: 13px;">' + row.startDate + '</td>'
+      html += '<tr style="border-bottom: 1px solid var(--line-soft);">'
+        + '  <td style="padding: 16px 20px; font-weight: 700; color: var(--txt-strong);">' + row.name + '</td>'
+        + '  <td style="padding: 16px 14px; text-align: right; font-weight: 800; color: var(--txt-strong); font-variant-numeric: tabular-nums;">' + formatNum(row.totalDebt) + '</td>'
+        + '  <td style="padding: 16px 14px; text-align: right; font-weight: 700; color: var(--txt-strong); font-variant-numeric: tabular-nums;">' + formatNum(row.monthly) + '</td>'
+        + '  <td style="padding: 16px 14px; text-align: center; color: var(--txt-soft); font-size: 13px;">' + row.startDate + '</td>'
         + '  <td style="padding: 16px 14px; text-align: center;">';
 
       if (isClosed && row.closedDate) {
-        html += '<div style="display: inline-block; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 9999px; padding: 4px 14px; color: #059669; font-size: 11px; font-weight: 700; line-height: 1.3;">'
+        html += '<div style="display: inline-block; background: var(--up-soft); border: 1px solid var(--up-line-2); border-radius: 9999px; padding: 4px 14px; color: var(--up-2); font-size: 11px; font-weight: 700; line-height: 1.3;">'
           + '  <div>ปิดหนี้แล้ว</div>'
           + '  <div>' + row.closedDate + '</div>'
           + '</div>';
       } else {
-        html += '<span style="color: #0f172a; font-weight: 700; font-size: 13px;">' + row.endDate + '</span>';
+        html += '<span style="color: var(--txt-strong); font-weight: 700; font-size: 13px;">' + row.endDate + '</span>';
       }
 
       html += '</td>'
-        + '  <td style="padding: 16px 14px; text-align: right; font-weight: 800; color: #059669; font-variant-numeric: tabular-nums;">' + formatNum(row.paid) + '</td>'
+        + '  <td style="padding: 16px 14px; text-align: right; font-weight: 800; color: var(--up-2); font-variant-numeric: tabular-nums;">' + formatNum(row.paid) + '</td>'
         + '  <td style="padding: 16px 20px; text-align: right; font-weight: 800; color: ' + remainingColor + '; font-variant-numeric: tabular-nums;">' + formatNum(row.remaining) + '</td>'
         + '</tr>';
     });
@@ -3385,57 +3388,57 @@ var CashFlowModule = {
 
     var modalHtml = ''
       + '<div id="debt-contract-modal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(3px); z-index: 9999; display: flex; align-items: center; justify-content: center; font-family: \'Sarabun\', -apple-system, BlinkMacSystemFont, sans-serif;">'
-      + '  <div style="background: #ffffff; width: 100%; max-width: 480px; border-radius: 18px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); padding: 24px 28px; position: relative; margin: 16px;">'
+      + '  <div style="background: var(--panel); width: 100%; max-width: 480px; border-radius: 18px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); padding: 24px 28px; position: relative; margin: 16px;">'
       + '    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">'
-      + '      <div style="font-size: 17px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">'
+      + '      <div style="font-size: 17px; font-weight: 800; color: var(--txt-strong); display: flex; align-items: center; gap: 8px;">'
       + '        <span style="font-size: 20px;">➕</span> เพิ่มสัญญาผ่อน / หนี้สินใหม่'
       + '      </div>'
-      + '      <button type="button" onclick="document.getElementById(\'debt-contract-modal\').remove()" style="background: transparent; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px; line-height: 1;">✕</button>'
+      + '      <button type="button" onclick="document.getElementById(\'debt-contract-modal\').remove()" style="background: transparent; border: none; font-size: 20px; color: var(--txt-faint); cursor: pointer; padding: 4px; line-height: 1;">✕</button>'
       + '    </div>'
       + '    <form id="debt-contract-form" onsubmit="event.preventDefault(); CashFlowModule.saveNewContract();">'
       + '      <div style="margin-bottom: 14px;">'
-      + '        <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">ชื่อรายการ</label>'
-      + '        <input type="text" id="modal-debt-name" required placeholder="เช่น ผ่อนคอนโด, ผ่อนมือถือ, ผ่อนประกัน" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; outline: none;">'
+      + '        <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">ชื่อรายการ</label>'
+      + '        <input type="text" id="modal-debt-name" required placeholder="เช่น ผ่อนคอนโด, ผ่อนมือถือ, ผ่อนประกัน" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 13.5px; outline: none;">'
       + '      </div>'
       + '      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">'
       + '        <div>'
-      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">ยอดหนี้เต็ม (บาท)</label>'
-      + '          <input type="number" step="0.01" id="modal-debt-total" required placeholder="0.00" value="0.00" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
+      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">ยอดหนี้เต็ม (บาท)</label>'
+      + '          <input type="number" step="0.01" id="modal-debt-total" required placeholder="0.00" value="0.00" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
       + '        </div>'
       + '        <div>'
-      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">ผ่อนต่องวด (บาท)</label>'
-      + '          <input type="number" step="0.01" id="modal-debt-monthly" required placeholder="0.00" value="0.00" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
+      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">ผ่อนต่องวด (บาท)</label>'
+      + '          <input type="number" step="0.01" id="modal-debt-monthly" required placeholder="0.00" value="0.00" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
       + '        </div>'
       + '      </div>'
       + '      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">'
       + '        <div>'
-      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">งวดที่จ่ายแล้ว</label>'
-      + '          <input type="number" id="modal-debt-paid-terms" value="1" min="0" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
+      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">งวดที่จ่ายแล้ว</label>'
+      + '          <input type="number" id="modal-debt-paid-terms" value="1" min="0" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
       + '        </div>'
       + '        <div>'
-      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">จำนวนงวดทั้งหมด</label>'
-      + '          <input type="number" id="modal-debt-total-terms" value="6" min="1" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
+      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">จำนวนงวดทั้งหมด</label>'
+      + '          <input type="number" id="modal-debt-total-terms" value="6" min="1" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 14px; font-weight: 700; outline: none;">'
       + '        </div>'
       + '      </div>'
       + '      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">'
       + '        <div>'
-      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">วันที่เริ่ม</label>'
-      + '          <input type="date" id="modal-debt-start-date" value="' + todayStr + '" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none;">'
+      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">วันที่เริ่ม</label>'
+      + '          <input type="date" id="modal-debt-start-date" value="' + todayStr + '" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 13px; outline: none;">'
       + '        </div>'
       + '        <div>'
-      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">วันที่ครบ</label>'
-      + '          <input type="date" id="modal-debt-end-date" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none;">'
+      + '          <label style="display: block; font-size: 13px; font-weight: 700; color: var(--txt-soft); margin-bottom: 6px;">วันที่ครบ</label>'
+      + '          <input type="date" id="modal-debt-end-date" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1.5px solid var(--line-2); border-radius: 8px; font-size: 13px; outline: none;">'
       + '        </div>'
       + '      </div>'
-      + '      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 22px; display: flex; align-items: center; gap: 8px;">'
-      + '        <input type="checkbox" id="modal-debt-is-closed" style="width: 16px; height: 16px; accent-color: #059669; cursor: pointer;">'
-      + '        <label for="modal-debt-is-closed" style="font-size: 13px; font-weight: 700; color: #059669; cursor: pointer; display: flex; align-items: center; gap: 4px;">'
+      + '      <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 22px; display: flex; align-items: center; gap: 8px;">'
+      + '        <input type="checkbox" id="modal-debt-is-closed" style="width: 16px; height: 16px; accent-color: var(--up-2); cursor: pointer;">'
+      + '        <label for="modal-debt-is-closed" style="font-size: 13px; font-weight: 700; color: var(--up-2); cursor: pointer; display: flex; align-items: center; gap: 4px;">'
       + '          ✅ ปิดหนี้เรียบร้อยแล้ว (ชำระครบถ้วน)'
       + '        </label>'
       + '      </div>'
       + '      <div style="display: flex; justify-content: flex-end; gap: 10px;">'
-      + '        <button type="button" onclick="document.getElementById(\'debt-contract-modal\').remove()" style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 700; color: #334155; cursor: pointer;">ยกเลิก</button>'
-      + '        <button type="submit" style="background: #0f172a; border: none; border-radius: 8px; padding: 8px 22px; font-size: 13px; font-weight: 700; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 6px;">💾 บันทึก</button>'
+      + '        <button type="button" onclick="document.getElementById(\'debt-contract-modal\').remove()" style="background: var(--panel); border: 1.5px solid var(--line-2); border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 700; color: var(--txt-mid); cursor: pointer;">ยกเลิก</button>'
+      + '        <button type="submit" style="background: var(--solid-ink); border: none; border-radius: 8px; padding: 8px 22px; font-size: 13px; font-weight: 700; color: var(--on-ink); cursor: pointer; display: flex; align-items: center; gap: 6px;">💾 บันทึก</button>'
       + '      </div>'
       + '    </form>'
       + '  </div>'

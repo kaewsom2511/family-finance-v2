@@ -7,6 +7,43 @@ const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_U
 // โหมด: 'signin' | 'signup' | 'forgot' | 'reset'
 let authMode = 'signin';
 
+// canvas/Chart.js ใส่ var(--token) ตรง ๆ ไม่ได้ เพราะไม่ผ่าน CSS parser
+// ตัวนี้จึงอ่านค่าจริงของโทเคนจากธีมที่ body ใช้อยู่ แล้ว cache ไว้จนกว่าธีมเปลี่ยน
+const ThemeColor = {
+  _theme: null,
+  _cache: {},
+
+  get(token, fallback) {
+    const theme = document.body ? document.body.getAttribute('data-theme') : '';
+    if (theme !== this._theme) {
+      this._theme = theme;
+      this._cache = {};
+    }
+    if (this._cache[token] !== undefined) return this._cache[token];
+    const raw = getComputedStyle(document.body).getPropertyValue(token).trim();
+    const value = /^(#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(raw) ? raw : (raw || fallback);
+    this._cache[token] = value;
+    return value;
+  },
+
+  // รับสีที่เขียนเป็น var(--x) หรือ hex ตรงตัว → คืนค่าที่ใช้วาดบน canvas ได้
+  css(color, fallback) {
+    const m = /^var\((--[\w-]+)\)$/.exec(String(color).trim());
+    return m ? this.get(m[1], fallback) : color;
+  },
+
+  // สีแบรนด์ธนาคารเป็น hex คงที่ทั้งสองธีม จึงเลือกหมึกจากค่า luminance ได้เลย
+  // พื้นสว่าง → หมึกเข้ม / พื้นเข้ม → หมึกอ่อน
+  inkOn(hex) {
+    const m = /^#([0-9a-f]{6})$/i.exec(String(hex).trim());
+    if (!m) return 'var(--on-ink)';
+    const v = (i) => { const c = parseInt(m[1].slice(i, i + 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    const L = 0.2126 * v(0) + 0.7152 * v(2) + 0.0722 * v(4);
+    return L > 0.18 ? 'var(--solid-ink)' : 'var(--on-ink)';
+  }
+};
+window.ThemeColor = ThemeColor;
+
 // ==========================================
 // DataScope: ใช้โค้ด/โครงสร้างร่วมกัน แต่ข้อมูลแยกตามบัญชีผู้ใช้
 // โมดูลทุกตัวยังเรียก localStorage ด้วยชื่อคีย์เดิม แต่คีย์ที่เป็นข้อมูลส่วนตัว

@@ -245,29 +245,29 @@ const CreditCardModule = {
 
     const html = `
       <div id="modal-edit-card-config" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
-        <div style="background: #fff; border-radius: 12px; width: 420px; max-width: 90vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">⚙️ แก้ไขข้อมูลบัตร: ${card.name}</h3>
-            <button id="btn-close-cc-modal" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">&times;</button>
+        <div style="background: var(--panel); border-radius: 12px; width: 420px; max-width: 90vw; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--txt-strong);">⚙️ แก้ไขข้อมูลบัตร: ${card.name}</h3>
+            <button id="btn-close-cc-modal" style="background: none; border: none; font-size: 20px; color: var(--txt-faint); cursor: pointer;">&times;</button>
           </div>
           <div style="display: flex; flex-direction: column; gap: 14px;">
             <div>
-              <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วงเงินบัตร (บาท)</label>
-              <input type="number" id="input-edit-limit" value="${card.limit}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; font-weight: 800;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วงเงินบัตร (บาท)</label>
+              <input type="number" id="input-edit-limit" value="${card.limit}" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 14px; font-weight: 800;">
             </div>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันตัดรอบบิล (Statement)</label>
-                <input type="number" id="input-edit-statement" value="${card.statementDay}" min="1" max="31" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันตัดรอบบิล (Statement)</label>
+                <input type="number" id="input-edit-statement" value="${card.statementDay}" min="1" max="31" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
               <div style="flex: 1;">
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">วันครบชำระ (Due Date)</label>
-                <input type="number" id="input-edit-due" value="${card.dueDay}" min="1" max="31" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--txt-soft); margin-bottom: 4px;">วันครบชำระ (Due Date)</label>
+                <input type="number" id="input-edit-due" value="${card.dueDay}" min="1" max="31" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 700;">
               </div>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-              <button id="btn-cancel-cc-modal" style="background: #fff; border: 1px solid #cbd5e1; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-              <button id="btn-save-cc-modal" style="background: #0284c7; color: #fff; border: none; padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">บันทึก</button>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; border-top: 1px solid var(--line-soft); padding-top: 12px;">
+              <button id="btn-cancel-cc-modal" style="background: var(--panel); border: 1px solid var(--line-2); padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+              <button id="btn-save-cc-modal" style="background: var(--accent); color: var(--on-accent); border: none; padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">บันทึก</button>
             </div>
           </div>
         </div>
