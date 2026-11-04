@@ -2485,8 +2485,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
       today: { amt: summary.dayChangeUSD, pct: summary.dayChangePct, known: summary.dayChangeKnown },
       yesterday: { amt: summary.prevDayChangeUSD, pct: summary.prevDayChangePct, known: summary.prevDayChangeKnown },
       all: {
-        amt: (summary.unrealizedPL || 0) / fx,
-        pct: summary.totalCost > 0 ? ((summary.unrealizedPL / summary.totalCost) * 100) : null,
+        amt: ((summary.unrealizedPL || 0) + (summary.realizedPL || 0) + (summary.dividends || 0)) / fx,
+        pct: summary.totalCost > 0 ? (((summary.unrealizedPL || 0) + (summary.realizedPL || 0) + (summary.dividends || 0)) / summary.totalCost) * 100 : null,
         known: summary.activeCount
       }
     };
@@ -2551,7 +2551,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const plPct = summary.totalCost > 0 ? (summary.unrealizedPL / summary.totalCost * 100) : null;
     const plChip = chip('💰', 'กำไร/ขาดทุนรวม',
       `<span style="color: ${plUp ? 'var(--up)' : 'var(--down)'};">${mask(`${plUp ? '+' : ''}${formatBaht(summary.unrealizedPL)}`)}</span>`,
-      pctLineHtml(plUp ? 'var(--up)' : 'var(--down)', mask(plPct == null ? '—' : `${plUp ? '▲' : '▼'} ${plUp ? '+' : ''}${plPct.toFixed(2)}%`)),
+      pctLineHtml(plUp ? 'var(--up)' : 'var(--down)', mask(plPct == null ? '—' : `${plUp ? '▲' : '▼'} ${plUp ? '+' : ''}${plPct.toFixed(2)}%`)) +
+      pctLineHtml('var(--txt-muted)', mask(`≈ ${plUp ? '+' : '-'}$${Math.abs(summary.unrealizedPL / fx).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)),
       'rgba(251, 191, 36, 0.14)');
 
     return `
