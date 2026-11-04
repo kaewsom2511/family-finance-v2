@@ -2944,20 +2944,39 @@ this.openAssetModal(holding.symbol, { reopen: true });
       ? `${summary.unrealizedUSD >= 0 ? '+' : ''}${formatUSD(summary.unrealizedUSD)}`
       : `${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}`);
 
+    const fx = summary.liveFxRate || 33.49;
+    const preferBaht = !summary.isForeignPort;
+    const deltas = this.summaryDeltas(summary);
+    const lastUpdated = summary.lastQuoteMs
+      ? new Date(summary.lastQuoteMs).toISOString().slice(0, 19).replace('T', ' ') + ' GMT'
+      : 'ยังไม่มีการอัปเดตราคา';
+
+    // บรรทัด วันนี้ / เมื่อวานนี้ ที่ย้ายมาอยู่ในการ์ดมูลค่าตลาด (เดิมอยู่บนการ์ดสรุปใบใหญ่)
+    const miniDeltaRowHtml = (label, d) => {
+      const p = this.deltaParts(d, fx, preferBaht);
+      const val = !p
+        ? '<span style="color: var(--txt-faint); font-weight: 800;">—</span>'
+        : `<span style="color: ${p.up ? 'var(--up)' : 'var(--down)'}; font-weight: 800; white-space: nowrap;">${maskNum(preferBaht ? `${p.baht} ${p.pct}` : `${p.usd} ${p.pct}`)}</span>`;
+      return `<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 11px;"><span style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap;">${label}</span>${val}</div>`;
+    };
+
     const costSub = summary.isForeignPort ? `≈ ${maskNum(formatBaht(summary.totalCost))}` : 'เป้าหมายพอร์ตนี้';
-    const mktSub = summary.isForeignPort ? `≈ ${maskNum(formatBaht(summary.marketValue))}` : 'รวมพอร์ตสุทธิ';
+    const mktAlt = summary.isForeignPort ? `≈ ${maskNum(formatBaht(summary.marketValue).slice(1))} บาท` : `≈ ${maskNum(formatUSD(summary.marketValue / fx))}`;
     const unplSub = summary.isForeignPort ? `≈ ${maskNum(`${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}`)}` : '💵 เงินปันผลสะสม';
 
     const rightCostSub = maskNum(summary.isForeignPort ? formatBaht(summary.targetAmount || 500000) : (summary.targetAmount > 0 ? formatBaht(summary.targetAmount) : '-'));
-    const rightMktSub = maskNum(formatBaht(summary.marketValue));
     const rightUnplSub = maskNum(`+${formatBaht(summary.dividends)}`);
 
     container.innerHTML = `
       <div class="portfolio-container" style="padding-bottom: 30px;">
         <div style="margin-bottom: 14px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <span style="font-size: 18px;">📊</span>
-            <span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); letter-spacing: 0.5px;">HOLDINGS MANAGEMENT</span>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; justify-content: space-between; flex-wrap: wrap;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 18px;">📊</span><span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); letter-spacing: 0.5px;">HOLDINGS MANAGEMENT</span></span>
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 10.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</span>
+              <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${this.hideValues ? 'แสดงยอด' : 'ซ่อนยอด'}"
+                style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 26px; height: 24px; border-radius: 5px; font-size: 12px; cursor: pointer;">${this.hideValues ? '🙈' : '👁'}</button>
+            </span>
           </div>
           <div style="display: flex; align-items: baseline; gap: 8px;">
             <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: var(--txt-strong);">${currentName}</h1>
@@ -2988,52 +3007,47 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </label>
         </div>
 
-        <div style="display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; margin-bottom: 18px;">
-          <div style="flex: 1.1 1 330px; min-width: 280px;">
-            ${this.renderSummaryCardHtml(summary, formatUSD, formatBaht, currentName)}
-          </div>
-
-          <!-- 4 กล่องสรุปสถิติ จัด 2x2 ข้างการ์ดสรุป -->
-          <div style="flex: 2 1 420px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+        <!-- 4 กล่องสรุปสถิติจัดแถวเดียว (ยุบการ์ดสรุปใบใหญ่: ยอดตลาด+ค่าเทียบอยู่กล่องที่ 2 พร้อม วันนี้/เมื่อวานนี้) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 10px; margin-bottom: 18px; align-items: stretch;">
           <!-- กล่องที่ 1: ต้นทุนรวม -->
-          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column;">
             <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">ต้นทุนรวม (Cost Basis)</div>
-            <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong); margin-bottom: 7px;">${costBig}</div>
-            <div style="border-top: 1px dashed var(--line); padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
+            <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong);">${costBig}</div>
+            <div style="border-top: 1px dashed var(--line); margin-top: auto; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">${costSub}</span>
               <strong style="color: var(--up-2);">${rightCostSub}</strong>
             </div>
           </div>
 
-          <!-- กล่องที่ 2: มูลค่าตลาด -->
-          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;">
+          <!-- กล่องที่ 2: มูลค่าตลาด + เปลี่ยนแปลง วันนี้ / เมื่อวานนี้ -->
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column;">
             <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">มูลค่าตลาด (Market Value)</div>
-            <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong); margin-bottom: 7px;">${mktBig}</div>
-            <div style="border-top: 1px dashed var(--line); padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
-              <span style="color: var(--txt-muted);">${mktSub}</span>
-              <strong style="color: var(--txt-strong);">${rightMktSub}</strong>
+            <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong);">${mktBig}</div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${mktAlt}</div>
+            <div style="border-top: 1px dashed var(--line); margin-top: 7px; padding-top: 7px; display: flex; flex-direction: column; gap: 4px;">
+              ${miniDeltaRowHtml('วันนี้', deltas.today)}
+              ${miniDeltaRowHtml('เมื่อวานนี้', deltas.yesterday)}
             </div>
           </div>
 
           <!-- กล่องที่ 3: กำไร / ขาดทุนที่ยังไม่เกิดขึ้น -->
-          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 12px 15px;">
+          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column;">
             <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
-            <div style="font-size: 19px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 7px;">${unplBig}</div>
-            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
+            <div style="font-size: 19px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${unplBig}</div>
+            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; margin-top: auto; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">${unplSub}</span>
               <strong style="color: var(--up);">${rightUnplSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 4: ผลตอบแทนรวม (%) -->
-          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 12px 15px;">
+          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column;">
             <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">ผลตอบแทนรวม (%)</div>
-            <div style="font-size: 19px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 7px;">${maskNum(`${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%`)}</div>
-            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
+            <div style="font-size: 19px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${maskNum(`${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%`)}</div>
+            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; margin-top: auto; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">กำไรรับจริงสะสม</span>
               <strong style="color: ${summary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${maskNum(`${summary.realizedPL >= 0 ? '+' : ''}${formatBaht(summary.realizedPL)}`)}</strong>
             </div>
-          </div>
           </div>
         </div>
 
