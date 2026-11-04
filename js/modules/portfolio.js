@@ -2967,6 +2967,10 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const rightCostSub = maskNum(summary.isForeignPort ? formatBaht(summary.targetAmount || 500000) : (summary.targetAmount > 0 ? formatBaht(summary.targetAmount) : '-'));
     const rightUnplSub = maskNum(`+${formatBaht(summary.dividends)}`);
 
+    const portTarget = Number(summary.targetAmount || 0) || (summary.isForeignPort ? 500000 : 0);
+    const portTargetPct = portTarget > 0 ? Math.min(100, (summary.marketValue / portTarget) * 100) : 0;
+    const targetPctText = portTarget > 0 ? `${portTargetPct.toFixed(1)}%` : '—';
+
     container.innerHTML = `
       <div class="portfolio-container" style="padding-bottom: 30px;">
         <div style="margin-bottom: 14px;">
@@ -2994,7 +2998,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
             </span>
           ` : ''}
 
-          <button id="btn-open-buy-modal" style="background: var(--up-2); color: var(--on-accent); border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">➕ ซื้อสินทรัพย์เพิ่ม</button>
           <button id="btn-sync-quotes" style="background: var(--panel); border: 1px solid var(--accent-bright); color: var(--accent); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 อัปเดตราคาตลาด</button>
           ${this.lastSyncFailures.length > 0 ? `
             <button id="btn-retry-failed-quotes" style="background: var(--warn-soft); border: 1px solid var(--warn-4); color: var(--warn-3); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔁 ลองใหม่ ${this.lastSyncFailures.length} รายการที่ดึงไม่ได้</button>
@@ -3005,6 +3008,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
             📥 นำเข้า JSON
             <input type="file" id="file-import-json" accept=".json" style="display: none;">
           </label>
+          <button id="btn-open-buy-modal" style="background: var(--up-2); color: var(--on-accent); border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-left: auto;">➕ ซื้อสินทรัพย์เพิ่ม</button>
         </div>
 
         <!-- 4 กล่องสรุปสถิติจัดแถวเดียว (ยุบการ์ดสรุปใบใหญ่: ยอดตลาด+ค่าเทียบอยู่กล่องที่ 2 พร้อม วันนี้/เมื่อวานนี้) -->
@@ -3013,9 +3017,17 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column;">
             <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">ต้นทุนรวม (Cost Basis)</div>
             <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong);">${costBig}</div>
-            <div style="border-top: 1px dashed var(--line); margin-top: auto; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
-              <span style="color: var(--txt-muted);">${costSub}</span>
-              <strong style="color: var(--up-2);">${rightCostSub}</strong>
+            <div style="border-top: 1px dashed var(--line); margin-top: auto; padding-top: 7px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
+                <span style="color: var(--txt-muted);">${costSub}</span>
+                <strong style="color: var(--up-2);">${rightCostSub}</strong>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="flex: 1 1 auto; min-width: 60px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden;">
+                  <div style="width: ${portTargetPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 3px;"></div>
+                </div>
+                <strong style="font-size: 10.5px; font-weight: 800; color: var(--accent); white-space: nowrap;">${maskNum(targetPctText)}</strong>
+              </div>
             </div>
           </div>
 
