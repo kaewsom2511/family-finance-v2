@@ -79,6 +79,7 @@ const DataScope = {
     'family-finance:debts-contracts:v1',
     'stock-trading-log:v3',
     'stock-trading-log:quote-cache:v1',
+    'wealthport:position-anchors:v1',
     'wealthport:latest-usd-thb',
     'wealthport:avg-cost-ledger:v1',
     'wealthport:dividend-plan-models:v3',

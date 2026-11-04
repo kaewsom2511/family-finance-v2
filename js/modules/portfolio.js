@@ -2792,6 +2792,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
           ${keyStatsCardHtml}
         </div>
 
+        ${this.valueHistoryCardHtml()}
+
         <div>
           <h3 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: var(--txt);">เปรียบเทียบผลการดำเนินงานรายพอร์ต (${sortedPortfolios.length} บัญชี):</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
@@ -2804,6 +2806,391 @@ this.openAssetModal(holding.symbol, { reopen: true });
     if (overallSummary.activeCount > 0) {
       DailyCloseService.ensure(overallSummary.activeHoldings, () => this.render());
     }
+    this.mountValueHistoryChart();
+  },
+
+  // ---------- การ์ดมูลค่าพอร์ตย้อนหลัง ----------
+  valueRange: '11m',
+  VALUE_RANGES: { '1m': 31, '3m': 92, '6m': 183, '11m': 336 },
+  VALUE_RANGE_LABELS: { '1m': '1M', '3m': '3M', '6m': '6M', '11m': '11M' },
+  _vhChart: null,
+  _vhResize: null,
+  _vhSeries: [],
+
+  vhColor(name) {
+    return (typeof TechnicalModule !== 'undefined' && TechnicalModule.themeVar)
+      ? TechnicalModule.themeVar(name) : '#94a3b8';
+  },
+
+  setValueRange(id) {
+    if (!this.VALUE_RANGES[id]) return;
+    this.valueRange = id;
+    this.mountValueHistoryChart();
+  },
+
+  valueHistoryCardHtml() {
+    const pills = Object.keys(this.VALUE_RANGES).map((id) => {
+      const on = this.valueRange === id;
+      return `<button type="button" onclick="PortfolioModule.setValueRange('${id}')" style="background: ${on ? 'var(--accent-soft)' : 'var(--inset)'}; border: 1px solid ${on ? 'var(--accent)' : 'var(--line-2)'}; color: ${on ? 'var(--accent)' : 'var(--txt-muted)'}; font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 20px; cursor: pointer;">${this.VALUE_RANGE_LABELS[id]}</button>`;
+    }).join('');
+    return `
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
+          <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0;">
+            <span style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">📈 มูลค่าพอร์ตย้อนหลัง</span>
+            <span id="vh-axis-note" style="font-size: 12px; font-weight: 700; color: var(--txt-muted);"></span>
+          </div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">${pills}</div>
+        </div>
+        <div id="vh-chart-host" style="height: 248px; position: relative;">
+          <div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--txt-muted);">กำลังเตรียมข้อมูล…</div>
+        </div>
+        <div id="vh-foot" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>`;
+  },
+
+  // หน้าต่างวันที่ของกราฟปัจจุบัน (ใช้ซ้ำทั้งการ์ดและ modal)
+  valueHistoryDays() {
+    const to = new Date();
+    const from = new Date(to.getTime() - this.VALUE_RANGES[this.valueRange] * 86400000);
+    const pad = (n) => String(n).padStart(2, '0');
+    const key = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return { firstDay: key(from), lastDay: key(to), days: ValueHistoryService.tradingDays(from, to) };
+  },
+
+  // ดึงราคาปิดที่ขาดไปทีละชุด แล้ววาดใหม่เฉพาะการ์ด (ไม่ re-render ทั้งหน้า)
+  mountValueHistoryChart() {
+    const host = document.getElementById('vh-chart-host');
+    const foot = document.getElementById('vh-foot');
+    if (!host || !foot || typeof ValueHistoryService === 'undefined') return;
+
+    const data = getPortfolioDataHelper();
+    const positions = ValueHistoryService.buildPositions(data, null);
+    if (!positions.size) {
+      host.innerHTML = '<div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--txt-muted);">ยังไม่มีรายการซื้อ-ขายให้คำนวณย้อนหลัง</div>';
+      foot.innerHTML = '';
+      return;
+    }
+
+    const seen = new Set();
+    const targets = [];
+    positions.forEach((p) => {
+      const k = ValueHistoryService.entryKey(p.symbol, p.assetType);
+      if (seen.has(k)) return;
+      seen.add(k);
+      targets.push({ symbol: p.symbol, assetType: p.assetType });
+    });
+    const redraw = () => this.mountValueHistoryChart();
+    if (!ValueHistoryService.running) ValueHistoryService.ensure(targets, redraw);
+
+    const win = this.valueHistoryDays();
+    const curve = ValueHistoryService.buildCurve(positions, win.days);
+    return this.drawValueHistoryCurve(host, foot, curve, win);
+  },
+
+  async drawValueHistoryCurve(host, foot, curve, win) {
+    // วาดเฉพาะวันที่ยอดคงเหลือของทุกสถานะรู้จริง ไม่งั้นเส้นโค้งจะต่ำปลอมแล้วกระโดดวันนำเข้าข้อมูลชุดใหญ่
+    const pts = curve.points.filter((p) => p.positions > 0 && p.date >= curve.honestFrom);
+
+    const masked = this.hideValues;
+    const base = pts.length ? pts[0].valueTHB : 0;
+    const series = pts.map((p) => ({
+      time: p.date,
+      value: masked ? (base > 0 ? (p.valueTHB / base) * 100 : 0) : p.valueTHB / 1e6,
+      thb: p.valueTHB,
+      date: p.date
+    }));
+    this._vhSeries = series;
+
+    const noteEl = document.getElementById('vh-axis-note');
+    if (noteEl) noteEl.textContent = masked ? 'แกนตั้ง: % ที่เปลี่ยนแปลงจากจุดแรกของกราฟ' : 'แกนตั้ง: ล้านบาท';
+
+    this.destroyValueHistoryChart();
+    if (!series.length) {
+      const busy = ValueHistoryService.running;
+      host.innerHTML = `<div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--txt-muted);">${
+        busy ? `กำลังดึงราคาปิดย้อนหลัง ${ValueHistoryService.progress.done}/${ValueHistoryService.progress.total}…`
+             : 'ช่วงนี้ยังไม่มีวันที่คำนวณมูลค่าได้ครบทุกสถานะ — ลองขยายช่วงเป็น 11M หรือตั้งยอดคงเหลือวันตั้งต้น'
+      }</div>`;
+      foot.innerHTML = this.valueHistoryFootHtml(curve, win, { empty: true });
+      return;
+    }
+
+    let LW;
+    try {
+      LW = await TechnicalModule.ensureLightweightCharts();
+    } catch (e) {
+      host.innerHTML = '<div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--down);">โหลดไลบรารีกราฟไม่สำเร็จ</div>';
+      foot.innerHTML = this.valueHistoryFootHtml(curve, win, { empty: true });
+      return;
+    }
+    // การ์ดอาจถูกวาดซ้ำระหว่างรอโหลดไลบรารี (ราคามาเป็นชุด) → ทิ้งงานวาดชุดเก่า
+    if (!document.getElementById('vh-chart-host')) return;
+
+    host.innerHTML = '';
+    const chart = LW.createChart(host, {
+      width: host.clientWidth || 600,
+      height: 248,
+      layout: { background: { type: 'solid', color: this.vhColor('--panel') }, textColor: this.vhColor('--txt-soft'), fontSize: 11 },
+      grid: { vertLines: { color: this.vhColor('--inset') }, horzLines: { color: this.vhColor('--inset') } },
+      rightPriceScale: { borderColor: this.vhColor('--line'), scaleMargins: { top: 0.08, bottom: 0.08 } },
+      timeScale: { borderColor: this.vhColor('--line'), rightOffset: 4 },
+      crosshair: { mode: LW.CrosshairMode.Normal },
+      localization: { locale: 'th-TH' },
+      handleScroll: false,
+      handleScale: false
+    });
+    const area = chart.addAreaSeries({
+      lineColor: this.vhColor('--accent'),
+      lineWidth: 2,
+      topColor: this.vhColor('--chart-area-top'),
+      bottomColor: this.vhColor('--chart-area-bottom'),
+      priceLineVisible: false,
+      priceFormat: { type: 'price', precision: masked ? 1 : 2, minMove: masked ? 0.1 : 0.01 }
+    });
+    area.setData(series);
+    chart.timeScale().fitContent();
+    this._vhChart = chart;
+
+    chart.subscribeCrosshairMove((param) => {
+      const read = document.getElementById('vh-read');
+      if (!read) return;
+      const hit = param && param.seriesData ? param.seriesData.get(area) : null;
+      if (!hit || typeof hit.value !== 'number') {
+        read.innerHTML = this.valueHistoryReadHtml(series[series.length - 1], masked);
+        return;
+      }
+      const row = series.find((s) => s.time === param.time);
+      read.innerHTML = this.valueHistoryReadHtml(row, masked, hit.value);
+    });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this._vhResize = new ResizeObserver(() => {
+        if (this._vhChart) this._vhChart.applyOptions({ width: host.clientWidth || 600 });
+      });
+      this._vhResize.observe(host);
+    }
+
+    foot.innerHTML = this.valueHistoryFootHtml(curve, win, {
+      empty: false,
+      first: series[0],
+      last: series[series.length - 1]
+    });
+  },
+
+  // ค่าที่อ่านได้จากกราฟ: ใช้ยอดจริงเมื่อเปิดแสดงยอด และสลับเป็น % เมื่อ 👁 ซ่อนอยู่
+  valueHistoryReadHtml(row, masked, axisValue) {
+    if (!row) return '';
+    const d = String(row.date || '').split('-');
+    const dateLabel = d.length === 3 ? `${Number(d[2])}/${d[1]}/${d[0]}` : String(row.date || '');
+    let shown;
+    if (masked) {
+      shown = typeof axisValue === 'number' ? `${axisValue >= 100 ? '+' : ''}${(axisValue - 100).toFixed(1)}%` : '•••,••%';
+    } else {
+      shown = '฿' + Math.round(row.thb || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    return `<span style="font-size: 14px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.3px;">${shown}</span>`
+      + `<span style="font-size: 12px; font-weight: 600; color: var(--txt-muted); margin-left: 8px;">${dateLabel}</span>`;
+  },
+
+  valueHistoryFootHtml(curve, win, state) {
+    const mask = (text) => (this.hideValues ? '•••,••' : text);
+    const shortBaht = (v) => `฿${(v / 1e6).toFixed(2)}M`;
+    const rows = [];
+    const need = curve.needAnchor || [];
+    if (!state.empty) {
+      const from = state.first.thb, to = state.last.thb;
+      const pct = from > 0 ? ((to - from) / from) * 100 : 0;
+      rows.push(`
+        <div style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;">
+          <div id="vh-read" style="display: flex; align-items: baseline; min-width: 150px;">${this.valueHistoryReadHtml(state.last, this.hideValues)}</div>
+          <span style="font-size: 12.5px; color: var(--txt-muted);">ชี้ออนกราฟเพื่อดูแต่ละวัน · ตลอดช่วง ${this.VALUE_RANGE_LABELS[this.valueRange]} <strong style="font-weight: 900; color: ${pct >= 0 ? 'var(--up)' : 'var(--down)'};">${this.hideValues ? '•••,••%' : `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`}</strong></span>
+          <span style="font-size: 12.5px; color: var(--txt-muted); margin-left: auto;">${mask(`${shortBaht(from)} → ${shortBaht(to)}`)}</span>
+        </div>`);
+    }
+    if (ValueHistoryService.running) {
+      rows.push(`<div style="font-size: 12px; color: var(--txt-muted);">⏳ กำลังดึงราคาปิดย้อนหลัง ${ValueHistoryService.progress.done}/${ValueHistoryService.progress.total} สัญลักษณ์ · เสร็จรอบนี้จะวาดกราฟใหม่เอง</div>`);
+    }
+    if (curve.honestFrom && curve.honestFrom <= win.lastDay && curve.honestFrom > win.firstDay) {
+      const lost = win.days.filter((d) => d < curve.honestFrom).length;
+      rows.push(`<div style="font-size: 12px; color: var(--txt-muted);">กราฟเริ่มวันที่ ${curve.honestFrom} · ขาดอีก ${lost} วันทำการก่อนหน้านั้นที่ยังไม่รู้ยอดคงเหลือของทุกสถานะ</div>`);
+    }
+    if (curve.missingSymbols && curve.missingSymbols.length && !ValueHistoryService.running) {
+      const shown = curve.missingSymbols.slice(0, 6).join(', ');
+      const more = curve.missingSymbols.length > 6 ? ` และอีก ${curve.missingSymbols.length - 6} ตัว` : '';
+      rows.push(`<div style="font-size: 12px; color: var(--txt-muted);">ไม่มีราคาปิดย้อนหลัง ${curve.missingSymbols.length} ตัว: ${shown}${more} (ไม่นำมารวมในกราฟ)</div>`);
+    }
+    if (need.length) {
+      rows.push(`
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 12.5px; color: var(--txt-soft);">🧷 ${need.length} สถานะข้อมูลยังไปไม่ถึงวันแรกของช่วงนี้ กราฟจึงเริ่มช้านั้น (แก้/ตั้งยอดคงเหลือได้)</span>
+          <button type="button" onclick="PortfolioModule.openValueAnchorModal()" style="background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">ตั้งยอดคงเหลือวันตั้งต้น</button>
+        </div>`);
+    }
+    return rows.join('');
+  },
+
+
+  destroyValueHistoryChart() {
+    if (this._vhResize) { try { this._vhResize.disconnect(); } catch (e) {} this._vhResize = null; }
+    if (this._vhChart) { try { this._vhChart.remove(); } catch (e) {} this._vhChart = null; }
+  },
+
+  // ---------- modal ตั้งยอดคงเหลือวันตั้งต้น ----------
+  VH_TYPE_LABELS: { 'thai-stock': '🇹🇭 หุ้นไทย', 'foreign-stock': '🇺🇸 ต่างประเทศ', 'mutual-fund': '🌱 กองทุน' },
+
+  openValueAnchorModal() {
+    const stale = document.getElementById('wealthport-value-anchor-modal');
+    if (stale) stale.remove();
+
+    const data = getPortfolioDataHelper();
+    const portMap = this.getPortfolioMap(data);
+    const positions = ValueHistoryService.buildPositions(data, null);
+    const win = this.valueHistoryDays();
+    const indexed = ValueHistoryService.positionIndex(positions);
+    const need = ValueHistoryService.needAnchor(indexed.list, win.firstDay);
+    if (!need.length) {
+      alert(`ทุกสถานะในช่วง ${this.VALUE_RANGE_LABELS[this.valueRange]} มียอดตั้งต้นรู้แล้ว — ไม่ต้องตั้งเพิ่ม`);
+      return;
+    }
+
+    const anchors = indexed.anchors;
+    const sorted = need.slice().sort((a, b) => {
+      const an = String(portMap[a.portfolioId] || a.portfolioId).localeCompare(String(portMap[b.portfolioId] || b.portfolioId));
+      return an || String(a.symbol).localeCompare(String(b.symbol));
+    });
+
+    // ทุกแถวมีตำแหน่งจริงประกอบไว้ เพราะเปลี่ยนวันตั้งต้นต้องคำนวณยอดใหม่จากแถวซื้อ-ขาย
+    const rows = sorted.map((row) => ({
+      row,
+      pos: positions.get(PositionAnchorService.entryKey(row.portfolioId, row.symbol)),
+      anchor: anchors[PositionAnchorService.entryKey(row.portfolioId, row.symbol)],
+      edited: false
+    }));
+    // ยอดที่ควรแสดง: เดินรายการจริงไปถึงวันนั้น ถ้าย้อนก่อนวันที่แอปบันทึกให้ใช้ยอดวันแรกที่บันทึก (ถือเท่าเดิม)
+    const unitsAt = (r, asOf) => (r.edited ? null : ValueHistoryService.openingUnitsAt(r.pos, asOf));
+
+    const rowHtml = (r, i) => {
+      const row = r.row;
+      const asOf = r.anchor ? r.anchor.asOf : row.firstRecorded;
+      const units = r.anchor ? r.anchor.units : row.suggestedUnits;
+      const disabled = !row.anchorable;
+      const cell = 'padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px; box-sizing: border-box;';
+      const input = 'width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; background: var(--panel-2); color: var(--txt-strong);';
+      return `
+        <tr>
+          <td style="${cell}">${portMap[row.portfolioId] || row.portfolioId}</td>
+          <td style="${cell}"><strong style="font-weight: 800; color: var(--txt-strong);">${row.symbol}</strong><div style="font-size: 11px; color: var(--txt-muted);">${this.VH_TYPE_LABELS[row.assetType] || row.assetType}</div></td>
+          <td style="${cell}"><span style="font-size: 12px; color: var(--txt-muted);">${row.firstRecorded}</span><div style="font-size: 11px; color: var(--txt-faint);">ถืออยู่วันนี้ ${row.unitsNow}</div>${disabled ? '<div style="font-size: 11px; color: var(--warn);">ตั้งย้อนหลังไม่ได้ · กันนับซ้ำ</div>' : ''}</td>
+          <td style="${cell}; text-align: right;"><input type="number" step="any" min="0" id="vha-units-${i}" value="${units}" ${disabled ? 'disabled' : ''} style="${input} text-align: right;"></td>
+          <td style="${cell}; text-align: right; min-width: 140px;"><input type="date" id="vha-date-${i}" value="${asOf}" max="${win.lastDay}" ${disabled ? 'disabled' : ''} style="${input}"></td>
+        </tr>`;
+    };
+
+    const modalHtml = `
+      <div id="wealthport-value-anchor-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--overlay); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999;">
+        <div style="background: var(--panel); border: 1px solid var(--line-2); border-radius: 14px; width: 900px; max-width: 95vw; max-height: 90vh; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.35);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--txt-strong);">🧷 ตั้งยอดคงเหลือวันตั้งต้น (${need.length} สถานะ)</h3>
+            <button id="btn-close-vha-modal" style="background:none; border:none; font-size: 22px; color: var(--txt-faint); cursor: pointer;">&times;</button>
+          </div>
+          <div style="font-size: 12.5px; color: var(--txt-soft); background: var(--inset); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;">
+            แอปเริ่มบันทึกรายการซื้อ-ขายของสถานะเหล่านี้ทีหลังวันแรกของกราฟ กราฟจึงไม่รู้มูลค่าก่อนหน้านั้น<br>
+            กรอกจำนวนหน่วยที่ถืออยู่จริง ณ วันตั้งต้น (ดูจากใบแจ้งยอดของโบรกเกอร์) ระบบจะใช้ยอดนั้นเป็นฐาน แล้วเดินรายการซื้อ-ขายจริงต่อจากนั้น — <strong>ไม่แก้รายการเดิม และยอดปัจจุบันไม่เปลี่ยน</strong><br>
+            ถ้าย้อนวันไปก่อนวันที่แอปบันทึก ระบบจะถือว่าถือเท่าเดิมมาจนถึงวันนั้น ถ้าไม่จริงให้พิมพ์จำนวนของวันนั้นแทน และตั้ง 0 เพื่อข้ามสถานะที่ทราบแน่นอนไม่ได้
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--txt-muted);">
+            <span>ตั้งวันเดียวกันทุกสถานะ:</span>
+            <input type="date" id="vha-bulk-date" max="${win.lastDay}" style="padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; background: var(--panel-2); color: var(--txt-strong);">
+            <button type="button" id="btn-vha-apply-date" style="background: var(--panel-2); border: 1px solid var(--line-2); color: var(--txt-soft); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer;">ใช้วันนั้น</button>
+            <span style="margin-left: auto;">กราฟช่วง ${this.VALUE_RANGE_LABELS[this.valueRange]} เริ่มวันที่ ${win.firstDay}</span>
+          </div>
+          <div style="overflow: auto; border: 1px solid var(--line); border-radius: 8px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="position: sticky; top: 0; background: var(--panel-2); z-index: 1;">
+                  <th style="padding: 9px 10px; font-size: 12px; font-weight: 800; color: var(--txt-soft);">พอร์ต</th>
+                  <th style="padding: 9px 10px; font-size: 12px; font-weight: 800; color: var(--txt-soft);">สัญลักษณ์</th>
+                  <th style="padding: 9px 10px; font-size: 12px; font-weight: 800; color: var(--txt-soft);">แอปบันทึกตั้งแต่</th>
+                  <th style="padding: 9px 10px; font-size: 12px; font-weight: 800; color: var(--txt-soft); text-align: right;">หน่วยที่ถือ ณ วันตั้งต้น</th>
+                  <th style="padding: 9px 10px; font-size: 12px; font-weight: 800; color: var(--txt-soft); text-align: right;">วันตั้งต้น</th>
+                </tr>
+              </thead>
+              <tbody>${rows.map(rowHtml).join('')}</tbody>
+            </table>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 12px;">
+            <button id="btn-vha-clear" style="margin-right: auto; background: var(--panel-2); border: 1px solid var(--down-line); color: var(--down); padding: 9px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">ล้างยอดที่ตั้งไว้แล้ว</button>
+            <button id="btn-cancel-vha-modal" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+            <button id="btn-confirm-vha" style="background: var(--accent); color: var(--on-accent); border: none; padding: 9px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">บันทึกและวาดกราฟใหม่</button>
+          </div>
+        </div>
+      </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const closeM = () => document.getElementById('wealthport-value-anchor-modal')?.remove();
+    document.getElementById('btn-close-vha-modal').onclick = closeM;
+    document.getElementById('btn-cancel-vha-modal').onclick = closeM;
+
+    // เปลี่ยนวันตั้งต้น → คำนวณยอดของวันนั้นจากแถวซื้อ-ขายจริงใหม่ ยกเว้นแถวที่ผู้ใช้พิมพ์เอง
+    const syncRow = (r, i) => {
+      if (r.row.anchorable !== true && !r.edited) return;
+      const dateEl = document.getElementById(`vha-date-${i}`);
+      const unitsEl = document.getElementById(`vha-units-${i}`);
+      if (!dateEl || !unitsEl || unitsEl.disabled) return;
+      const u = unitsAt(r, dateEl.value);
+      if (u === null) return;
+      unitsEl.value = String(u);
+    };
+    rows.forEach((r, i) => {
+      const unitsEl = document.getElementById(`vha-units-${i}`);
+      const dateEl = document.getElementById(`vha-date-${i}`);
+      if (unitsEl) unitsEl.oninput = () => { r.edited = true; };
+      if (dateEl) dateEl.onchange = () => syncRow(r, i);
+    });
+
+    document.getElementById('btn-vha-apply-date').onclick = () => {
+      const v = document.getElementById('vha-bulk-date').value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { alert('เลือกวันตั้งต้นก่อน'); return; }
+      rows.forEach((r, i) => {
+        const el = document.getElementById(`vha-date-${i}`);
+        if (!el || el.disabled) return;
+        el.value = v;
+        syncRow(r, i);
+      });
+    };
+
+    document.getElementById('btn-vha-clear').onclick = () => {
+      const stored = PositionAnchorService.read();
+      const n = Object.keys(stored).length;
+      if (!n) { alert('ยังไม่ได้ตั้งยอดคงเหลือไว้'); return; }
+      if (!confirm(`ลดยอดคงเหลือวันตั้งต้นที่ตั้งไว้ ${n} สถานะออกทั้งหมด? กราฟจะกลับไปแสดงเฉพาะช่วงที่แอปบันทึกรายการเอง`)) return;
+      try { localStorage.removeItem(PositionAnchorService.STORAGE_KEY); } catch (e) {}
+      if (typeof CloudSync !== 'undefined' && CloudSync.scheduleCloudPush) CloudSync.scheduleCloudPush();
+      closeM();
+      this.mountValueHistoryChart();
+    };
+
+    document.getElementById('btn-confirm-vha').onclick = () => {
+      let saved = 0, cleared = 0, skipped = 0;
+      rows.forEach((r, i) => {
+        const row = r.row;
+        const unitsEl = document.getElementById(`vha-units-${i}`);
+        const dateEl = document.getElementById(`vha-date-${i}`);
+        if (!unitsEl || !dateEl) return;
+        const units = parseFloat(unitsEl.value);
+        const asOf = dateEl.value;
+        if (!(units > 0)) { PositionAnchorService.clear(row.portfolioId, row.symbol); cleared++; return; }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) { skipped++; return; }
+        // anchor ณ วันใด → กลืนแถวซื้อ-ขายทั้งหมดถึงวันนั้น ไม่งั้นนับซ้ำกับยอดตั้งต้น
+        const sup = ValueHistoryService.supersedesFor(r.pos, asOf);
+        if (sup.missingIds) { skipped++; return; }
+        if (PositionAnchorService.set(row.portfolioId, row.symbol, units, asOf, sup.ids, 'ตั้งจากกราฟมูลค่าย้อนหลัง')) saved++;
+      });
+      closeM();
+      this.mountValueHistoryChart();
+      if (skipped) alert(`บันทึก ${saved} สถานะ${cleared ? ` · ลบออก ${cleared}` : ''} · ข้าม ${skipped} สถานะที่วันตั้งต้นนั้นมีรายการไม่ระบุเลขที่ (กันนับซ้ำ)`);
+    };
   },
 
   renderHoldingsManagement(container) {
