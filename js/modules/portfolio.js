@@ -1299,6 +1299,28 @@ var PortfolioModule = {
     }
   },
 
+  async handleRefreshFx(btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    try {
+      btn.textContent = '⏳';
+      const rate = await QuoteSyncService.fetchExchangeRate();
+      const label = this.formatFxLabel(rate);
+      const mainBadge = document.getElementById('main-fx-badge');
+      if (mainBadge) mainBadge.innerHTML = label;
+      const modalBadge = document.getElementById('avg-fx-badge');
+      if (modalBadge) modalBadge.innerHTML = label;
+      this.render();
+    } catch (err) {
+      console.error(err);
+      alert('ดึงอัตราแลกเปลี่ยนไม่สำเร็จ ลองอีกครั้งในภายหลัง');
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.textContent = '↻';
+    }
+  },
+
   async handleRetryFailedQuotes(btn) {
     const targets = this.lastSyncFailures.slice();
     if (targets.length === 0) return;
@@ -1534,6 +1556,13 @@ var PortfolioModule = {
       if (syncBtn) {
         e.preventDefault();
         await this.handleSyncQuotes(syncBtn);
+        return;
+      }
+
+      const refreshFxBtn = e.target.closest('#btn-refresh-fx');
+      if (refreshFxBtn) {
+        e.preventDefault();
+        await this.handleRefreshFx(refreshFxBtn);
         return;
       }
 
@@ -3447,6 +3476,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
             <span id="main-fx-badge" style="background: var(--up-soft); color: var(--up-4); border: 1px solid var(--up-line-2); border-radius: 6px; padding: 6px 12px; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
               ${this.formatFxLabel(summary.liveFxRate || 33.49)}
             </span>
+            <button id="btn-refresh-fx" title="อัปเดตอัตราแลกเปลี่ยน" style="background: var(--up-soft); border: 1px solid var(--up-line-2); color: var(--up-4); padding: 6px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 800; cursor: pointer;">↻</button>
           ` : ''}
 
           <button id="btn-sync-quotes" style="background: var(--panel); border: 1px solid var(--accent-bright); color: var(--accent); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 อัปเดตราคาตลาด</button>
