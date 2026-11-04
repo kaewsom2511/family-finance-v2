@@ -2479,13 +2479,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
     this.render();
   },
 
-  // สรุปย่อบนการ์ดรายพอร์ต: USD เป็นหลัก + บรรทัดบาท และวันนี้/เมื่อวานนี้/กำไรสะสม
-  renderPortfolioSummaryHtml(summary, formatUSD, formatBaht) {
+  summaryDeltas(summary) {
     const fx = summary.liveFxRate || 33.49;
-    const hide = this.hideValues;
-    const mask = (text) => (hide ? '•••,••' : text);
-
-    const deltas = {
+    return {
       today: { amt: summary.dayChangeUSD, pct: summary.dayChangePct, known: summary.dayChangeKnown },
       yesterday: { amt: summary.prevDayChangeUSD, pct: summary.prevDayChangePct, known: summary.prevDayChangeKnown },
       all: {
@@ -2494,19 +2490,38 @@ this.openAssetModal(holding.symbol, { reopen: true });
         known: summary.activeCount
       }
     };
+  },
 
-    const rowHtml = (d, label) => {
-      let value;
-      if (!d.known || d.amt == null || d.pct == null) {
-        value = '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
-      } else {
-        const up = d.amt >= 0;
-        const money = (up ? '+$' : '-$') + Math.abs(d.amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const pct = `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`;
-        value = `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${mask(money)} ${mask(pct)}</span>`;
-      }
-      return `<div style="display: flex; align-items: baseline; gap: 8px;">${value}<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${label}</span></div>`;
-    };
+  // พอร์ตที่ถือสินทรัพย์บาทให้อัปเป็น฿นำแล้ววงเล็บ USD ต่อท้าย ส่วนพอร์ตต่างประเทศคง USD ตามเดิม
+  deltaValueHtml(d, fx, preferBaht) {
+    const mask = (text) => (this.hideValues ? '•••,••' : text);
+    if (!d.known || d.amt == null || d.pct == null) {
+      return '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
+    }
+    const up = d.amt >= 0;
+    const sign = up ? '+' : '-';
+    const digits = Math.abs(d.amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const usd = `${sign}$${digits}`;
+    const baht = `${sign}฿${(Math.abs(d.amt) * fx).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const pct = `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`;
+    const main = mask(preferBaht ? baht : usd);
+    if (!preferBaht) {
+      return `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${main} ${mask(pct)}</span>`;
+    }
+    return `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${main} ${mask(pct)}</span>` +
+      `<span style="font-size: 11px; font-weight: 700; color: var(--txt-muted);">${mask(`≈ ${usd}`)}</span>`;
+  },
+
+  deltaRowHtml(d, label, fx, preferBaht) {
+    return `<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">${this.deltaValueHtml(d, fx, preferBaht)}<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${label}</span></div>`;
+  },
+
+  // สรุปย่อบนการ์ดรายพอร์ต: USD เป็นหลัก + บรรทัดบาท และวันนี้/เมื่อวานนี้/กำไรสะสม
+  renderPortfolioSummaryHtml(summary, formatUSD, formatBaht) {
+    const fx = summary.liveFxRate || 33.49;
+    const hide = this.hideValues;
+    const preferBaht = !summary.isForeignPort;
+    const deltas = this.summaryDeltas(summary);
 
     return `
       <div style="margin-bottom: 14px;">
@@ -2514,11 +2529,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <div style="font-size: 21px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; color: var(--txt-strong);">
           ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
         </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">≈ ${this.hideValues ? '•••,••' : formatBaht(summary.marketValue).slice(1)} บาท</div>
         <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 12.5px;">
-          ${rowHtml(deltas.today, 'วันนี้')}
-          ${rowHtml(deltas.yesterday, 'เมื่อวานนี้')}
-          ${rowHtml(deltas.all, 'กำไรสะสม')}
+          ${this.deltaRowHtml(deltas.today, 'วันนี้', fx, preferBaht)}
+          ${this.deltaRowHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
+          ${this.deltaRowHtml(deltas.all, 'กำไรสะสม', fx, preferBaht)}
         </div>
       </div>
     `;
@@ -2530,26 +2545,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const hide = this.hideValues;
     const mask = (text) => (hide ? '•••,••' : text);
 
-    const deltas = {
-      today: { amt: summary.dayChangeUSD, pct: summary.dayChangePct, known: summary.dayChangeKnown },
-      yesterday: { amt: summary.prevDayChangeUSD, pct: summary.prevDayChangePct, known: summary.prevDayChangeKnown },
-      all: {
-        amt: (summary.unrealizedPL || 0) / fx,
-        pct: summary.totalCost > 0 ? ((summary.unrealizedPL / summary.totalCost) * 100) : null,
-        known: summary.activeCount
-      }
-    };
-
-    const deltaHtml = (d) => {
-      if (!d || !d.known || d.amt == null || d.pct == null) return '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
-      const up = d.amt >= 0;
-      const money = (up ? '+$' : '-$') + Math.abs(d.amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const pct = `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`;
-      return `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${mask(money)} ${mask(pct)}</span>`;
-    };
-
-    const labelHtml = (text) => `<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${text}</span>`;
-
+    const preferBaht = !summary.isForeignPort;
+    const deltas = this.summaryDeltas(summary);
     const picked = deltas[this.summaryPeriod] || deltas.all;
     const lastUpdated = summary.lastQuoteMs
       ? new Date(summary.lastQuoteMs).toISOString().slice(0, 19).replace('T', ' ') + ' GMT'
@@ -2569,17 +2566,17 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
 
         <div style="display: flex; flex-direction: column; gap: 7px; margin-top: 14px; font-size: 13px;">
-          <div style="display: flex; align-items: baseline; gap: 8px;">${deltaHtml(deltas.today)}${labelHtml('วันนี้')}</div>
-          <div style="display: flex; align-items: baseline; gap: 8px;">${deltaHtml(deltas.yesterday)}${labelHtml('เมื่อวานนี้')}</div>
+          ${this.deltaRowHtml(deltas.today, 'วันนี้', fx, preferBaht)}
+          ${this.deltaRowHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            ${deltaHtml(picked)}
+            ${this.deltaValueHtml(picked, fx, preferBaht)}
             <select id="summary-period" onchange="PortfolioModule.setSummaryPeriod(this.value)"
               style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 6px; font-size: 11.5px; font-weight: 700; padding: 3px 6px; cursor: pointer;">
               <option value="today" ${this.summaryPeriod === 'today' ? 'selected' : ''}>วันนี้</option>
               <option value="yesterday" ${this.summaryPeriod === 'yesterday' ? 'selected' : ''}>เมื่อวานนี้</option>
               <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
             </select>
-            ${labelHtml('กำไรสะสม')}
+            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">กำไรสะสม</span>
           </div>
         </div>
 
