@@ -2547,10 +2547,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
       return chip(icon, `${label}${controlHtml || ''}`, `<span style="color: ${color};">${main}</span>`, pctHtml + alt, tint);
     };
 
-    const divP = summary.dividends >= 0;
-    const dividendChip = chip('💵', 'เงินปันผลสะสม',
-      `<span style="color: ${divP ? 'var(--up)' : 'var(--down)'};">${mask(`${divP ? '+' : ''}${formatBaht(summary.dividends)}`)}</span>`,
-      pctLineHtml('var(--txt-muted)', mask(`≈ ${formatUSD(summary.dividends / fx)}`)),
+    const plUp = summary.unrealizedPL >= 0;
+    const plPct = summary.totalCost > 0 ? (summary.unrealizedPL / summary.totalCost * 100) : null;
+    const plChip = chip('💰', 'กำไร/ขาดทุนรวม',
+      `<span style="color: ${plUp ? 'var(--up)' : 'var(--down)'};">${mask(`${plUp ? '+' : ''}${formatBaht(summary.unrealizedPL)}`)}</span>`,
+      pctLineHtml(plUp ? 'var(--up)' : 'var(--down)', mask(plPct == null ? '—' : `${plUp ? '▲' : '▼'} ${plUp ? '+' : ''}${plPct.toFixed(2)}%`)),
       'rgba(251, 191, 36, 0.14)');
 
     return `
@@ -2583,7 +2584,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
           ${deltaChip('📈', 'วันนี้', deltas.today, null, 'rgba(96, 165, 250, 0.14)')}
           ${deltaChip('📅', 'เมื่อวานนี้', deltas.yesterday, null, 'rgba(129, 140, 248, 0.16)')}
           ${deltaChip('💹', 'กำไรสะสม', picked, periodControl, 'rgba(52, 211, 153, 0.14)')}
-          ${dividendChip}
+          ${plChip}
         </div>
       </div>
     `;
