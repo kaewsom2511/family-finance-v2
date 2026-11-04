@@ -2525,12 +2525,12 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const color = p ? (p.up ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
     const main = !p ? '—' : mask(preferBaht ? p.baht : p.usd);
     const pct = !p ? '' : mask(p.pct);
-    const alt = (p && preferBaht) ? `<div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${mask(`≈ ${p.usd}`)}</div>` : '';
+    const alt = (p && preferBaht) ? `<div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); margin-top: 1px;">${mask(`≈ ${p.usd}`)}</div>` : '';
 
     return `
-      <div style="flex: 1 1 150px; min-width: 140px;">
-        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${label}${controlHtml || ''}</div>
-        <div style="font-size: 15px; font-weight: 800; color: ${color}; margin-top: 5px; line-height: 1.25;">${main} ${pct}</div>
+      <div style="flex: 0 1 auto;">
+        <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">${label}${controlHtml || ''}</div>
+        <div style="font-size: 12.5px; font-weight: 800; color: ${color}; margin-top: 4px; line-height: 1.25;">${main} ${pct}</div>
         ${alt}
       </div>
     `;
@@ -2574,28 +2574,28 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const periodControl = `
       <select id="summary-period" onchange="PortfolioModule.setSummaryPeriod(this.value)"
-        style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 2px 5px; cursor: pointer; text-transform: none;">
+        style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 5px; font-size: 10.5px; font-weight: 700; padding: 1px 4px; cursor: pointer; text-transform: none;">
         <option value="today" ${this.summaryPeriod === 'today' ? 'selected' : ''}>วันนี้</option>
         <option value="yesterday" ${this.summaryPeriod === 'yesterday' ? 'selected' : ''}>เมื่อวานนี้</option>
         <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
       </select>`;
 
     return `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap; height: 100%; box-sizing: border-box;">
-        <div style="flex: 1 1 260px; min-width: 230px;">
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 15px 18px; display: flex; align-items: flex-start; gap: 22px; flex-wrap: wrap; height: 100%; box-sizing: border-box;">
+        <div style="flex: 1 1 210px; min-width: 190px;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-            <div style="font-size: 13.5px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
+            <div style="font-size: 12px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
             <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
-              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 30px; height: 28px; border-radius: 6px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
+              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 26px; height: 24px; border-radius: 5px; font-size: 12px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
           </div>
-          <div style="margin-top: 10px; font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1.05; color: var(--txt-strong);">
+          <div style="margin-top: 7px; font-size: 25px; font-weight: 900; letter-spacing: -0.6px; line-height: 1.05; color: var(--txt-strong);">
             ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
           </div>
-          <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
-          <div style="margin-top: 10px; font-size: 11px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
+          <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
+          <div style="margin-top: 8px; font-size: 10.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
         </div>
 
-        <div style="flex: 2 1 340px; display: flex; gap: 24px; flex-wrap: wrap;">
+        <div style="flex: 2 1 300px; display: flex; gap: 20px; flex-wrap: wrap;">
           ${this.deltaBlockHtml(deltas.today, 'วันนี้', fx, preferBaht)}
           ${this.deltaBlockHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
           ${this.deltaBlockHtml(picked, 'กำไรสะสม', fx, preferBaht, periodControl)}
@@ -3000,48 +3000,48 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </label>
         </div>
 
-        <div style="display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; margin-bottom: 22px;">
-          <div style="flex: 1 1 330px; min-width: 300px;">
+        <div style="display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; margin-bottom: 18px;">
+          <div style="flex: 1.1 1 330px; min-width: 280px;">
             ${this.renderSummaryCardHtml(summary, formatUSD, formatBaht, currentName)}
           </div>
 
           <!-- 4 กล่องสรุปสถิติ จัด 2x2 ข้างการ์ดสรุป -->
-          <div style="flex: 2 1 460px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <div style="flex: 2 1 420px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
           <!-- กล่องที่ 1: ต้นทุนรวม -->
-          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">ต้นทุนรวม (Cost Basis)</div>
-            <div style="font-size: 26px; font-weight: 900; color: var(--txt-strong); margin-bottom: 12px;">${costBig}</div>
-            <div style="border-top: 1px dashed var(--line); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">ต้นทุนรวม (Cost Basis)</div>
+            <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong); margin-bottom: 7px;">${costBig}</div>
+            <div style="border-top: 1px dashed var(--line); padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">${costSub}</span>
               <strong style="color: var(--up-2);">${rightCostSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 2: มูลค่าตลาด -->
-          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">มูลค่าตลาด (Market Value)</div>
-            <div style="font-size: 26px; font-weight: 900; color: var(--txt-strong); margin-bottom: 12px;">${mktBig}</div>
-            <div style="border-top: 1px dashed var(--line); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">มูลค่าตลาด (Market Value)</div>
+            <div style="font-size: 19px; font-weight: 900; color: var(--txt-strong); margin-bottom: 7px;">${mktBig}</div>
+            <div style="border-top: 1px dashed var(--line); padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">${mktSub}</span>
               <strong style="color: var(--txt-strong);">${rightMktSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 3: กำไร / ขาดทุนที่ยังไม่เกิดขึ้น -->
-          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
-            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 12px;">${unplBig}</div>
-            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 12px 15px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
+            <div style="font-size: 19px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 7px;">${unplBig}</div>
+            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">${unplSub}</span>
               <strong style="color: var(--up);">${rightUnplSub}</strong>
             </div>
           </div>
 
           <!-- กล่องที่ 4: ผลตอบแทนรวม (%) -->
-          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">ผลตอบแทนรวม (%)</div>
-            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 12px;">${maskNum(`${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%`)}</div>
-            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 12px 15px;">
+            <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">ผลตอบแทนรวม (%)</div>
+            <div style="font-size: 19px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 7px;">${maskNum(`${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%`)}</div>
+            <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 7px; display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;">
               <span style="color: var(--txt-muted);">กำไรรับจริงสะสม</span>
               <strong style="color: ${summary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${maskNum(`${summary.realizedPL >= 0 ? '+' : ''}${formatBaht(summary.realizedPL)}`)}</strong>
             </div>
