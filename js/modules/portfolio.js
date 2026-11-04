@@ -2645,16 +2645,18 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     // แถบเป้าหมาย (ย้ายจากการ์ดสรุปไปอยู่ในการ์ดสรุปตัวเลขสำคัญ)
     const targetRowHtml = `
-      <div style="border-top: 1px dashed var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); white-space: nowrap;">ความคืบหน้าสู่เป้าหมาย</span>
-          <strong style="font-size: 12.5px; font-weight: 800; color: var(--accent);">${progressPct.toFixed(1)}%</strong>
-          <span style="font-size: 11px; color: var(--txt-muted); white-space: nowrap; margin-left: auto;">เป้าหมายรวม <strong style="color: var(--txt-strong); font-weight: 700;">${formatBaht(targetAmount)}</strong>${remainingToTarget > 0 ? ` · ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${formatBaht(remainingToTarget)}</strong>` : ' · <strong style="color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</strong>'}</span>
+      <div style="border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 9px;">
+        <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 14px; font-weight: 700; color: var(--txt-muted); white-space: nowrap;">ความคืบหน้าสู่เป้าหมาย</span>
+          <strong style="font-size: 20px; font-weight: 900; color: var(--accent); letter-spacing: -0.4px; line-height: 1.1;">${progressPct.toFixed(1)}%</strong>
         </div>
-        <div style="height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;">
-          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 4px;"></div>
+        <div style="height: 10px; background: var(--line); border-radius: 5px; overflow: hidden;">
+          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 5px;"></div>
         </div>
-        <span style="align-self: flex-start; background: var(--up-soft-2); color: var(--up-4); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="align-self: flex-start; background: var(--up-soft-2); color: var(--up-4); font-size: 12.5px; font-weight: 700; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
+          <span style="font-size: 13px; color: var(--txt-muted); white-space: nowrap; margin-left: auto;">เป้าหมายรวม <strong style="color: var(--txt-strong); font-weight: 800;">${formatBaht(targetAmount)}</strong>${remainingToTarget > 0 ? ` · ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${formatBaht(remainingToTarget)}</strong>` : ' · <strong style="color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</strong>'}</span>
+        </div>
       </div>`;
 
     const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht);
@@ -2665,24 +2667,26 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const aTH = allocTotal > 0 ? (alloc.valTH / allocTotal) * 100 : 0;
     const aFund = allocTotal > 0 ? (alloc.valFund / allocTotal) * 100 : 0;
     const allocLegendRow = (color, label, pct, val) => `
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0;">
-        <span style="width: 9px; height: 9px; background: ${color}; display: inline-block; border-radius: 3px; flex-shrink: 0;"></span>
-        <span style="color: var(--txt-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</span>
-        <strong style="color: var(--txt-strong); font-weight: 800; margin-left: auto; white-space: nowrap;">${pct.toFixed(1)}%</strong>
-        <span style="color: var(--txt-muted); font-size: 11px; white-space: nowrap;">${mask(formatBaht(val))}</span>
+      <div style="display: flex; align-items: flex-start; gap: 10px; min-width: 0;">
+        <span style="width: 12px; height: 12px; background: ${color}; display: inline-block; border-radius: 4px; flex-shrink: 0; margin-top: 4px;"></span>
+        <div style="min-width: 0; flex: 1 1 auto;">
+          <div style="font-size: 14px; font-weight: 700; color: var(--txt-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--txt-muted); margin-top: 2px;">${mask(formatBaht(val))}</div>
+        </div>
+        <strong style="font-size: 16px; font-weight: 900; color: var(--txt-strong); white-space: nowrap; letter-spacing: -0.3px;">${pct.toFixed(1)}%</strong>
       </div>`;
 
     const allocCardHtml = `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-sizing: border-box; height: 100%;">
-        <div style="font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 14px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
-        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-          <div style="position: relative; width: 148px; height: 148px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
-            <div style="position: absolute; inset: 26px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
-              <div style="font-size: 16px; font-weight: 900; color: var(--txt-strong);">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
-              <div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; height: 100%;">
+        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 18px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
+        <div style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap;">
+          <div style="position: relative; width: 186px; height: 186px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
+            <div style="position: absolute; inset: 33px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;">
+              <div style="font-size: 22px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.6px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
+              <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); text-align: center;">มูลค่าตลาดปัจจุบัน</div>
             </div>
           </div>
-          <div style="flex: 1 1 210px; display: flex; flex-direction: column; gap: 9px; min-width: 0;">
+          <div style="flex: 1 1 230px; display: flex; flex-direction: column; gap: 13px; min-width: 0;">
             ${allocLegendRow('var(--indigo)', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
             ${allocLegendRow('var(--up-3)', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
             ${allocLegendRow('var(--accent)', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
@@ -2691,18 +2695,18 @@ this.openAssetModal(holding.symbol, { reopen: true });
       </div>`;
 
     const summaryRow = (icon, label, valueHtml, subHtml) => `
-      <div style="display: flex; align-items: flex-start; gap: 11px;">
-        <span style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 13px;">${icon}</span>
+      <div style="display: flex; align-items: flex-start; gap: 13px;">
+        <span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 16px;">${icon}</span>
         <div style="min-width: 0;">
-          <div style="font-size: 11.5px; color: var(--txt-muted); font-weight: 600;">${label}</div>
-          <div style="font-size: 16px; font-weight: 900; margin-top: 2px; line-height: 1.25;">${valueHtml}</div>
-          ${subHtml ? `<div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">${subHtml}</div>` : ''}
+          <div style="font-size: 14px; color: var(--txt-muted); font-weight: 700;">${label}</div>
+          <div style="font-size: 22px; font-weight: 900; margin-top: 3px; line-height: 1.2; letter-spacing: -0.5px;">${valueHtml}</div>
+          ${subHtml ? `<div style="font-size: 13px; color: var(--txt-muted); margin-top: 3px;">${subHtml}</div>` : ''}
         </div>
       </div>`;
 
     const keyStatsCardHtml = `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 13px;">
-        <div style="font-size: 13px; font-weight: 700; color: var(--txt);">🧭 สรุปตัวเลขสำคัญ</div>
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 16px;">
+        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">🧭 สรุปตัวเลขสำคัญ</div>
         ${summaryRow('💼', 'ต้นทุนรวมสะสม (Total Cost)', `<span style="color: var(--txt-strong);">${mask(formatBaht(overallSummary.totalCost))}</span>`, `≈ ${mask(formatUSD(overallSummary.totalCost / liveFx))} USD`)}
         ${summaryRow('📈', 'กำไร / ขาดทุนที่ยังไม่เกิดขึ้น', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${mask(formatBaht(overallSummary.unrealizedPL))}</span>`, `สถานะ: <strong style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '🟢 พอร์ตเขียวสุขภาพดี' : '🔴 ติดดอยสะสม'}</strong>`)}
         ${summaryRow('🎯', 'ผลตอบแทนรวม (%)', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</span>`, `กำไรรับจริงสะสม: <strong style="color: ${overallSummary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${overallSummary.realizedPL >= 0 ? '+' : ''}${mask(formatBaht(overallSummary.realizedPL))}</strong>`)}
