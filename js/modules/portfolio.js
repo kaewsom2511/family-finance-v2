@@ -2559,8 +2559,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
     `;
   },
 
-  // การ์ดสรุปย่อ: ยอดรวม USD + วันนี้ / เมื่อวาน / กำไรสะสม (เลือกช่วงได้)
-  renderSummaryCardHtml(summary, formatUSD, formatBaht, title) {
+  // การ์ดสรุปย่อ: ยอดรวม USD + วันนี้ / เมื่อวาน / กำไรสะสม (เลือกช่วงได้) และแถบเสริมด้านล่างเฉพาะหน้าภาพรวม
+  renderSummaryCardHtml(summary, formatUSD, formatBaht, title, extraHtml) {
     const fx = summary.liveFxRate || 33.49;
     const hide = this.hideValues;
     const mask = (text) => (hide ? '•••,••' : text);
@@ -2581,7 +2581,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
       </select>`;
 
     return `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 15px 18px; display: flex; align-items: flex-start; gap: 22px; flex-wrap: wrap; height: 100%; box-sizing: border-box;">
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 15px 18px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: ${extraHtml ? '11px' : '0px'};">
+        <div style="display: flex; align-items: flex-start; gap: 22px; flex-wrap: wrap;">
         <div style="flex: 1 1 210px; min-width: 190px;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
             <div style="font-size: 12px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
@@ -2600,6 +2601,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
           ${this.deltaBlockHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
           ${this.deltaBlockHtml(picked, 'กำไรสะสม', fx, preferBaht, periodControl)}
         </div>
+        </div>
+
+        ${extraHtml || ''}
       </div>
     `;
   },
@@ -2609,7 +2613,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const overallSummary = this.calculatePortfolioDetail(data, 'ALL');
     const formatBaht = (num) => { const v = Number(num || 0); return (v < 0 ? '-฿' : '฿') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     const formatUSD = (num) => '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht);
 
     const isProfit = overallSummary.unrealizedPL >= 0;
     const sortedPortfolios = this.getSortedPortfolios(data);
@@ -2623,13 +2626,25 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const remainingToTarget = Math.max(0, targetAmount - netTotal);
 
     const liveFx = overallSummary.liveFxRate || 33.49;
-    const totalNetWorthUSD = netTotal / liveFx;
 
     let stageBadge = '🌱 ต้นอ่อนผลิใบ · ระยะ 2';
     if (progressPct >= 100) stageBadge = '🌳 ไม้ใหญ่ผลิดอก · สำเร็จเป้าหมาย';
     else if (progressPct >= 75) stageBadge = '🌿 แตกกิ่งก้าน · ระยะ 4';
     else if (progressPct >= 50) stageBadge = '🪴 เติบโตสมบูรณ์ · ระยะ 3';
     else if (progressPct < 25) stageBadge = '🌰 เมล็ดพันธุ์ · ระยะ 1';
+
+    // แถบเป้าหมายรวมเข้ากับการ์ดสรุป (เดิมเป็นการ์ดความมั่งคั่งสุทธิแยกอีกชั้น ซึ่งยอดซ้ำกับการ์ดสรุป)
+    const targetStripHtml = `
+      <div style="border-top: 1px dashed var(--line); padding-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); white-space: nowrap;">ความคืบหน้าสู่เป้าหมาย</span>
+        <strong style="font-size: 12.5px; font-weight: 800; color: var(--accent);">${progressPct.toFixed(1)}%</strong>
+        <div style="flex: 1 1 160px; min-width: 120px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden;">
+          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 3px;"></div>
+        </div>
+        <span style="font-size: 11px; color: var(--txt-muted); white-space: nowrap;">เป้าหมายรวม <strong style="color: var(--txt-strong); font-weight: 700;">${formatBaht(targetAmount)}</strong>${remainingToTarget > 0 ? ` · ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${formatBaht(remainingToTarget)}</strong>` : ' · <strong style="color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</strong>'}</span>
+        <span style="background: var(--up-soft-2); color: var(--up-4); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
+      </div>`;
+    const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht, null, targetStripHtml);
 
     const portCardsHtml = sortedPortfolios.map(p => {
       const pId = p.id || p.portfolioId;
@@ -2702,33 +2717,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
         </div>
 
         <div style="margin-bottom: 20px;">${summaryCardHtml}</div>
-
-        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
-            <div>
-              <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">ความมั่งคั่งสุทธิรวม (Total Portfolio Net Worth)</div>
-              <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 32px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.5px; line-height: 1.1;">${formatBaht(netTotal)}</span>
-                <span style="font-size: 15px; font-weight: 700; color: var(--txt-muted);">≈ ${formatUSD(totalNetWorthUSD)} USD</span>
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <span style="background: ${isProfit ? 'var(--up-soft)' : 'var(--down-soft)'}; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; font-size: 12.5px; font-weight: 800; padding: 6px 12px; border-radius: 20px; border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'};">
-                ${isProfit ? '▲ +' : '▼ '}${formatBaht(overallSummary.unrealizedPL)} (${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%)
-              </span>
-              <span style="background: var(--up-soft-2); color: var(--up-4); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--up-soft-3);">${stageBadge}</span>
-            </div>
-          </div>
-          <div style="background: var(--panel-2); border: 1px solid var(--line-soft); border-radius: 12px; padding: 12px 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; flex-wrap: wrap; gap: 6px;">
-              <span style="color: var(--txt-soft);">ความคืบหน้าสู่เป้าหมาย: <strong style="color: var(--accent); font-size: 13.5px; font-weight: 800;">${progressPct.toFixed(1)}%</strong> <span style="color: var(--txt-faint);">${remainingToTarget > 0 ? `(ขาดอีก ${formatBaht(remainingToTarget)})` : '<strong style="color:var(--up);">(สำเร็จเป้าหมายแล้ว! 🎉)</strong>'}</span></span>
-              <span style="color: var(--txt-muted);">เป้าหมายรวม: <strong style="color: var(--txt-strong); font-weight: 700;">${formatBaht(targetAmount)}</strong></span>
-            </div>
-            <div style="height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;">
-              <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 4px;"></div>
-            </div>
-          </div>
-        </div>
 
         <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 20px;">
           <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
