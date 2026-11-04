@@ -2672,30 +2672,30 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const aTH = allocTotal > 0 ? (alloc.valTH / allocTotal) * 100 : 0;
     const aFund = allocTotal > 0 ? (alloc.valFund / allocTotal) * 100 : 0;
     const allocLegendRow = (color, label, pct, val) => `
-      <div style="display: flex; align-items: flex-start; gap: 10px; min-width: 0;">
-        <span style="width: 12px; height: 12px; background: ${color}; display: inline-block; border-radius: 4px; flex-shrink: 0; margin-top: 4px;"></span>
+      <div style="display: flex; align-items: flex-start; gap: 9px; min-width: 0;">
+        <span style="width: 11px; height: 11px; background: ${color}; display: inline-block; border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></span>
         <div style="min-width: 0; flex: 1 1 auto;">
-          <div style="font-size: 14px; font-weight: 700; color: var(--txt-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
-          <div style="font-size: 13px; font-weight: 600; color: var(--txt-muted); margin-top: 2px;">${mask(formatBaht(val))}</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--txt-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--txt-muted); margin-top: 1px;">${mask(formatBaht(val))}</div>
         </div>
-        <strong style="font-size: 16px; font-weight: 900; color: var(--txt-strong); white-space: nowrap; letter-spacing: -0.3px;">${pct.toFixed(1)}%</strong>
+        <strong style="font-size: 15px; font-weight: 900; color: var(--txt-strong); white-space: nowrap; letter-spacing: -0.3px;">${pct.toFixed(1)}%</strong>
       </div>`;
 
     const allocCardHtml = `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; height: 100%;">
-        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 18px;">🥧 สัดส่วนสินทรัพย์</div>
-        <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap; height: calc(100% - 40px);">
-          <div style="position: relative; width: 128px; height: 128px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
-            <div style="position: absolute; inset: 24px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
-              <div style="font-size: 17px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.4px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
-              <div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-align: center;">รวมทั้งหมด</div>
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column;">
+        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 14px;">🥧 สัดส่วนสินทรัพย์</div>
+        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+          <div style="position: relative; width: 110px; height: 110px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
+            <div style="position: absolute; inset: 20px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+              <div style="font-size: 14px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.3px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--txt-muted); text-align: center;">รวมทั้งหมด</div>
             </div>
           </div>
-          <div style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 11px; min-width: 0;">
-            ${allocLegendRow('var(--indigo)', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
-            ${allocLegendRow('var(--up-3)', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
-            ${allocLegendRow('var(--accent)', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
-          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+          ${allocLegendRow('var(--indigo)', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
+          ${allocLegendRow('var(--up-3)', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
+          ${allocLegendRow('var(--accent)', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
         </div>
       </div>`;
 
@@ -2790,7 +2790,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
         <div style="margin-bottom: 20px;">${summaryCardHtml}</div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; align-items: stretch;">
+        <div style="display: grid; grid-template-columns: minmax(210px, 0.85fr) minmax(340px, 1.6fr) minmax(240px, 1fr); gap: 16px; margin-bottom: 24px; align-items: stretch;">
           ${allocCardHtml}
           ${this.valueHistoryCardHtml()}
           ${keyStatsCardHtml}
@@ -2837,17 +2837,17 @@ this.openAssetModal(holding.symbol, { reopen: true });
     }).join('');
     return `
       <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; margin-bottom: 24px; height: 100%; display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
-          <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0;">
-            <span style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">📈 กราฟมูลค่าพอร์ต (ย้อนหลัง 11 เดือน)</span>
-            <span id="vh-axis-note" style="font-size: 12px; font-weight: 700; color: var(--txt-muted);"></span>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+          <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0;">
+            <span style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">📈 มูลค่าพอร์ตย้อนหลัง</span>
+            <span id="vh-axis-note" style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted);"></span>
           </div>
           <div style="display: flex; gap: 6px; flex-shrink: 0;">${pills}</div>
         </div>
-        <div id="vh-chart-host" style="height: 200px; position: relative; flex-shrink: 0;">
+        <div id="vh-chart-host" style="height: 130px; position: relative; flex-shrink: 0;">
           <div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--txt-muted);">กำลังเตรียมข้อมูล…</div>
         </div>
-        <div id="vh-foot" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; font-size: 12px;"></div>
+        <div id="vh-foot" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 5px; font-size: 11.5px;"></div>
       </div>`;
   },
 
@@ -2905,7 +2905,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
     this._vhSeries = series;
 
     const noteEl = document.getElementById('vh-axis-note');
-    if (noteEl) noteEl.textContent = masked ? 'แกนตั้ง: % ที่เปลี่ยนแปลงจากจุดแรกของกราฟ' : 'แกนตั้ง: ล้านบาท';
+    if (noteEl) noteEl.textContent = masked ? 'หน่วย: % จากจุดแรก' : 'หน่วย: ล้านบาท';
 
     this.destroyValueHistoryChart();
     if (!series.length) {
@@ -2932,7 +2932,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
     host.innerHTML = '';
     const chart = LW.createChart(host, {
       width: host.clientWidth || 600,
-      height: 248,
+      height: host.clientHeight || 130,
       layout: { background: { type: 'solid', color: this.vhColor('--panel') }, textColor: this.vhColor('--txt-soft'), fontSize: 11 },
       grid: { vertLines: { color: this.vhColor('--inset') }, horzLines: { color: this.vhColor('--inset') } },
       rightPriceScale: { borderColor: this.vhColor('--line'), scaleMargins: { top: 0.08, bottom: 0.08 } },
@@ -3004,29 +3004,29 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const from = state.first.thb, to = state.last.thb;
       const pct = from > 0 ? ((to - from) / from) * 100 : 0;
       rows.push(`
-        <div style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;">
-          <div id="vh-read" style="display: flex; align-items: baseline; min-width: 150px;">${this.valueHistoryReadHtml(state.last, this.hideValues)}</div>
-          <span style="font-size: 12.5px; color: var(--txt-muted);">ชี้ออนกราฟเพื่อดูแต่ละวัน · ตลอดช่วง ${this.VALUE_RANGE_LABELS[this.valueRange]} <strong style="font-weight: 900; color: ${pct >= 0 ? 'var(--up)' : 'var(--down)'};">${this.hideValues ? '•••,••%' : `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`}</strong></span>
-          <span style="font-size: 12.5px; color: var(--txt-muted); margin-left: auto;">${mask(`${shortBaht(from)} → ${shortBaht(to)}`)}</span>
+        <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;">
+          <div id="vh-read" style="display: flex; align-items: baseline; min-width: 140px;">${this.valueHistoryReadHtml(state.last, this.hideValues)}</div>
+          <span style="font-size: 12px; color: var(--txt-muted);">ชี้ออนกราฟดูรายวัน · ${this.VALUE_RANGE_LABELS[this.valueRange]} <strong style="font-weight: 900; color: ${pct >= 0 ? 'var(--up)' : 'var(--down)'};">${this.hideValues ? '•••,••%' : `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`}</strong></span>
+          <span style="font-size: 12px; color: var(--txt-muted); margin-left: auto;">${mask(`${shortBaht(from)} → ${shortBaht(to)}`)}</span>
         </div>`);
     }
     if (ValueHistoryService.running) {
-      rows.push(`<div style="font-size: 12px; color: var(--txt-muted);">⏳ กำลังดึงราคาปิดย้อนหลัง ${ValueHistoryService.progress.done}/${ValueHistoryService.progress.total} สัญลักษณ์ · เสร็จรอบนี้จะวาดกราฟใหม่เอง</div>`);
+      rows.push(`<div style="font-size: 11.5px; color: var(--txt-muted);">⏳ กำลังดึงราคาปิดย้อนหลัง ${ValueHistoryService.progress.done}/${ValueHistoryService.progress.total} สัญลักษณ์ · เสร็จรอบนี้จะวาดกราฟใหม่เอง</div>`);
     }
     if (curve.honestFrom && curve.honestFrom <= win.lastDay && curve.honestFrom > win.firstDay) {
       const lost = win.days.filter((d) => d < curve.honestFrom).length;
-      rows.push(`<div style="font-size: 12px; color: var(--txt-muted);">กราฟเริ่มวันที่ ${curve.honestFrom} · ขาดอีก ${lost} วันทำการก่อนหน้านั้นที่ยังไม่รู้ยอดคงเหลือของทุกสถานะ</div>`);
+      rows.push(`<div style="font-size: 11.5px; color: var(--txt-muted);">กราฟเริ่มวันที่ ${curve.honestFrom} · ขาดอีก ${lost} วันทำการก่อนหน้านั้นที่ยังไม่รู้ยอดคงเหลือของทุกสถานะ</div>`);
     }
     if (curve.missingSymbols && curve.missingSymbols.length && !ValueHistoryService.running) {
       const shown = curve.missingSymbols.slice(0, 6).join(', ');
       const more = curve.missingSymbols.length > 6 ? ` และอีก ${curve.missingSymbols.length - 6} ตัว` : '';
-      rows.push(`<div style="font-size: 12px; color: var(--txt-muted);">ไม่มีราคาปิดย้อนหลัง ${curve.missingSymbols.length} ตัว: ${shown}${more} (ไม่นำมารวมในกราฟ)</div>`);
+      rows.push(`<div style="font-size: 11.5px; color: var(--txt-muted);">ไม่มีราคาปิดย้อนหลัง ${curve.missingSymbols.length} ตัว: ${shown}${more} (ไม่นำมารวมในกราฟ)</div>`);
     }
     if (need.length) {
       rows.push(`
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <span style="font-size: 12.5px; color: var(--txt-soft);">🧷 ${need.length} สถานะข้อมูลยังไปไม่ถึงวันแรกของช่วงนี้ กราฟจึงเริ่มช้านั้น (แก้/ตั้งยอดคงเหลือได้)</span>
-          <button type="button" onclick="PortfolioModule.openValueAnchorModal()" style="background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">ตั้งยอดคงเหลือวันตั้งต้น</button>
+          <span style="font-size: 12px; color: var(--txt-soft);">🧷 ${need.length} สถานะยังไม่มีข้อมูลถึงวันแรกของช่วง</span>
+          <button type="button" onclick="PortfolioModule.openValueAnchorModal()" style="background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;">ตั้งยอดคงเหลือวันตั้งต้น</button>
         </div>`);
     }
     return rows.join('');
