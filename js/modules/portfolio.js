@@ -2492,28 +2492,48 @@ this.openAssetModal(holding.symbol, { reopen: true });
     };
   },
 
-  // พอร์ตที่ถือสินทรัพย์บาทให้อัปเป็น฿นำแล้ววงเล็บ USD ต่อท้าย ส่วนพอร์ตต่างประเทศคง USD ตามเดิม
-  deltaValueHtml(d, fx, preferBaht) {
-    const mask = (text) => (this.hideValues ? '•••,••' : text);
-    if (!d.known || d.amt == null || d.pct == null) {
-      return '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
-    }
+  deltaParts(d, fx, preferBaht) {
+    if (!d.known || d.amt == null || d.pct == null) return null;
     const up = d.amt >= 0;
     const sign = up ? '+' : '-';
     const digits = Math.abs(d.amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const usd = `${sign}$${digits}`;
-    const baht = `${sign}฿${(Math.abs(d.amt) * fx).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const pct = `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`;
-    const main = mask(preferBaht ? baht : usd);
-    if (!preferBaht) {
-      return `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${main} ${mask(pct)}</span>`;
-    }
-    return `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${main} ${mask(pct)}</span>` +
-      `<span style="font-size: 11px; font-weight: 700; color: var(--txt-muted);">${mask(`≈ ${usd}`)}</span>`;
+    return {
+      up,
+      usd: `${sign}$${digits}`,
+      baht: `${sign}฿${(Math.abs(d.amt) * fx).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      pct: `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`
+    };
+  },
+
+  deltaValueHtml(d, fx, preferBaht) {
+    const mask = (text) => (this.hideValues ? '•••,••' : text);
+    const p = this.deltaParts(d, fx, preferBaht);
+    if (!p) return '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
+    const main = mask(preferBaht ? p.baht : p.usd);
+    const alt = preferBaht ? `<span style="font-size: 11px; font-weight: 700; color: var(--txt-muted);">${mask(`≈ ${p.usd}`)}</span>` : '';
+    return `<span style="color: ${p.up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${main} ${mask(p.pct)}</span>${alt}`;
   },
 
   deltaRowHtml(d, label, fx, preferBaht) {
     return `<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">${this.deltaValueHtml(d, fx, preferBaht)}<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${label}</span></div>`;
+  },
+
+  // คอลัมน์ตัวเลขบนการ์ดใหญ่: ป้ายกำกับอยู่ด้านบน like กล่องสถิติใต้การ์ด
+  deltaBlockHtml(d, label, fx, preferBaht, controlHtml) {
+    const mask = (text) => (this.hideValues ? '•••,••' : text);
+    const p = this.deltaParts(d, fx, preferBaht);
+    const color = p ? (p.up ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
+    const main = !p ? '—' : mask(preferBaht ? p.baht : p.usd);
+    const pct = !p ? '' : mask(p.pct);
+    const alt = (p && preferBaht) ? `<div style="font-size: 11px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${mask(`≈ ${p.usd}`)}</div>` : '';
+
+    return `
+      <div style="flex: 1 1 150px; min-width: 140px;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${label}${controlHtml || ''}</div>
+        <div style="font-size: 15px; font-weight: 800; color: ${color}; margin-top: 5px; line-height: 1.25;">${main} ${pct}</div>
+        ${alt}
+      </div>
+    `;
   },
 
   // สรุปย่อบนการ์ดรายพอร์ต: USD เป็นหลัก + บรรทัดบาท และวันนี้/เมื่อวานนี้/กำไรสะสม
@@ -2552,35 +2572,34 @@ this.openAssetModal(holding.symbol, { reopen: true });
       ? new Date(summary.lastQuoteMs).toISOString().slice(0, 19).replace('T', ' ') + ' GMT'
       : 'ยังไม่มีการอัปเดตราคา';
 
+    const periodControl = `
+      <select id="summary-period" onchange="PortfolioModule.setSummaryPeriod(this.value)"
+        style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 2px 5px; cursor: pointer; text-transform: none;">
+        <option value="today" ${this.summaryPeriod === 'today' ? 'selected' : ''}>วันนี้</option>
+        <option value="yesterday" ${this.summaryPeriod === 'yesterday' ? 'selected' : ''}>เมื่อวานนี้</option>
+        <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
+      </select>`;
+
     return `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; margin-bottom: 20px; max-width: 560px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-          <div style="font-size: 13.5px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
-          <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
-            style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 30px; height: 28px; border-radius: 6px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
-        </div>
-
-        <div style="margin-top: 10px; font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1.05; color: var(--txt-strong);">
-          ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
-        </div>
-        <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
-
-        <div style="display: flex; flex-direction: column; gap: 7px; margin-top: 14px; font-size: 13px;">
-          ${this.deltaRowHtml(deltas.today, 'วันนี้', fx, preferBaht)}
-          ${this.deltaRowHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            ${this.deltaValueHtml(picked, fx, preferBaht)}
-            <select id="summary-period" onchange="PortfolioModule.setSummaryPeriod(this.value)"
-              style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 6px; font-size: 11.5px; font-weight: 700; padding: 3px 6px; cursor: pointer;">
-              <option value="today" ${this.summaryPeriod === 'today' ? 'selected' : ''}>วันนี้</option>
-              <option value="yesterday" ${this.summaryPeriod === 'yesterday' ? 'selected' : ''}>เมื่อวานนี้</option>
-              <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
-            </select>
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">กำไรสะสม</span>
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap; height: 100%; box-sizing: border-box;">
+        <div style="flex: 1 1 260px; min-width: 230px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="font-size: 13.5px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
+            <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
+              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 30px; height: 28px; border-radius: 6px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
           </div>
+          <div style="margin-top: 10px; font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1.05; color: var(--txt-strong);">
+            ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
+          </div>
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
+          <div style="margin-top: 10px; font-size: 11px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
         </div>
 
-        <div style="margin-top: 12px; font-size: 11px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
+        <div style="flex: 2 1 340px; display: flex; gap: 24px; flex-wrap: wrap;">
+          ${this.deltaBlockHtml(deltas.today, 'วันนี้', fx, preferBaht)}
+          ${this.deltaBlockHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
+          ${this.deltaBlockHtml(picked, 'กำไรสะสม', fx, preferBaht, periodControl)}
+        </div>
       </div>
     `;
   },
@@ -2682,7 +2701,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </div>
         </div>
 
-        ${summaryCardHtml}
+        <div style="margin-bottom: 20px;">${summaryCardHtml}</div>
 
         <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
@@ -2929,19 +2948,21 @@ this.openAssetModal(holding.symbol, { reopen: true });
     }).join('');
 
     // ค่าสำหรับสร้างกล่องสรุปตามรูป 1 (รองรับทั้ง USD และ THB)
-    const costBig = summary.isForeignPort ? formatUSD(summary.totalCostUSD) : formatBaht(summary.totalCost);
-    const mktBig = summary.isForeignPort ? formatUSD(summary.totalMarketUSD) : formatBaht(summary.marketValue);
-    const unplBig = summary.isForeignPort 
+    // ปิดตัวเลขด้วยเมื่อผู้ใช้กดปุ่ม 🙈 เพราะกล่องเหล่านี้นั่งติดกับการ์ดสรุป
+    const maskNum = (text) => (this.hideValues ? '•••,••' : text);
+    const costBig = maskNum(summary.isForeignPort ? formatUSD(summary.totalCostUSD) : formatBaht(summary.totalCost));
+    const mktBig = maskNum(summary.isForeignPort ? formatUSD(summary.totalMarketUSD) : formatBaht(summary.marketValue));
+    const unplBig = maskNum(summary.isForeignPort 
       ? `${summary.unrealizedUSD >= 0 ? '+' : ''}${formatUSD(summary.unrealizedUSD)}`
-      : `${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}`;
+      : `${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}`);
 
-    const costSub = summary.isForeignPort ? `≈ ${formatBaht(summary.totalCost)}` : 'เป้าหมายพอร์ตนี้';
-    const mktSub = summary.isForeignPort ? `≈ ${formatBaht(summary.marketValue)}` : 'รวมพอร์ตสุทธิ';
-    const unplSub = summary.isForeignPort ? `≈ ${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}` : '💵 เงินปันผลสะสม';
+    const costSub = summary.isForeignPort ? `≈ ${maskNum(formatBaht(summary.totalCost))}` : 'เป้าหมายพอร์ตนี้';
+    const mktSub = summary.isForeignPort ? `≈ ${maskNum(formatBaht(summary.marketValue))}` : 'รวมพอร์ตสุทธิ';
+    const unplSub = summary.isForeignPort ? `≈ ${maskNum(`${summary.unrealizedPL >= 0 ? '+' : ''}${formatBaht(summary.unrealizedPL)}`)}` : '💵 เงินปันผลสะสม';
 
-    const rightCostSub = summary.isForeignPort ? formatBaht(summary.targetAmount || 500000) : (summary.targetAmount > 0 ? formatBaht(summary.targetAmount) : '-');
-    const rightMktSub = formatBaht(summary.marketValue);
-    const rightUnplSub = `+${formatBaht(summary.dividends)}`;
+    const rightCostSub = maskNum(summary.isForeignPort ? formatBaht(summary.targetAmount || 500000) : (summary.targetAmount > 0 ? formatBaht(summary.targetAmount) : '-'));
+    const rightMktSub = maskNum(formatBaht(summary.marketValue));
+    const rightUnplSub = maskNum(`+${formatBaht(summary.dividends)}`);
 
     container.innerHTML = `
       <div class="portfolio-container" style="padding-bottom: 30px;">
@@ -2979,10 +3000,13 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </label>
         </div>
 
-        ${this.renderSummaryCardHtml(summary, formatUSD, formatBaht, currentName)}
+        <div style="display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; margin-bottom: 22px;">
+          <div style="flex: 1 1 330px; min-width: 300px;">
+            ${this.renderSummaryCardHtml(summary, formatUSD, formatBaht, currentName)}
+          </div>
 
-        <!-- 4 กล่องสรุปสถิติ (ตรงตามรูป 1 เป๊ะ สำหรับพอร์ตต่างประเทศ) -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 22px;">
+          <!-- 4 กล่องสรุปสถิติ จัด 2x2 ข้างการ์ดสรุป -->
+          <div style="flex: 2 1 460px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
           <!-- กล่องที่ 1: ต้นทุนรวม -->
           <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;">
             <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">ต้นทุนรวม (Cost Basis)</div>
@@ -3016,11 +3040,12 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <!-- กล่องที่ 4: ผลตอบแทนรวม (%) -->
           <div style="background: var(--panel); border: 1px solid ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; border-radius: 12px; padding: 18px 20px;">
             <div style="font-size: 12px; color: var(--txt-muted); font-weight: 600; margin-bottom: 6px;">ผลตอบแทนรวม (%)</div>
-            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 12px;">${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%</div>
+            <div style="font-size: 26px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'}; margin-bottom: 12px;">${maskNum(`${isProfit ? '+' : ''}${summary.returnPct.toFixed(2)}%`)}</div>
             <div style="border-top: 1px dashed ${isProfit ? 'var(--up-line)' : 'var(--down-line)'}; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
               <span style="color: var(--txt-muted);">กำไรรับจริงสะสม</span>
-              <strong style="color: ${summary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${summary.realizedPL >= 0 ? '+' : ''}${formatBaht(summary.realizedPL)}</strong>
+              <strong style="color: ${summary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${maskNum(`${summary.realizedPL >= 0 ? '+' : ''}${formatBaht(summary.realizedPL)}`)}</strong>
             </div>
+          </div>
           </div>
         </div>
 
