@@ -2748,8 +2748,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
       `;
     }).join('');
 
-    const activityFeedHtml = this.renderActivityFeedHtml(data);
-
     container.innerHTML = `
       <div class="pf-glass portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 20px 22px 30px !important; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: nowrap; gap: 14px; width: 100%;">
@@ -2775,12 +2773,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
         <div style="margin-bottom: 18px;">${summaryCardHtml}</div>
 
-        <div style="display: grid; grid-template-columns: minmax(210px, 0.85fr) minmax(340px, 1.6fr) minmax(240px, 1fr); gap: 16px; margin-bottom: 22px; align-items: stretch;">
+        <div style="display: grid; grid-template-columns: minmax(200px, 0.8fr) minmax(400px, 2fr) minmax(230px, 0.95fr); gap: 16px; margin-bottom: 22px; align-items: stretch;">
           ${allocCardHtml}
           ${this.valueHistoryCardHtml()}
           <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0;">
             ${keyStatsCardHtml}
-            ${activityFeedHtml}
           </div>
         </div>
 
@@ -2798,43 +2795,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
     }
     this.mountValueHistoryChart();
     this.paintPortfolioSparklines();
-  },
-
-  // ---------- การ์ดกิจกรรมล่าสุด (รายการซื้อ-ขายล่าสุดทุกพอร์ต) ----------
-  renderActivityFeedHtml(data) {
-    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    const fmtDate = (raw) => {
-      const m = String(raw || '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (!m) return String(raw || '');
-      return `${Number(m[3])} ${thaiMonths[Number(m[2]) - 1]} ${Number(m[1]) + 543}`;
-    };
-    const trades = (data.trades || [])
-      .filter((t) => t && t.tradeDate)
-      .sort((a, b) => String(b.tradeDate).localeCompare(String(a.tradeDate)))
-      .slice(0, 6);
-
-    const rows = trades.map((t) => {
-      const buy = String(t.side || 'buy').toLowerCase() !== 'sell';
-      const color = buy ? '#34d399' : '#fb7185';
-      const qty = Number(t.quantity || 0).toLocaleString('en-US', { maximumFractionDigits: 4 });
-      const price = Number(t.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      return `
-        <div style="display: flex; gap: 10px; align-items: flex-start;">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; margin-top: 5px; flex-shrink: 0; box-shadow: 0 0 6px ${color};"></span>
-          <div style="min-width: 0; flex: 1;">
-            <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-soft);">${buy ? 'ซื้อ' : 'ขาย'} ${String(t.symbol || '').toUpperCase()} <span style="color: var(--txt-muted); font-weight: 600;">×${qty}</span></div>
-            <div style="font-size: 11px; color: var(--txt-muted); margin-top: 1px;">${fmtDate(t.tradeDate)} · ราคา ${price}</div>
-          </div>
-        </div>`;
-    }).join('');
-
-    return `
-      <div class="pf-card" style="padding: 16px 18px;">
-        <div style="font-size: 14px; font-weight: 800; color: var(--txt-strong); margin-bottom: 12px;">🕘 กิจกรรมล่าสุด</div>
-        <div style="display: flex; flex-direction: column; gap: 11px;">
-          ${rows || '<div style="font-size: 12px; color: var(--txt-muted);">ยังไม่มีรายการซื้อ-ขาย</div>'}
-        </div>
-      </div>`;
   },
 
   // ---------- sparkline มูลค่ารายพอร์ต (ใช้ cache ราคาชุดเดียวกับกราฟหลัก) ----------
