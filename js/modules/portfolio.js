@@ -2635,33 +2635,38 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const progressPct = targetAmount > 0 ? Math.min(100, (netTotal / targetAmount) * 100) : 0;
     const remainingToTarget = Math.max(0, targetAmount - netTotal);
 
-    const liveFx = overallSummary.liveFxRate || 33.49;
-
     let stageBadge = '🌱 ต้นอ่อนผลิใบ · ระยะ 2';
     if (progressPct >= 100) stageBadge = '🌳 ไม้ใหญ่ผลิดอก · สำเร็จเป้าหมาย';
     else if (progressPct >= 75) stageBadge = '🌿 แตกกิ่งก้าน · ระยะ 4';
     else if (progressPct >= 50) stageBadge = '🪴 เติบโตสมบูรณ์ · ระยะ 3';
     else if (progressPct < 25) stageBadge = '🌰 เมล็ดพันธุ์ · ระยะ 1';
 
-    // แถบเป้าหมาย (ย้ายจากการ์ดสรุปไปอยู่ในการ์ดสรุปตัวเลขสำคัญ)
+    const mask = (text) => (this.hideValues ? '•••,••' : text);
+
+    // แถบเป้าหมายแบบกะทัดรัด (อยู่ในการ์ดภาพรวมสำคัญ)
     const targetRowHtml = `
-      <div style="border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 9px;">
-        <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;">
-          <span style="font-size: 14px; font-weight: 700; color: var(--txt-muted); white-space: nowrap;">ความคืบหน้าสู่เป้าหมาย</span>
-          <strong style="font-size: 20px; font-weight: 900; color: var(--accent); letter-spacing: -0.4px; line-height: 1.1;">${progressPct.toFixed(1)}%</strong>
+      <div style="border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 13px;">
+          <span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 16px;">🏆</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 14px; color: var(--txt-muted); font-weight: 700;">เป้าหมายรวมพอร์ต</div>
+            <div style="font-size: 22px; font-weight: 900; margin-top: 3px; line-height: 1.2; letter-spacing: -0.5px;"><span style="color: var(--txt-strong);">${mask(formatBaht(targetAmount))}</span></div>
+          </div>
+          <strong style="font-size: 18px; font-weight: 900; color: var(--accent); white-space: nowrap;">${progressPct.toFixed(1)}%</strong>
         </div>
-        <div style="height: 10px; background: var(--line); border-radius: 5px; overflow: hidden;">
-          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 5px;"></div>
+        <div style="height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;">
+          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 4px;"></div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <span style="align-self: flex-start; background: var(--up-soft-2); color: var(--up-4); font-size: 12.5px; font-weight: 700; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
-          <span style="font-size: 13px; color: var(--txt-muted); white-space: nowrap; margin-left: auto;">เป้าหมายรวม <strong style="color: var(--txt-strong); font-weight: 800;">${formatBaht(targetAmount)}</strong>${remainingToTarget > 0 ? ` · ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${formatBaht(remainingToTarget)}</strong>` : ' · <strong style="color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</strong>'}</span>
+          <span style="background: var(--up-soft-2); color: var(--up-4); font-size: 12.5px; font-weight: 700; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
+          ${remainingToTarget > 0
+            ? `<span style="font-size: 13px; color: var(--txt-muted);">ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${mask(formatBaht(remainingToTarget))}</strong></span>`
+            : `<span style="font-size: 13px; color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</span>`}
         </div>
       </div>`;
 
     const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht);
 
-    const mask = (text) => (this.hideValues ? '•••,••' : text);
     const alloc = overallSummary.allocation;
     const allocTotal = alloc.valTH + alloc.valFund + alloc.valUS;
     const aTH = allocTotal > 0 ? (alloc.valTH / allocTotal) * 100 : 0;
@@ -2706,11 +2711,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const keyStatsCardHtml = `
       <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 16px;">
-        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">🧭 สรุปตัวเลขสำคัญ</div>
-        ${summaryRow('💼', 'ต้นทุนรวมสะสม (Total Cost)', `<span style="color: var(--txt-strong);">${mask(formatBaht(overallSummary.totalCost))}</span>`, `≈ ${mask(formatUSD(overallSummary.totalCost / liveFx))} USD`)}
-        ${summaryRow('📈', 'กำไร / ขาดทุนที่ยังไม่เกิดขึ้น', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${mask(formatBaht(overallSummary.unrealizedPL))}</span>`, `สถานะ: <strong style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '🟢 พอร์ตเขียวสุขภาพดี' : '🔴 ติดดอยสะสม'}</strong>`)}
-        ${summaryRow('🎯', 'ผลตอบแทนรวม (%)', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</span>`, `กำไรรับจริงสะสม: <strong style="color: ${overallSummary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${overallSummary.realizedPL >= 0 ? '+' : ''}${mask(formatBaht(overallSummary.realizedPL))}</strong>`)}
-        ${summaryRow('💵', 'เงินปันผลสะสมทั้งหมด', `<span style="color: var(--up);">+${mask(formatBaht(overallSummary.dividends))}</span>`, 'สร้างกระแสเงินสดต่อเนื่อง')}
+        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">🧭 ภาพรวมสำคัญ</div>
+        ${summaryRow('💡', 'ผลตอบแทนรวม', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</span>`, 'เทียบต้นทุนสุทธิ')}
+        ${summaryRow('🛡️', 'เงินปันผลสะสม', `<span style="color: var(--up);">+${mask(formatBaht(overallSummary.dividends))}</span>`, 'สร้างกระแสเงินสดต่อเนื่อง')}
         ${targetRowHtml}
       </div>`;
 
