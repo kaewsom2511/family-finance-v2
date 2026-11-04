@@ -2683,15 +2683,15 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const allocCardHtml = `
       <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; height: 100%;">
-        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 18px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
-        <div style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap;">
-          <div style="position: relative; width: 186px; height: 186px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
-            <div style="position: absolute; inset: 33px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;">
-              <div style="font-size: 22px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.6px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
-              <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); text-align: center;">มูลค่าตลาดปัจจุบัน</div>
+        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 18px;">🥧 สัดส่วนสินทรัพย์</div>
+        <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap; height: calc(100% - 40px);">
+          <div style="position: relative; width: 128px; height: 128px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
+            <div style="position: absolute; inset: 24px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+              <div style="font-size: 17px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.4px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
+              <div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-align: center;">รวมทั้งหมด</div>
             </div>
           </div>
-          <div style="flex: 1 1 230px; display: flex; flex-direction: column; gap: 13px; min-width: 0;">
+          <div style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 11px; min-width: 0;">
             ${allocLegendRow('var(--indigo)', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
             ${allocLegendRow('var(--up-3)', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
             ${allocLegendRow('var(--accent)', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
@@ -2790,12 +2790,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
         <div style="margin-bottom: 20px;">${summaryCardHtml}</div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; margin-bottom: 24px; align-items: stretch;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; align-items: stretch;">
           ${allocCardHtml}
+          ${this.valueHistoryCardHtml()}
           ${keyStatsCardHtml}
         </div>
-
-        ${this.valueHistoryCardHtml()}
 
         <div>
           <h3 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: var(--txt);">เปรียบเทียบผลการดำเนินงานรายพอร์ต (${sortedPortfolios.length} บัญชี):</h3>
@@ -2815,7 +2814,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
   // ---------- การ์ดมูลค่าพอร์ตย้อนหลัง ----------
   valueRange: '11m',
   VALUE_RANGES: { '1m': 31, '3m': 92, '6m': 183, '11m': 336 },
-  VALUE_RANGE_LABELS: { '1m': '1M', '3m': '3M', '6m': '6M', '11m': '11M' },
+  VALUE_RANGE_LABELS: { '1m': '1M', '3m': '3M', '6m': '6M', '11m': '1Y' },
   _vhChart: null,
   _vhResize: null,
   _vhSeries: [],
@@ -2837,18 +2836,18 @@ this.openAssetModal(holding.symbol, { reopen: true });
       return `<button type="button" onclick="PortfolioModule.setValueRange('${id}')" style="background: ${on ? 'var(--accent-soft)' : 'var(--inset)'}; border: 1px solid ${on ? 'var(--accent)' : 'var(--line-2)'}; color: ${on ? 'var(--accent)' : 'var(--txt-muted)'}; font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 20px; cursor: pointer;">${this.VALUE_RANGE_LABELS[id]}</button>`;
     }).join('');
     return `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; margin-bottom: 24px;">
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; margin-bottom: 24px; height: 100%; display: flex; flex-direction: column;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
           <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0;">
-            <span style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">📈 มูลค่าพอร์ตย้อนหลัง</span>
+            <span style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">📈 กราฟมูลค่าพอร์ต (ย้อนหลัง 11 เดือน)</span>
             <span id="vh-axis-note" style="font-size: 12px; font-weight: 700; color: var(--txt-muted);"></span>
           </div>
           <div style="display: flex; gap: 6px; flex-shrink: 0;">${pills}</div>
         </div>
-        <div id="vh-chart-host" style="height: 248px; position: relative;">
+        <div id="vh-chart-host" style="height: 200px; position: relative; flex-shrink: 0;">
           <div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--txt-muted);">กำลังเตรียมข้อมูล…</div>
         </div>
-        <div id="vh-foot" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px;"></div>
+        <div id="vh-foot" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; font-size: 12px;"></div>
       </div>`;
   },
 
