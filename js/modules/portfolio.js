@@ -540,9 +540,101 @@ var QuoteSyncService = {
   }
 };
 
+// ราคาปิดรายวันต่อสัญลักษณ์ ใช้เฉพาะแถว "เมื่อวานนี้" ของการ์ดสรุป
+// โควตาของ backend จำกัด จึงดึงได้ไม่เกินวันละครั้งต่อสัญลักษณ์ แล้วเก็บสะสมไว้ในเครื่อง
+var DailyCloseService = {
+  STORAGE_KEY: 'wealthport:daily-close:v1',
+  REFETCH_MS: 12 * 60 * 60 * 1000,
+  REQUEST_GAP_MS: 300,
+  MAX_PER_RUN: 25,
+  running: false,
+
+  read() {
+    try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '{}'); } catch (e) { return {}; }
+  },
+
+  write(store) {
+    try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(store)); } catch (e) {}
+  },
+
+  entryKey(symbol, assetType) {
+    return `${assetType || 'foreign-stock'}|${String(symbol || '').trim().toUpperCase().replace(/\.BK$/i, '')}`;
+  },
+
+  // เทียบสองวันทำการล่าสุดที่ตลาดปิดแล้ว (นับวันนี้เป็นแท่งค้างตลาดเสมอ)
+  lastCompletedChange(store, symbol, assetType, todayStr) {
+    const closes = store[this.entryKey(symbol, assetType)]?.closes || {};
+    const dates = Object.keys(closes).filter(d => d < todayStr).sort();
+    if (dates.length < 2) return null;
+    const base = Number(closes[dates[dates.length - 2]]);
+    const last = Number(closes[dates[dates.length - 1]]);
+    if (!(base > 0) || !(last > 0)) return null;
+    return { amount: last - base, base, date: dates[dates.length - 1] };
+  },
+
+  async fetchOne(symbol, assetType) {
+    const clean = String(symbol || '').trim().toUpperCase().replace(/\.BK$/i, '');
+    if (!clean) return null;
+    const base = QuoteSyncService.getApiBaseUrl();
+    const isFund = assetType === 'mutual-fund';
+    const isThai = isFund || assetType === 'thai-stock';
+    const url = isFund
+      ? `${base}/api/fund-chart?symbol=${encodeURIComponent(clean)}&range=1m`
+      : `${base}/api/chart?symbol=${encodeURIComponent(isThai ? `${clean}.BK` : clean)}&assetType=${isThai ? 'thai-stock' : 'foreign-stock'}&range=1mo&interval=1d`;
+
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const closes = {};
+      (Array.isArray(data?.points) ? data.points : []).forEach(p => {
+        const d = String(p.time || '').slice(0, 10);
+        const v = Number(isFund ? p.value : p.close);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d) && v > 0) closes[d] = v;
+      });
+      return Object.keys(closes).length ? closes : null;
+    } catch (e) {
+      return null;
+    } finally {
+      clearTimeout(tid);
+    }
+  },
+
+  // เรียกหลังเรนเดอร์: ข้ามสัญลักษณ์ที่ดึงมาแล้วภายใน 12 ชม. รวมถึงครั้งที่ดึงไม่สำเร็จ
+  async ensure(holdings, onDone) {
+    if (this.running) return;
+    const store = this.read();
+    const targets = [];
+    for (const h of holdings) {
+      const key = this.entryKey(h.symbol, h.assetType);
+      const e = store[key];
+      if (e && (Date.now() - (e.fetchedAt || 0)) < this.REFETCH_MS) continue;
+      targets.push({ key, symbol: h.symbol, assetType: h.assetType });
+      if (targets.length >= this.MAX_PER_RUN) break;
+    }
+    if (!targets.length) return;
+
+    this.running = true;
+    let changed = false;
+    for (const t of targets) {
+      // บันทึก fetchedAt แม้ดึงไม่ได้ มิฉะนั้นทุกครั้งที่เรนเดอร์จะยิง API ซ้ำ
+      store[t.key] = { closes: (await this.fetchOne(t.symbol, t.assetType)) || {}, fetchedAt: Date.now() };
+      changed = true;
+      await new Promise(r => setTimeout(r, this.REQUEST_GAP_MS));
+    }
+    if (changed) this.write(store);
+    this.running = false;
+    if (changed && onDone) onDone();
+  }
+};
+
 var PortfolioModule = {
   currentTab: 'overview',
   selectedPortfolioId: 'ALL',
+  summaryPeriod: 'all',
+  hideValues: false,
   searchQuery: '',
   filterCategory: 'all',
   perfSearchQuery: '',
@@ -988,6 +1080,13 @@ var PortfolioModule = {
     let estimateQuotes = 0;
     let missingQuotes = 0;
 
+    // ตัวเลขการ์ดสรุป: "วันนี้" จาก previousClose ของเควต, "เมื่อวาน" จากแท่งราคาปิดรายวันที่ cached ไว้
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const dailyCloses = DailyCloseService.read();
+    let dayAmtUSD = 0, dayBaseUSD = 0, dayKnown = 0;
+    let prevDayAmtUSD = 0, prevDayBaseUSD = 0, prevDayKnown = 0, prevDayDate = '';
+    let lastQuoteMs = 0;
+
     activeHoldings.forEach(item => {
       totalCostTHB += item.totalCost;
 
@@ -1065,6 +1164,26 @@ var PortfolioModule = {
       item.dayChangeUSD = hasDayChange && isForeign ? item.dayChangeNative * item.shares : null;
       item.dayChangeTHB = hasDayChange ? item.dayChangeNative * item.shares * (isForeign ? liveFxRate : 1) : null;
 
+      if (hasDayChange) {
+        const amt = isForeign ? item.dayChangeUSD : item.dayChangeTHB / liveFxRate;
+        const valueUSD = isForeign ? item.marketUSD : item.marketValue / liveFxRate;
+        dayAmtUSD += amt;
+        dayBaseUSD += (valueUSD - amt);
+        dayKnown++;
+      }
+
+      const yChange = DailyCloseService.lastCompletedChange(dailyCloses, item.symbol, item.assetType, todayStr);
+      if (yChange) {
+        const factor = isForeign ? 1 : 1 / liveFxRate;
+        prevDayAmtUSD += yChange.amount * item.shares * factor;
+        prevDayBaseUSD += yChange.base * item.shares * factor;
+        prevDayKnown++;
+        if (yChange.date > prevDayDate) prevDayDate = yChange.date;
+      }
+
+      const qMs = q?.updatedAt ? new Date(q.updatedAt).getTime() : NaN;
+      if (Number.isFinite(qMs) && qMs > lastQuoteMs) lastQuoteMs = qMs;
+
       item.name = this.plainName(q && q.name) || this.tradeName(item.trades, item.symbol) || null;
 
       if (item.quoteStatus === 'live') liveQuotes++;
@@ -1096,6 +1215,14 @@ var PortfolioModule = {
       marketValue: totalMarketValueTHB,
       unrealizedPL: unrealizedPL,
       returnPct: returnPct,
+      dayChangeUSD: dayAmtUSD,
+      dayChangePct: dayBaseUSD > 0 ? (dayAmtUSD / dayBaseUSD) * 100 : null,
+      dayChangeKnown: dayKnown,
+      prevDayChangeUSD: prevDayAmtUSD,
+      prevDayChangePct: prevDayBaseUSD > 0 ? (prevDayAmtUSD / prevDayBaseUSD) * 100 : null,
+      prevDayChangeKnown: prevDayKnown,
+      prevDayDate: prevDayDate,
+      lastQuoteMs: lastQuoteMs,
       targetAmount: targetPortAmount,
       dividends: isBLS && totalDividendsTHB === 0 ? 71376.41 : totalDividendsTHB,
       realizedPL: isBLS && realizedPLTHB === 0 ? -1071.75 : realizedPLTHB,
@@ -2342,11 +2469,131 @@ this.openAssetModal(holding.symbol, { reopen: true });
     document.body.insertAdjacentHTML('beforeend', modalHtml);
   },
 
+  setSummaryPeriod(value) {
+    this.summaryPeriod = ['today', 'yesterday', 'all'].includes(value) ? value : 'all';
+    this.render();
+  },
+
+  toggleHideValues() {
+    this.hideValues = !this.hideValues;
+    this.render();
+  },
+
+  // สรุปย่อบนการ์ดรายพอร์ต: USD เป็นหลัก + บรรทัดบาท และวันนี้/เมื่อวานนี้/กำไรสะสม
+  renderPortfolioSummaryHtml(summary, formatUSD, formatBaht) {
+    const fx = summary.liveFxRate || 33.49;
+    const hide = this.hideValues;
+    const mask = (text) => (hide ? '•••,••' : text);
+
+    const deltas = {
+      today: { amt: summary.dayChangeUSD, pct: summary.dayChangePct, known: summary.dayChangeKnown },
+      yesterday: { amt: summary.prevDayChangeUSD, pct: summary.prevDayChangePct, known: summary.prevDayChangeKnown },
+      all: {
+        amt: (summary.unrealizedPL || 0) / fx,
+        pct: summary.totalCost > 0 ? ((summary.unrealizedPL / summary.totalCost) * 100) : null,
+        known: summary.activeCount
+      }
+    };
+
+    const rowHtml = (d, label) => {
+      let value;
+      if (!d.known || d.amt == null || d.pct == null) {
+        value = '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
+      } else {
+        const up = d.amt >= 0;
+        const money = (up ? '+$' : '-$') + Math.abs(d.amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const pct = `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`;
+        value = `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${mask(money)} ${mask(pct)}</span>`;
+      }
+      return `<div style="display: flex; align-items: baseline; gap: 8px;">${value}<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${label}</span></div>`;
+    };
+
+    return `
+      <div style="margin-bottom: 14px;">
+        <div style="font-size: 11px; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
+        <div style="font-size: 21px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; color: var(--txt-strong);">
+          ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
+        </div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
+        <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 12.5px;">
+          ${rowHtml(deltas.today, 'วันนี้')}
+          ${rowHtml(deltas.yesterday, 'เมื่อวานนี้')}
+          ${rowHtml(deltas.all, 'กำไรสะสม')}
+        </div>
+      </div>
+    `;
+  },
+
+  // การ์ดสรุปย่อ: ยอดรวม USD + วันนี้ / เมื่อวาน / กำไรสะสม (เลือกช่วงได้)
+  renderSummaryCardHtml(summary, formatUSD, formatBaht, title) {
+    const fx = summary.liveFxRate || 33.49;
+    const hide = this.hideValues;
+    const mask = (text) => (hide ? '•••,••' : text);
+
+    const deltas = {
+      today: { amt: summary.dayChangeUSD, pct: summary.dayChangePct, known: summary.dayChangeKnown },
+      yesterday: { amt: summary.prevDayChangeUSD, pct: summary.prevDayChangePct, known: summary.prevDayChangeKnown },
+      all: {
+        amt: (summary.unrealizedPL || 0) / fx,
+        pct: summary.totalCost > 0 ? ((summary.unrealizedPL / summary.totalCost) * 100) : null,
+        known: summary.activeCount
+      }
+    };
+
+    const deltaHtml = (d) => {
+      if (!d || !d.known || d.amt == null || d.pct == null) return '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
+      const up = d.amt >= 0;
+      const money = (up ? '+$' : '-$') + Math.abs(d.amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const pct = `(${up ? '+' : ''}${d.pct.toFixed(2)}%)`;
+      return `<span style="color: ${up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${mask(money)} ${mask(pct)}</span>`;
+    };
+
+    const labelHtml = (text) => `<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${text}</span>`;
+
+    const picked = deltas[this.summaryPeriod] || deltas.all;
+    const lastUpdated = summary.lastQuoteMs
+      ? new Date(summary.lastQuoteMs).toISOString().slice(0, 19).replace('T', ' ') + ' GMT'
+      : 'ยังไม่มีการอัปเดตราคา';
+
+    return `
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; margin-bottom: 20px; max-width: 560px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <div style="font-size: 13.5px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
+          <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
+            style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 30px; height: 28px; border-radius: 6px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1.05; color: var(--txt-strong);">
+          ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
+        </div>
+        <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px; margin-top: 14px; font-size: 13px;">
+          <div style="display: flex; align-items: baseline; gap: 8px;">${deltaHtml(deltas.today)}${labelHtml('วันนี้')}</div>
+          <div style="display: flex; align-items: baseline; gap: 8px;">${deltaHtml(deltas.yesterday)}${labelHtml('เมื่อวานนี้')}</div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            ${deltaHtml(picked)}
+            <select id="summary-period" onchange="PortfolioModule.setSummaryPeriod(this.value)"
+              style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 6px; font-size: 11.5px; font-weight: 700; padding: 3px 6px; cursor: pointer;">
+              <option value="today" ${this.summaryPeriod === 'today' ? 'selected' : ''}>วันนี้</option>
+              <option value="yesterday" ${this.summaryPeriod === 'yesterday' ? 'selected' : ''}>เมื่อวานนี้</option>
+              <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
+            </select>
+            ${labelHtml('กำไรสะสม')}
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; font-size: 11px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
+      </div>
+    `;
+  },
+
   renderOverviewDashboard(container) {
     const data = getPortfolioDataHelper();
     const overallSummary = this.calculatePortfolioDetail(data, 'ALL');
     const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatUSD = (num) => '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht);
 
     const isProfit = overallSummary.unrealizedPL >= 0;
     const sortedPortfolios = this.getSortedPortfolios(data);
@@ -2388,10 +2635,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
                 ${pProfit ? '+' : ''}${pSummary.returnPct.toFixed(2)}%
               </span>
             </div>
-            <div style="margin-bottom: 14px;">
-              <div style="font-size: 11px; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
-              <div style="font-size: 20px; font-weight: 800; color: var(--txt-strong);">${formatBaht(pNetTotal)}</div>
-            </div>
+            ${this.renderPortfolioSummaryHtml(pSummary, formatUSD, formatBaht)}
+
             <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
               <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px;">
                 <span style="color: var(--txt-muted);">🎯 เป้าหมาย: <strong>${pTarget > 0 ? formatBaht(pTarget) : 'ยังไม่ตั้งเป้า'}</strong></span>
@@ -2439,6 +2684,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
             </label>
           </div>
         </div>
+
+        ${summaryCardHtml}
 
         <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
@@ -2521,6 +2768,10 @@ this.openAssetModal(holding.symbol, { reopen: true });
         </div>
       </div>
     `;
+
+    if (overallSummary.activeCount > 0) {
+      DailyCloseService.ensure(overallSummary.activeHoldings, () => this.render());
+    }
   },
 
   renderHoldingsManagement(container) {
@@ -2731,6 +2982,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </label>
         </div>
 
+        ${this.renderSummaryCardHtml(summary, formatUSD, formatBaht, currentName)}
+
         <!-- 4 กล่องสรุปสถิติ (ตรงตามรูป 1 เป๊ะ สำหรับพอร์ตต่างประเทศ) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 22px;">
           <!-- กล่องที่ 1: ต้นทุนรวม -->
@@ -2825,6 +3078,10 @@ this.openAssetModal(holding.symbol, { reopen: true });
         </div>
       </div>
     `;
+
+    if (summary.activeCount > 0) {
+      DailyCloseService.ensure(summary.activeHoldings, () => this.render());
+    }
   },
 
   renderPerformanceReport(container) {
