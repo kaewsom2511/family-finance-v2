@@ -2518,24 +2518,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
     return `<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">${this.deltaValueHtml(d, fx, preferBaht)}<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${label}</span></div>`;
   },
 
-  // คอลัมน์ตัวเลขบนการ์ดใหญ่: ป้ายกำกับอยู่ด้านบน like กล่องสถิติใต้การ์ด
-  deltaBlockHtml(d, label, fx, preferBaht, controlHtml) {
-    const mask = (text) => (this.hideValues ? '•••,••' : text);
-    const p = this.deltaParts(d, fx, preferBaht);
-    const color = p ? (p.up ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
-    const main = !p ? '—' : mask(preferBaht ? p.baht : p.usd);
-    const pct = !p ? '' : mask(p.pct);
-    const alt = (p && preferBaht) ? `<div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); margin-top: 1px;">${mask(`≈ ${p.usd}`)}</div>` : '';
-
-    return `
-      <div style="flex: 0 1 auto;">
-        <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">${label}${controlHtml || ''}</div>
-        <div style="font-size: 12.5px; font-weight: 800; color: ${color}; margin-top: 4px; line-height: 1.25;">${main} ${pct}</div>
-        ${alt}
-      </div>
-    `;
-  },
-
   // สรุปย่อบนการ์ดรายพอร์ต: USD เป็นหลัก + บรรทัดบาท และวันนี้/เมื่อวานนี้/กำไรสะสม
   renderPortfolioSummaryHtml(summary, formatUSD, formatBaht) {
     const fx = summary.liveFxRate || 33.49;
@@ -2559,8 +2541,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
     `;
   },
 
-  // การ์ดสรุปย่อ: ยอดรวม USD + วันนี้ / เมื่อวาน / กำไรสะสม (เลือกช่วงได้) และแถบเสริมด้านล่างเฉพาะหน้าภาพรวม
-  renderSummaryCardHtml(summary, formatUSD, formatBaht, title, extraHtml) {
+  // การ์ดสรุปย่อหน้าภาพรวม: ยอดใหญ่ฝั่งซ้าย + ตัวชี้วัด 4 ช่องฝั่งขวา บนพื้น gradient พร้อมเส้นกราฟประกอบ
+  renderSummaryCardHtml(summary, formatUSD, formatBaht, title) {
     const fx = summary.liveFxRate || 33.49;
     const hide = this.hideValues;
     const mask = (text) => (hide ? '•••,••' : text);
@@ -2580,30 +2562,55 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
       </select>`;
 
+    const chip = (icon, label, valueHtml, subHtml) => `
+      <div style="display: flex; gap: 10px; align-items: flex-start; min-width: 0;">
+        <span style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 13px;">${icon}</span>
+        <div style="min-width: 0;">
+          <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">${label}</div>
+          <div style="font-size: 14px; font-weight: 800; margin-top: 3px; line-height: 1.3; white-space: nowrap;">${valueHtml}</div>
+          ${subHtml || ''}
+        </div>
+      </div>`;
+
+    const deltaChip = (icon, label, d, controlHtml) => {
+      const p = this.deltaParts(d, fx, preferBaht);
+      const color = p ? (p.up ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
+      const main = !p ? '—' : `${mask(preferBaht ? p.baht : p.usd)} <span style="font-size: 11.5px;">${mask(p.pct)}</span>`;
+      const alt = (p && preferBaht) ? `<div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); margin-top: 1px;">${mask(`≈ ${p.usd}`)}</div>` : '';
+      return chip(icon, `${label}${controlHtml || ''}`, `<span style="color: ${color};">${main}</span>`, alt);
+    };
+
+    const divP = summary.dividends >= 0;
+    const dividendChip = chip('💵', 'เงินปันผลสะสม',
+      `<span style="color: ${divP ? 'var(--up)' : 'var(--down)'};">${mask(`${divP ? '+' : ''}${formatBaht(summary.dividends)}`)}</span>`,
+      `<div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); margin-top: 1px;">${mask(`≈ ${formatUSD(summary.dividends / fx)}`)}</div>`);
+
     return `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 15px 18px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: ${extraHtml ? '11px' : '0px'};">
-        <div style="display: flex; align-items: flex-start; gap: 22px; flex-wrap: wrap;">
-        <div style="flex: 1 1 210px; min-width: 190px;">
+      <div style="position: relative; overflow: hidden; background-color: var(--panel); background-image: linear-gradient(115deg, var(--accent-softer) 0%, var(--accent-soft) 65%, var(--up-soft-2) 100%); border: 1px solid var(--accent-line); border-radius: 16px; padding: 20px 22px; height: 100%; box-sizing: border-box; display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap;">
+        <svg aria-hidden="true" viewBox="0 0 320 160" preserveAspectRatio="none" style="position: absolute; right: 0; bottom: 0; width: 42%; height: 76%; opacity: 0.18; pointer-events: none;">
+          <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12 L320 160 L0 160 Z" fill="var(--accent)"></path>
+          <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12" fill="none" stroke="var(--accent-bright)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+        </svg>
+
+        <div style="flex: 1 1 250px; min-width: 220px; position: relative;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
             <div style="font-size: 12px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
             <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
               style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 26px; height: 24px; border-radius: 5px; font-size: 12px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
           </div>
-          <div style="margin-top: 7px; font-size: 25px; font-weight: 900; letter-spacing: -0.6px; line-height: 1.05; color: var(--txt-strong);">
+          <div style="margin-top: 8px; font-size: 30px; font-weight: 900; letter-spacing: -0.8px; line-height: 1.05; color: var(--txt-strong);">
             ${hide ? (preferBaht ? '฿ •••,•••.••' : '$ •••,•••.••') : (preferBaht ? formatBaht(summary.marketValue) : formatUSD(summary.marketValue / fx))}
           </div>
-          <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
-          <div style="margin-top: 8px; font-size: 10.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
+          <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
+          <div style="margin-top: 10px; font-size: 10.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
         </div>
 
-        <div style="flex: 2 1 300px; display: flex; gap: 20px; flex-wrap: wrap;">
-          ${this.deltaBlockHtml(deltas.today, 'วันนี้', fx, preferBaht)}
-          ${this.deltaBlockHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
-          ${this.deltaBlockHtml(picked, 'กำไรสะสม', fx, preferBaht, periodControl)}
+        <div style="flex: 2 1 360px; display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 14px 18px; position: relative;">
+          ${deltaChip('📈', 'วันนี้', deltas.today)}
+          ${deltaChip('📅', 'เมื่อวานนี้', deltas.yesterday)}
+          ${deltaChip('💹', 'กำไรสะสม', picked, periodControl)}
+          ${dividendChip}
         </div>
-        </div>
-
-        ${extraHtml || ''}
       </div>
     `;
   },
@@ -2633,18 +2640,72 @@ this.openAssetModal(holding.symbol, { reopen: true });
     else if (progressPct >= 50) stageBadge = '🪴 เติบโตสมบูรณ์ · ระยะ 3';
     else if (progressPct < 25) stageBadge = '🌰 เมล็ดพันธุ์ · ระยะ 1';
 
-    // แถบเป้าหมายรวมเข้ากับการ์ดสรุป (เดิมเป็นการ์ดความมั่งคั่งสุทธิแยกอีกชั้น ซึ่งยอดซ้ำกับการ์ดสรุป)
-    const targetStripHtml = `
-      <div style="border-top: 1px dashed var(--line); padding-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); white-space: nowrap;">ความคืบหน้าสู่เป้าหมาย</span>
-        <strong style="font-size: 12.5px; font-weight: 800; color: var(--accent);">${progressPct.toFixed(1)}%</strong>
-        <div style="flex: 1 1 160px; min-width: 120px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden;">
-          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 3px;"></div>
+    // แถบเป้าหมาย (ย้ายจากการ์ดสรุปไปอยู่ในการ์ดสรุปตัวเลขสำคัญ)
+    const targetRowHtml = `
+      <div style="border-top: 1px dashed var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); white-space: nowrap;">ความคืบหน้าสู่เป้าหมาย</span>
+          <strong style="font-size: 12.5px; font-weight: 800; color: var(--accent);">${progressPct.toFixed(1)}%</strong>
+          <span style="font-size: 11px; color: var(--txt-muted); white-space: nowrap; margin-left: auto;">เป้าหมายรวม <strong style="color: var(--txt-strong); font-weight: 700;">${formatBaht(targetAmount)}</strong>${remainingToTarget > 0 ? ` · ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${formatBaht(remainingToTarget)}</strong>` : ' · <strong style="color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</strong>'}</span>
         </div>
-        <span style="font-size: 11px; color: var(--txt-muted); white-space: nowrap;">เป้าหมายรวม <strong style="color: var(--txt-strong); font-weight: 700;">${formatBaht(targetAmount)}</strong>${remainingToTarget > 0 ? ` · ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${formatBaht(remainingToTarget)}</strong>` : ' · <strong style="color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</strong>'}</span>
-        <span style="background: var(--up-soft-2); color: var(--up-4); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
+        <div style="height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;">
+          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 4px;"></div>
+        </div>
+        <span style="align-self: flex-start; background: var(--up-soft-2); color: var(--up-4); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
       </div>`;
-    const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht, null, targetStripHtml);
+
+    const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht);
+
+    const mask = (text) => (this.hideValues ? '•••,••' : text);
+    const alloc = overallSummary.allocation;
+    const allocTotal = alloc.valTH + alloc.valFund + alloc.valUS;
+    const aTH = allocTotal > 0 ? (alloc.valTH / allocTotal) * 100 : 0;
+    const aFund = allocTotal > 0 ? (alloc.valFund / allocTotal) * 100 : 0;
+    const allocLegendRow = (color, label, pct, val) => `
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0;">
+        <span style="width: 9px; height: 9px; background: ${color}; display: inline-block; border-radius: 3px; flex-shrink: 0;"></span>
+        <span style="color: var(--txt-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</span>
+        <strong style="color: var(--txt-strong); font-weight: 800; margin-left: auto; white-space: nowrap;">${pct.toFixed(1)}%</strong>
+        <span style="color: var(--txt-muted); font-size: 11px; white-space: nowrap;">${mask(formatBaht(val))}</span>
+      </div>`;
+
+    const allocCardHtml = `
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-sizing: border-box; height: 100%;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 14px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          <div style="position: relative; width: 148px; height: 148px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
+            <div style="position: absolute; inset: 26px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+              <div style="font-size: 16px; font-weight: 900; color: var(--txt-strong);">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
+              <div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
+            </div>
+          </div>
+          <div style="flex: 1 1 210px; display: flex; flex-direction: column; gap: 9px; min-width: 0;">
+            ${allocLegendRow('var(--indigo)', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
+            ${allocLegendRow('var(--up-3)', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
+            ${allocLegendRow('var(--accent)', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
+          </div>
+        </div>
+      </div>`;
+
+    const summaryRow = (icon, label, valueHtml, subHtml) => `
+      <div style="display: flex; align-items: flex-start; gap: 11px;">
+        <span style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 13px;">${icon}</span>
+        <div style="min-width: 0;">
+          <div style="font-size: 11.5px; color: var(--txt-muted); font-weight: 600;">${label}</div>
+          <div style="font-size: 16px; font-weight: 900; margin-top: 2px; line-height: 1.25;">${valueHtml}</div>
+          ${subHtml ? `<div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">${subHtml}</div>` : ''}
+        </div>
+      </div>`;
+
+    const keyStatsCardHtml = `
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 13px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--txt);">🧭 สรุปตัวเลขสำคัญ</div>
+        ${summaryRow('💼', 'ต้นทุนรวมสะสม (Total Cost)', `<span style="color: var(--txt-strong);">${mask(formatBaht(overallSummary.totalCost))}</span>`, `≈ ${mask(formatUSD(overallSummary.totalCost / liveFx))} USD`)}
+        ${summaryRow('📈', 'กำไร / ขาดทุนที่ยังไม่เกิดขึ้น', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${mask(formatBaht(overallSummary.unrealizedPL))}</span>`, `สถานะ: <strong style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '🟢 พอร์ตเขียวสุขภาพดี' : '🔴 ติดดอยสะสม'}</strong>`)}
+        ${summaryRow('🎯', 'ผลตอบแทนรวม (%)', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</span>`, `กำไรรับจริงสะสม: <strong style="color: ${overallSummary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${overallSummary.realizedPL >= 0 ? '+' : ''}${mask(formatBaht(overallSummary.realizedPL))}</strong>`)}
+        ${summaryRow('💵', 'เงินปันผลสะสมทั้งหมด', `<span style="color: var(--up);">+${mask(formatBaht(overallSummary.dividends))}</span>`, 'สร้างกระแสเงินสดต่อเนื่อง')}
+        ${targetRowHtml}
+      </div>`;
 
     const portCardsHtml = sortedPortfolios.map(p => {
       const pId = p.id || p.portfolioId;
@@ -2655,14 +2716,17 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const pProgPct = pTarget > 0 ? Math.min(100, (pNetTotal / pTarget) * 100) : 0;
 
       return `
-        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background-color: var(--panel); background-image: linear-gradient(165deg, var(--accent-softer) 0%, transparent 60%); border: 1px solid var(--line); border-radius: 14px; padding: 17px 18px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-              <div>
-                <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--txt-strong);">💼 ${p.name || 'พอร์ต'}</h3>
-                <span style="font-size: 12px; color: var(--txt-muted);">${pSummary.activeCount} สินทรัพย์</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <span style="flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 15px;">💼</span>
+                <div style="min-width: 0;">
+                  <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name || 'พอร์ต'}</div>
+                  <span style="font-size: 12px; color: var(--txt-muted);">${pSummary.activeCount} สินทรัพย์</span>
+                </div>
               </div>
-              <span style="background: ${pProfit ? 'var(--up-soft)' : 'var(--down-soft)'}; color: ${pProfit ? 'var(--up)' : 'var(--down)'}; font-weight: 700; font-size: 12px; padding: 3px 8px; border-radius: 6px;">
+              <span style="flex-shrink: 0; background: ${pProfit ? 'var(--up-soft)' : 'var(--down-soft)'}; color: ${pProfit ? 'var(--up)' : 'var(--down)'}; font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 20px; border: 1px solid ${pProfit ? 'var(--up-line)' : 'var(--down-line)'};">
                 ${pProfit ? '+' : ''}${pSummary.returnPct.toFixed(2)}%
               </span>
             </div>
@@ -2691,8 +2755,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
       `;
     }).join('');
 
-    const alloc = overallSummary.allocation;
-
     container.innerHTML = `
       <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: nowrap; gap: 14px; width: 100%;">
@@ -2718,50 +2780,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
         <div style="margin-bottom: 20px;">${summaryCardHtml}</div>
 
-        <div class="summary-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 20px;">
-          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">💼 ต้นทุนรวมสะสม (Total Cost)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--txt-strong);">${formatBaht(overallSummary.totalCost)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">≈ ${formatUSD(overallSummary.totalCost / liveFx)} USD</div>
-          </div>
-          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">📈 กำไร / ขาดทุนที่ยังไม่เกิดขึ้น</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${formatBaht(overallSummary.unrealizedPL)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">สถานะ: <strong style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '🟢 พอร์ตเขียวสุขภาพดี' : '🔴 ติดดอยสะสม'}</strong></div>
-          </div>
-          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🎯 ผลตอบแทนรวม (%)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</div>
-            <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">กำไรรับจริงสะสม: <strong style="color: ${overallSummary.realizedPL >= 0 ? 'var(--up)' : 'var(--down)'};">${overallSummary.realizedPL >= 0 ? '+' : ''}${formatBaht(overallSummary.realizedPL)}</strong></div>
-          </div>
-          <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
-            <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">💵 เงินปันผลสะสมทั้งหมด</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--up);">+${formatBaht(overallSummary.dividends)}</div>
-            <div class="card-subtext" style="font-size: 11px; color: var(--up); margin-top: 6px;">สร้างกระแสเงินสดต่อเนื่อง</div>
-          </div>
-        </div>
-
-        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
-          <div style="font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 10px;">📊 การกระจายความเสี่ยงรวม (Grand Asset Allocation)</div>
-          <div style="height: 12px; border-radius: 6px; overflow: hidden; display: flex; background: var(--line); margin-bottom: 12px;">
-            ${alloc.th > 0 ? `<div style="width: ${alloc.th}%; background: var(--indigo);" title="หุ้นไทย: ${alloc.th.toFixed(1)}%"></div>` : ''}
-            ${alloc.fund > 0 ? `<div style="width: ${alloc.fund}%; background: var(--up-3);" title="กองทุนรวม: ${alloc.fund.toFixed(1)}%"></div>` : ''}
-            ${alloc.us > 0 ? `<div style="width: ${alloc.us}%; background: var(--accent);" title="หุ้นสหรัฐฯ: ${alloc.us.toFixed(1)}%"></div>` : ''}
-          </div>
-          <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 12px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 9px; height: 9px; background: var(--indigo); display: inline-block; border-radius: 2px;"></span>
-              <span>🇹🇭 หุ้นไทย & REITs: <strong>${alloc.th.toFixed(1)}%</strong> (${formatBaht(alloc.valTH)})</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 9px; height: 9px; background: var(--up-3); display: inline-block; border-radius: 2px;"></span>
-              <span>🌱 กองทุนรวม (Fund): <strong>${alloc.fund.toFixed(1)}%</strong> (${formatBaht(alloc.valFund)})</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 9px; height: 9px; background: var(--accent); display: inline-block; border-radius: 2px;"></span>
-              <span>🇺🇸 หุ้นสหรัฐฯ (US): <strong>${alloc.us.toFixed(1)}%</strong> (${formatBaht(alloc.valUS)})</span>
-            </div>
-          </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; margin-bottom: 24px; align-items: stretch;">
+          ${allocCardHtml}
+          ${keyStatsCardHtml}
         </div>
 
         <div>
