@@ -479,3 +479,116 @@ body[data-theme="dark"] ::-webkit-scrollbar-thumb {
 body[data-theme="dark"] ::selection {
   background: rgba(34, 211, 238, 0.28);
 }
+
+/* ============================================================
+   Portfolio overview — Navy Glass (scope เฉพาะส่วน overview)
+   เลียนแบบดีไซน์เป้าหมาย: กระจกกราเดียน น้ำเงินลึก เน้นฟ้า/ม่วง/ชมพู
+   ============================================================ */
+.pf-glass {
+  --panel: rgba(21, 28, 64, 0.55);
+  --panel-2: rgba(35, 46, 96, 0.42);
+  --panel-flat: rgba(21, 28, 64, 0.55);
+  --inset: rgba(9, 13, 38, 0.5);
+  --line: rgba(129, 140, 248, 0.18);
+  --line-2: rgba(129, 140, 248, 0.32);
+  --line-soft: rgba(129, 140, 248, 0.10);
+
+  --txt-strong: #f4f7ff;
+  --txt: #e8edfb;
+  --txt-mid: #ccd6f3;
+  --txt-soft: #b0bde4;
+  --txt-muted: #93a2cf;
+  --txt-faint: #7484b8;
+  --on-accent: #071022;
+  --on-ink: #f4f7ff;
+  --on-ink-muted: #c2cdf0;
+
+  --accent: #60a5fa;
+  --accent-2: #38bdf8;
+  --accent-3: #818cf8;
+  --accent-bright: #7dd3fc;
+  --accent-soft: rgba(96, 165, 250, 0.18);
+  --accent-softer: rgba(96, 165, 250, 0.09);
+  --accent-line: rgba(96, 165, 250, 0.42);
+
+  --up: #34d399;
+  --up-2: #6ee7b7;
+  --up-3: #22d3ee;
+  --up-4: #6ee7b7;
+  --up-5: #a7f3d0;
+  --up-6: #86efac;
+  --up-soft: rgba(52, 211, 153, 0.14);
+  --up-soft-2: rgba(52, 211, 153, 0.08);
+  --up-soft-3: rgba(52, 211, 153, 0.18);
+  --up-line: rgba(52, 211, 153, 0.40);
+  --up-line-2: rgba(52, 211, 153, 0.55);
+  --up-line-3: rgba(52, 211, 153, 0.60);
+
+  --down: #fb7185;
+  --down-2: #fda4af;
+  --down-3: #fb7185;
+  --down-4: #fda4af;
+  --down-soft: rgba(251, 113, 133, 0.14);
+  --down-soft-2: rgba(251, 113, 133, 0.20);
+  --down-line: rgba(251, 113, 133, 0.40);
+  --down-line-2: rgba(251, 113, 133, 0.55);
+
+  --indigo: #818cf8;
+  --chart-area-top: rgba(56, 189, 248, 0.38);
+  --chart-area-bottom: rgba(56, 189, 248, 0.02);
+
+  position: relative;
+  background:
+    radial-gradient(900px 480px at 88% -12%, rgba(99, 102, 241, 0.22), transparent 62%),
+    radial-gradient(720px 460px at -8% 28%, rgba(56, 189, 248, 0.12), transparent 55%),
+    radial-gradient(600px 380px at 55% 118%, rgba(168, 85, 247, 0.10), transparent 60%),
+    linear-gradient(180deg, #0b1130 0%, #070c24 100%);
+  border-radius: 22px;
+}
+
+.pf-glass .pf-card {
+  background: linear-gradient(155deg, rgba(99, 102, 241, 0.13), rgba(13, 20, 52, 0.52) 55%, rgba(56, 189, 248, 0.07));
+  border: 1px solid rgba(129, 140, 248, 0.24);
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgba(2, 6, 28, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(6px);
+  box-sizing: border-box;
+}
+
+.pf-glass .pf-num-grad {
+  background: linear-gradient(92deg, #ffffff 8%, #bfdbfe 48%, #67e8f9 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.pf-glass .pf-icon-chip {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: rgba(96, 165, 250, 0.14);
+  border: 1px solid rgba(96, 165, 250, 0.30);
+}
+
+.pf-glass .pf-btn-ghost {
+  width: 100%;
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(129, 140, 248, 0.30);
+  color: #c7d2fe;
+  padding: 8px 0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pf-glass .pf-btn-ghost:hover {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(129, 140, 248, 0.55);
+}

@@ -2505,42 +2505,6 @@ this.openAssetModal(holding.symbol, { reopen: true });
     };
   },
 
-  deltaValueHtml(d, fx, preferBaht) {
-    const mask = (text) => (this.hideValues ? '•••,••' : text);
-    const p = this.deltaParts(d, fx, preferBaht);
-    if (!p) return '<span style="color: var(--txt-faint); font-weight: 800;">—</span>';
-    const main = mask(preferBaht ? p.baht : p.usd);
-    const alt = preferBaht ? `<span style="font-size: 11px; font-weight: 700; color: var(--txt-muted);">${mask(`≈ ${p.usd}`)}</span>` : '';
-    return `<span style="color: ${p.up ? 'var(--up)' : 'var(--down)'}; font-weight: 800;">${main} ${mask(p.pct)}</span>${alt}`;
-  },
-
-  deltaRowHtml(d, label, fx, preferBaht) {
-    return `<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">${this.deltaValueHtml(d, fx, preferBaht)}<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase;">${label}</span></div>`;
-  },
-
-  // สรุปย่อบนการ์ดรายพอร์ต: USD เป็นหลัก + บรรทัดบาท และวันนี้/เมื่อวานนี้/กำไรสะสม
-  renderPortfolioSummaryHtml(summary, formatUSD, formatBaht) {
-    const fx = summary.liveFxRate || 33.49;
-    const hide = this.hideValues;
-    const preferBaht = !summary.isForeignPort;
-    const deltas = this.summaryDeltas(summary);
-
-    return `
-      <div style="margin-bottom: 14px;">
-        <div style="font-size: 11px; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
-        <div style="font-size: 21px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; color: var(--txt-strong);">
-          ${hide ? (preferBaht ? '฿ •••,•••.••' : '$ •••,•••.••') : (preferBaht ? formatBaht(summary.marketValue) : formatUSD(summary.marketValue / fx))}
-        </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${preferBaht ? `≈ ${this.hideValues ? '•••,••' : formatUSD(summary.marketValue / fx)}` : `≈ ${this.hideValues ? '•••,••' : formatBaht(summary.marketValue).slice(1)} บาท`}</div>
-        <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 12.5px;">
-          ${this.deltaRowHtml(deltas.today, 'วันนี้', fx, preferBaht)}
-          ${this.deltaRowHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
-          ${this.deltaRowHtml(deltas.all, 'กำไรสะสม', fx, preferBaht)}
-        </div>
-      </div>
-    `;
-  },
-
   // การ์ดสรุปย่อหน้าภาพรวม: ยอดใหญ่ฝั่งซ้าย + ตัวชี้วัด 4 ช่องฝั่งขวา บนพื้น gradient พร้อมเส้นกราฟประกอบ
   renderSummaryCardHtml(summary, formatUSD, formatBaht, title) {
     const fx = summary.liveFxRate || 33.49;
@@ -2562,56 +2526,63 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
       </select>`;
 
-    const chip = (icon, label, valueHtml, subHtml) => `
+    const chip = (icon, label, valueHtml, subHtml, tint) => `
       <div style="display: flex; gap: 11px; align-items: flex-start; min-width: 0;">
-        <span style="flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 15px;">${icon}</span>
+        <span class="pf-icon-chip" style="background: ${tint || 'rgba(96, 165, 250, 0.14)'}; border-color: ${tint ? tint.replace(/[\d.]+\)$/, '0.35)') : 'rgba(96, 165, 250, 0.30)'};">${icon}</span>
         <div style="min-width: 0;">
-          <div style="font-size: 15px; font-weight: 700; color: var(--txt-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${label}</div>
-          <div style="font-size: 25px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; line-height: 1.15; white-space: nowrap;">${valueHtml}</div>
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${label}</div>
+          <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; line-height: 1.15; white-space: nowrap;">${valueHtml}</div>
           ${subHtml || ''}
         </div>
       </div>`;
 
-    const pctLineHtml = (color, text) => `<div style="font-size: 15px; font-weight: 700; color: ${color}; margin-top: 2px; line-height: 1.2; white-space: nowrap;">${text}</div>`;
+    const pctLineHtml = (color, text) => `<div style="font-size: 13px; font-weight: 700; color: ${color}; margin-top: 2px; line-height: 1.2; white-space: nowrap;">${text}</div>`;
 
-    const deltaChip = (icon, label, d, controlHtml) => {
+    const deltaChip = (icon, label, d, controlHtml, tint) => {
       const p = this.deltaParts(d, fx, preferBaht);
       const color = p ? (p.up ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
       const main = !p ? '—' : mask(preferBaht ? p.baht : p.usd);
       const pctHtml = !p ? '' : pctLineHtml(color, mask(`${p.up ? '▲' : '▼'} ${p.pct.replace(/[()]/g, '')}`));
       const alt = (p && preferBaht) ? pctLineHtml('var(--txt-muted)', mask(`≈ ${p.usd}`)) : '';
-      return chip(icon, `${label}${controlHtml || ''}`, `<span style="color: ${color};">${main}</span>`, pctHtml + alt);
+      return chip(icon, `${label}${controlHtml || ''}`, `<span style="color: ${color};">${main}</span>`, pctHtml + alt, tint);
     };
 
     const divP = summary.dividends >= 0;
     const dividendChip = chip('💵', 'เงินปันผลสะสม',
       `<span style="color: ${divP ? 'var(--up)' : 'var(--down)'};">${mask(`${divP ? '+' : ''}${formatBaht(summary.dividends)}`)}</span>`,
-      pctLineHtml('var(--txt-muted)', mask(`≈ ${formatUSD(summary.dividends / fx)}`)));
+      pctLineHtml('var(--txt-muted)', mask(`≈ ${formatUSD(summary.dividends / fx)}`)),
+      'rgba(251, 191, 36, 0.14)');
 
     return `
-      <div style="position: relative; overflow: hidden; background-color: var(--panel); background-image: linear-gradient(115deg, var(--accent-softer) 0%, var(--accent-soft) 65%, var(--up-soft-2) 100%); border: 1px solid var(--accent-line); border-radius: 16px; padding: 20px 22px; height: 100%; box-sizing: border-box; display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap;">
-        <svg aria-hidden="true" viewBox="0 0 320 160" preserveAspectRatio="none" style="position: absolute; right: 0; bottom: 0; width: 42%; height: 76%; opacity: 0.18; pointer-events: none;">
-          <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12 L320 160 L0 160 Z" fill="var(--accent)"></path>
-          <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12" fill="none" stroke="var(--accent-bright)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+      <div class="pf-card" style="position: relative; overflow: hidden; padding: 22px 24px; height: 100%; display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap;">
+        <svg aria-hidden="true" viewBox="0 0 320 160" preserveAspectRatio="none" style="position: absolute; right: 0; bottom: 0; width: 40%; height: 82%; opacity: 0.22; pointer-events: none;">
+          <defs>
+            <linearGradient id="pf-banner-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"></stop>
+              <stop offset="100%" stop-color="#6366f1" stop-opacity="0.15"></stop>
+            </linearGradient>
+          </defs>
+          <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12 L320 160 L0 160 Z" fill="url(#pf-banner-fill)"></path>
+          <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12" fill="none" stroke="#7dd3fc" stroke-width="2" vector-effect="non-scaling-stroke"></path>
         </svg>
 
         <div style="flex: 1 1 260px; min-width: 220px; position: relative;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-            <div style="font-size: 15px; font-weight: 700; color: var(--txt-soft);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; letter-spacing: 0.6px;">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
             <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
-              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 28px; height: 26px; border-radius: 6px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
+              style="background: rgba(9, 13, 38, 0.5); border: 1px solid var(--line-2); color: var(--txt-soft); width: 28px; height: 26px; border-radius: 8px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
           </div>
-          <div style="margin-top: 9px; font-size: 40px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.05; color: var(--txt-strong);">
+          <div class="pf-num-grad" style="margin-top: 10px; font-size: 42px; font-weight: 900; letter-spacing: -1.2px; line-height: 1.05;">
             ${hide ? (preferBaht ? '฿ •••,•••.••' : '$ •••,•••.••') : (preferBaht ? formatBaht(summary.marketValue) : formatUSD(summary.marketValue / fx))}
           </div>
-          <div style="font-size: 15px; font-weight: 700; color: var(--txt-muted); margin-top: 5px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
-          <div style="margin-top: 12px; font-size: 12.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
+          <div style="font-size: 14px; font-weight: 700; color: var(--txt-muted); margin-top: 6px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
+          <div style="margin-top: 12px; font-size: 12px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
         </div>
 
-        <div style="flex: 2 1 420px; display: grid; grid-template-columns: repeat(auto-fit, minmax(172px, 1fr)); gap: 16px 22px; position: relative; border-left: 1px solid var(--line-2); padding-left: 24px; box-sizing: border-box;">
-          ${deltaChip('📈', 'วันนี้', deltas.today)}
-          ${deltaChip('📅', 'เมื่อวานนี้', deltas.yesterday)}
-          ${deltaChip('💹', 'กำไรสะสม', picked, periodControl)}
+        <div style="flex: 2 1 420px; display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 16px 22px; position: relative; border-left: 1px solid var(--line-2); padding-left: 24px; box-sizing: border-box;">
+          ${deltaChip('📈', 'วันนี้', deltas.today, null, 'rgba(96, 165, 250, 0.14)')}
+          ${deltaChip('📅', 'เมื่อวานนี้', deltas.yesterday, null, 'rgba(129, 140, 248, 0.16)')}
+          ${deltaChip('💹', 'กำไรสะสม', picked, periodControl, 'rgba(52, 211, 153, 0.14)')}
           ${dividendChip}
         </div>
       </div>
@@ -2645,23 +2616,23 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     // แถบเป้าหมายแบบกะทัดรัด (อยู่ในการ์ดภาพรวมสำคัญ)
     const targetRowHtml = `
-      <div style="border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 13px;">
-          <span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 16px;">🏆</span>
+      <div style="border-top: 1px dashed var(--line-2); padding-top: 13px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="pf-icon-chip" style="background: rgba(168, 85, 247, 0.16); border-color: rgba(168, 85, 247, 0.38);">🏆</span>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 14px; color: var(--txt-muted); font-weight: 700;">เป้าหมายรวมพอร์ต</div>
-            <div style="font-size: 22px; font-weight: 900; margin-top: 3px; line-height: 1.2; letter-spacing: -0.5px;"><span style="color: var(--txt-strong);">${mask(formatBaht(targetAmount))}</span></div>
+            <div style="font-size: 12.5px; color: var(--txt-muted); font-weight: 700;">เป้าหมายรวมพอร์ต</div>
+            <div style="font-size: 20px; font-weight: 900; margin-top: 2px; line-height: 1.2; letter-spacing: -0.5px;"><span class="pf-num-grad">${mask(formatBaht(targetAmount))}</span></div>
           </div>
-          <strong style="font-size: 18px; font-weight: 900; color: var(--accent); white-space: nowrap;">${progressPct.toFixed(1)}%</strong>
+          <strong style="font-size: 17px; font-weight: 900; color: var(--accent-bright); white-space: nowrap;">${progressPct.toFixed(1)}%</strong>
         </div>
-        <div style="height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;">
-          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--up-3)); border-radius: 4px;"></div>
+        <div style="height: 8px; background: rgba(9, 13, 38, 0.6); border-radius: 5px; overflow: hidden; border: 1px solid rgba(129, 140, 248, 0.18);">
+          <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #34d399); border-radius: 5px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);"></div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <span style="background: var(--up-soft-2); color: var(--up-4); font-size: 12.5px; font-weight: 700; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--up-soft-3); white-space: nowrap;">${stageBadge}</span>
+          <span style="background: rgba(168, 85, 247, 0.16); color: #d8b4fe; font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.38); white-space: nowrap;">${stageBadge}</span>
           ${remainingToTarget > 0
-            ? `<span style="font-size: 13px; color: var(--txt-muted);">ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${mask(formatBaht(remainingToTarget))}</strong></span>`
-            : `<span style="font-size: 13px; color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</span>`}
+            ? `<span style="font-size: 12.5px; color: var(--txt-muted);">ขาดอีก <strong style="color: var(--txt-soft); font-weight: 700;">${mask(formatBaht(remainingToTarget))}</strong></span>`
+            : `<span style="font-size: 12.5px; color: var(--up); font-weight: 700;">สำเร็จเป้าหมายแล้ว 🎉</span>`}
         </div>
       </div>`;
 
@@ -2672,48 +2643,48 @@ this.openAssetModal(holding.symbol, { reopen: true });
     const aTH = allocTotal > 0 ? (alloc.valTH / allocTotal) * 100 : 0;
     const aFund = allocTotal > 0 ? (alloc.valFund / allocTotal) * 100 : 0;
     const allocLegendRow = (color, label, pct, val) => `
-      <div style="display: flex; align-items: flex-start; gap: 9px; min-width: 0;">
-        <span style="width: 11px; height: 11px; background: ${color}; display: inline-block; border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></span>
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <span style="width: 10px; height: 10px; background: ${color}; display: inline-block; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px ${color};"></span>
         <div style="min-width: 0; flex: 1 1 auto;">
-          <div style="font-size: 13px; font-weight: 700; color: var(--txt-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
-          <div style="font-size: 12px; font-weight: 600; color: var(--txt-muted); margin-top: 1px;">${mask(formatBaht(val))}</div>
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+          <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-top: 1px;">${mask(formatBaht(val))}</div>
         </div>
         <strong style="font-size: 15px; font-weight: 900; color: var(--txt-strong); white-space: nowrap; letter-spacing: -0.3px;">${pct.toFixed(1)}%</strong>
       </div>`;
 
     const allocCardHtml = `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column;">
-        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); margin-bottom: 14px;">🥧 สัดส่วนสินทรัพย์</div>
-        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
-          <div style="position: relative; width: 110px; height: 110px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(var(--indigo) 0% ${aTH.toFixed(2)}%, var(--up-3) ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, var(--accent) ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'};">
-            <div style="position: absolute; inset: 20px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
-              <div style="font-size: 14px; font-weight: 900; color: var(--txt-strong); letter-spacing: -0.3px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
-              <div style="font-size: 10px; font-weight: 700; color: var(--txt-muted); text-align: center;">รวมทั้งหมด</div>
+      <div class="pf-card" style="padding: 18px 20px; height: 100%; display: flex; flex-direction: column;">
+        <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong); margin-bottom: 14px;">🥧 สัดส่วนสินทรัพย์</div>
+        <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+          <div style="position: relative; width: 118px; height: 118px; border-radius: 50%; flex-shrink: 0; background: ${allocTotal > 0 ? `conic-gradient(from 210deg, #3b82f6 0% ${aTH.toFixed(2)}%, #22d3ee ${aTH.toFixed(2)}% ${(aTH + aFund).toFixed(2)}%, #a855f7 ${(aTH + aFund).toFixed(2)}% 100%)` : 'var(--line)'}; box-shadow: 0 0 24px rgba(59, 130, 246, 0.35);">
+            <div style="position: absolute; inset: 20px; border-radius: 50%; background: #0d1437; border: 1px solid rgba(129, 140, 248, 0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+              <div class="pf-num-grad" style="font-size: 15px; font-weight: 900; letter-spacing: -0.3px; line-height: 1.1;">${mask(allocTotal > 0 ? `฿${(allocTotal / 1e6).toFixed(2)}M` : '—')}</div>
+              <div style="font-size: 9.5px; font-weight: 700; color: var(--txt-muted); text-align: center;">รวมทั้งหมด</div>
             </div>
           </div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
-          ${allocLegendRow('var(--indigo)', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
-          ${allocLegendRow('var(--up-3)', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
-          ${allocLegendRow('var(--accent)', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
+        <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+          ${allocLegendRow('#3b82f6', '🇹🇭 หุ้นไทย & REITs', aTH, alloc.valTH)}
+          ${allocLegendRow('#22d3ee', '🌱 กองทุนรวม (Fund)', aFund, alloc.valFund)}
+          ${allocLegendRow('#a855f7', '🇺🇸 หุ้นสหรัฐฯ (US)', allocTotal > 0 ? (alloc.valUS / allocTotal) * 100 : 0, alloc.valUS)}
         </div>
       </div>`;
 
-    const summaryRow = (icon, label, valueHtml, subHtml) => `
-      <div style="display: flex; align-items: flex-start; gap: 13px;">
-        <span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 16px;">${icon}</span>
+    const summaryRow = (icon, label, valueHtml, subHtml, tint) => `
+      <div style="display: flex; align-items: center; gap: 13px;">
+        <span class="pf-icon-chip" style="background: ${tint || 'rgba(96, 165, 250, 0.14)'};">${icon}</span>
         <div style="min-width: 0;">
-          <div style="font-size: 14px; color: var(--txt-muted); font-weight: 700;">${label}</div>
-          <div style="font-size: 22px; font-weight: 900; margin-top: 3px; line-height: 1.2; letter-spacing: -0.5px;">${valueHtml}</div>
-          ${subHtml ? `<div style="font-size: 13px; color: var(--txt-muted); margin-top: 3px;">${subHtml}</div>` : ''}
+          <div style="font-size: 12.5px; color: var(--txt-muted); font-weight: 700;">${label}</div>
+          <div style="font-size: 21px; font-weight: 900; margin-top: 2px; line-height: 1.2; letter-spacing: -0.5px;">${valueHtml}</div>
+          ${subHtml ? `<div style="font-size: 12px; color: var(--txt-muted); margin-top: 2px;">${subHtml}</div>` : ''}
         </div>
       </div>`;
 
     const keyStatsCardHtml = `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 16px;">
-        <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">🧭 ภาพรวมสำคัญ</div>
-        ${summaryRow('💡', 'ผลตอบแทนรวม', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</span>`, 'เทียบต้นทุนสุทธิ')}
-        ${summaryRow('🛡️', 'เงินปันผลสะสม', `<span style="color: var(--up);">+${mask(formatBaht(overallSummary.dividends))}</span>`, 'สร้างกระแสเงินสดต่อเนื่อง')}
+      <div class="pf-card" style="padding: 18px 20px; height: 100%; display: flex; flex-direction: column; gap: 15px;">
+        <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">🧭 ภาพรวมสำคัญ</div>
+        ${summaryRow('💡', 'ผลตอบแทนรวม', `<span style="color: ${isProfit ? 'var(--up)' : 'var(--down)'};">${isProfit ? '+' : ''}${overallSummary.returnPct.toFixed(2)}%</span>`, 'เทียบต้นทุนสุทธิ', 'rgba(52, 211, 153, 0.14)')}
+        ${summaryRow('🛡️', 'เงินปันผลสะสม', `<span style="color: var(--up);">+${mask(formatBaht(overallSummary.dividends))}</span>`, 'สร้างกระแสเงินสดต่อเนื่อง', 'rgba(251, 191, 36, 0.14)')}
         ${targetRowHtml}
       </div>`;
 
@@ -2721,83 +2692,100 @@ this.openAssetModal(holding.symbol, { reopen: true });
       const pId = p.id || p.portfolioId;
       const pSummary = this.calculatePortfolioDetail(data, pId);
       const pProfit = pSummary.unrealizedPL >= 0;
-      const pNetTotal = pSummary.marketValue;
-      const pTarget = parseFloat(p.targetAmount || p.cashBalance || 0);
-      const pProgPct = pTarget > 0 ? Math.min(100, (pNetTotal / pTarget) * 100) : 0;
+      const pFx = pSummary.liveFxRate || 33.49;
+      const preferBaht = !pSummary.isForeignPort;
+      const pDeltas = this.summaryDeltas(pSummary);
+      const flag = pSummary.isForeignPort ? '🇺🇸' : '🇹🇭';
+
+      const deltaLine = (label, d) => {
+        const parts = this.deltaParts(d, pFx, preferBaht);
+        if (!parts) {
+          return `<div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 12px;"><span style="color: var(--txt-muted);">${label}</span><span style="color: var(--txt-faint); font-weight: 700;">—</span></div>`;
+        }
+        const color = parts.up ? 'var(--up)' : 'var(--down)';
+        const main = mask(preferBaht ? parts.baht : parts.usd);
+        const pct = mask(parts.pct.replace(/[()]/g, ''));
+        return `<div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; padding: 3px 0;">
+          <span style="color: var(--txt-muted); font-weight: 600;">${label}</span>
+          <span style="color: ${color}; font-weight: 800; white-space: nowrap;">${main} <span style="font-weight: 600; opacity: 0.85;">(${pct})</span></span>
+        </div>`;
+      };
 
       return `
-        <div style="background-color: var(--panel); background-image: linear-gradient(165deg, var(--accent-softer) 0%, transparent 60%); border: 1px solid var(--line); border-radius: 14px; padding: 17px 18px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
-              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                <span style="flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 15px;">💼</span>
-                <div style="min-width: 0;">
-                  <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name || 'พอร์ต'}</div>
-                  <span style="font-size: 12px; color: var(--txt-muted);">${pSummary.activeCount} สินทรัพย์</span>
-                </div>
-              </div>
-              <span style="flex-shrink: 0; background: ${pProfit ? 'var(--up-soft)' : 'var(--down-soft)'}; color: ${pProfit ? 'var(--up)' : 'var(--down)'}; font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 20px; border: 1px solid ${pProfit ? 'var(--up-line)' : 'var(--down-line)'};">
-                ${pProfit ? '+' : ''}${pSummary.returnPct.toFixed(2)}%
-              </span>
-            </div>
-            ${this.renderPortfolioSummaryHtml(pSummary, formatUSD, formatBaht)}
-
-            <div style="background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-              <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px;">
-                <span style="color: var(--txt-muted);">🎯 เป้าหมาย: <strong>${pTarget > 0 ? formatBaht(pTarget) : 'ยังไม่ตั้งเป้า'}</strong></span>
-                <strong style="color: ${pProgPct >= 100 ? 'var(--up-3)' : 'var(--accent)'}; font-weight: 700;">${pTarget > 0 ? `${pProgPct.toFixed(1)}%` : '-'}</strong>
-              </div>
-              <div style="height: 6px; background: var(--line); border-radius: 3px; overflow: hidden;">
-                <div style="width: ${pProgPct}%; height: 100%; background: ${pProgPct >= 100 ? 'var(--up-3)' : 'linear-gradient(90deg, var(--accent-bright), var(--accent))'}; border-radius: 3px;"></div>
+        <div class="pf-card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 11px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+              <span class="pf-icon-chip" style="width: 34px; height: 34px; font-size: 15px;">${flag}</span>
+              <div style="min-width: 0;">
+                <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name || 'พอร์ต'}</div>
+                <span style="font-size: 11.5px; color: var(--txt-muted);">${pSummary.activeCount} สินทรัพย์</span>
               </div>
             </div>
-            <div style="border-top: 1px dashed var(--line); padding-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="display: flex; justify-content: space-between;"><span style="color: var(--txt-muted);">ต้นทุนรวม:</span><strong>${formatBaht(pSummary.totalCost)}</strong></div>
-              <div style="display: flex; justify-content: space-between;"><span style="color: var(--txt-muted);">กำไร/ขาดทุน:</span><strong style="color: ${pProfit ? 'var(--up)' : 'var(--down)'};">${pProfit ? '+' : ''}${formatBaht(pSummary.unrealizedPL)}</strong></div>
-            </div>
+            <span style="flex-shrink: 0; background: ${pProfit ? 'rgba(52, 211, 153, 0.14)' : 'rgba(251, 113, 133, 0.14)'}; color: ${pProfit ? 'var(--up)' : 'var(--down)'}; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid ${pProfit ? 'rgba(52, 211, 153, 0.40)' : 'rgba(251, 113, 133, 0.40)'};">
+              ${pProfit ? '+' : ''}${pSummary.returnPct.toFixed(2)}%
+            </span>
           </div>
-          <div style="margin-top: 16px;">
-            <button class="btn-jump-to-port" data-id="${pId}" style="width: 100%; background: var(--panel-2); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-              🔍 ดูรายการถือครองพอร์ตนี้
-            </button>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;">
+            <div style="min-width: 0;">
+              <div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); text-transform: uppercase; letter-spacing: 0.4px;">มูลค่าตลาดปัจจุบัน</div>
+              <div class="pf-num-grad" style="font-size: 21px; font-weight: 900; letter-spacing: -0.6px; line-height: 1.15; white-space: nowrap;">${mask(preferBaht ? formatBaht(pSummary.marketValue) : formatUSD(pSummary.marketValue / pFx))}</div>
+              <div style="font-size: 11.5px; font-weight: 600; color: var(--txt-muted); margin-top: 2px;">${preferBaht ? `≈ ${mask(formatUSD(pSummary.marketValue / pFx))}` : `≈ ${mask(formatBaht(pSummary.marketValue).slice(1))} บาท`}</div>
+            </div>
+            <span class="pf-spark" data-pid="${pId}" style="flex-shrink: 0; align-self: center;"></span>
+          </div>
+
+          <div style="border-top: 1px dashed var(--line-2); padding-top: 7px; display: flex; flex-direction: column; gap: 2px;">
+            ${deltaLine('วันนี้', pDeltas.today)}
+            ${deltaLine('เมื่อวานนี้', pDeltas.yesterday)}
+            ${deltaLine('กำไรสะสม', pDeltas.all)}
+          </div>
+
+          <div>
+            <button class="btn-jump-to-port pf-btn-ghost" data-id="${pId}">ดูรายละเอียด →</button>
           </div>
         </div>
       `;
     }).join('');
 
+    const activityFeedHtml = this.renderActivityFeedHtml(data);
+
     container.innerHTML = `
-      <div class="portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 0 30px 0 !important; text-align: left;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: nowrap; gap: 14px; width: 100%;">
+      <div class="pf-glass portfolio-container" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 20px 22px 30px !important; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: nowrap; gap: 14px; width: 100%;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: var(--accent-soft); color: var(--accent); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 22px; flex-shrink: 0;">📁</div>
+            <div class="pf-icon-chip" style="width: 44px; height: 44px; font-size: 22px; border-radius: 12px;">📁</div>
             <div style="text-align: left;">
-              <div style="font-size: 11px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.5px;">TOTAL WEALTH OVERVIEW</div>
+              <div style="font-size: 10.5px; text-transform: uppercase; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.8px;">TOTAL WEALTH OVERVIEW</div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--txt-strong);">พอร์ตการลงทุนทั้งหมด</h1>
-                <span style="background: var(--inset); color: var(--txt-soft); padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${sortedPortfolios.length} บัญชี · ${overallSummary.activeCount} สินทรัพย์</span>
+                <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: var(--txt-strong);">พอร์ตการลงทุนทั้งหมด</h1>
+                <span style="background: rgba(9, 13, 38, 0.55); color: var(--txt-soft); padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--line-2);">${sortedPortfolios.length} บัญชี · ${overallSummary.activeCount} สินทรัพย์</span>
               </div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
-            <button class="btn-soft" id="btn-edit-port" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">🎯 จัดการพอร์ต & เป้าหมาย</button>
-            <button id="btn-export-json" class="btn-soft" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">📤 ส่งออก JSON</button>
-            <label class="btn-soft" style="background: var(--panel); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; margin: 0;">
+            <button class="btn-soft" id="btn-edit-port" style="background: rgba(9, 13, 38, 0.55); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer;">🎯 จัดการพอร์ต & เป้าหมาย</button>
+            <button id="btn-export-json" class="btn-soft" style="background: rgba(9, 13, 38, 0.55); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer;">📤 ส่งออก JSON</button>
+            <label class="btn-soft" style="background: rgba(9, 13, 38, 0.55); border: 1px solid var(--line-2); color: var(--txt-mid); padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; margin: 0;">
               📥 นำเข้า JSON
               <input type="file" id="file-import-json-overview" accept=".json" style="display: none;">
             </label>
           </div>
         </div>
 
-        <div style="margin-bottom: 20px;">${summaryCardHtml}</div>
+        <div style="margin-bottom: 18px;">${summaryCardHtml}</div>
 
-        <div style="display: grid; grid-template-columns: minmax(210px, 0.85fr) minmax(340px, 1.6fr) minmax(240px, 1fr); gap: 16px; margin-bottom: 24px; align-items: stretch;">
+        <div style="display: grid; grid-template-columns: minmax(210px, 0.85fr) minmax(340px, 1.6fr) minmax(240px, 1fr); gap: 16px; margin-bottom: 22px; align-items: stretch;">
           ${allocCardHtml}
           ${this.valueHistoryCardHtml()}
-          ${keyStatsCardHtml}
+          <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0;">
+            ${keyStatsCardHtml}
+            ${activityFeedHtml}
+          </div>
         </div>
 
         <div>
-          <h3 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: var(--txt);">เปรียบเทียบผลการดำเนินงานรายพอร์ต (${sortedPortfolios.length} บัญชี):</h3>
+          <h3 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 800; color: var(--txt-strong);">เปรียบเทียบผลการดำเนินงานรายพอร์ต (${sortedPortfolios.length} บัญชี):</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
             ${portCardsHtml}
           </div>
@@ -2809,6 +2797,89 @@ this.openAssetModal(holding.symbol, { reopen: true });
       DailyCloseService.ensure(overallSummary.activeHoldings, () => this.render());
     }
     this.mountValueHistoryChart();
+    this.paintPortfolioSparklines();
+  },
+
+  // ---------- การ์ดกิจกรรมล่าสุด (รายการซื้อ-ขายล่าสุดทุกพอร์ต) ----------
+  renderActivityFeedHtml(data) {
+    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const fmtDate = (raw) => {
+      const m = String(raw || '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return String(raw || '');
+      return `${Number(m[3])} ${thaiMonths[Number(m[2]) - 1]} ${Number(m[1]) + 543}`;
+    };
+    const trades = (data.trades || [])
+      .filter((t) => t && t.tradeDate)
+      .sort((a, b) => String(b.tradeDate).localeCompare(String(a.tradeDate)))
+      .slice(0, 6);
+
+    const rows = trades.map((t) => {
+      const buy = String(t.side || 'buy').toLowerCase() !== 'sell';
+      const color = buy ? '#34d399' : '#fb7185';
+      const qty = Number(t.quantity || 0).toLocaleString('en-US', { maximumFractionDigits: 4 });
+      const price = Number(t.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; margin-top: 5px; flex-shrink: 0; box-shadow: 0 0 6px ${color};"></span>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-soft);">${buy ? 'ซื้อ' : 'ขาย'} ${String(t.symbol || '').toUpperCase()} <span style="color: var(--txt-muted); font-weight: 600;">×${qty}</span></div>
+            <div style="font-size: 11px; color: var(--txt-muted); margin-top: 1px;">${fmtDate(t.tradeDate)} · ราคา ${price}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="pf-card" style="padding: 16px 18px;">
+        <div style="font-size: 14px; font-weight: 800; color: var(--txt-strong); margin-bottom: 12px;">🕘 กิจกรรมล่าสุด</div>
+        <div style="display: flex; flex-direction: column; gap: 11px;">
+          ${rows || '<div style="font-size: 12px; color: var(--txt-muted);">ยังไม่มีรายการซื้อ-ขาย</div>'}
+        </div>
+      </div>`;
+  },
+
+  // ---------- sparkline มูลค่ารายพอร์ต (ใช้ cache ราคาชุดเดียวกับกราฟหลัก) ----------
+  sparklineSvg(values, width, height) {
+    if (!values || values.length < 2) return '';
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const span = max - min || 1;
+    const stepX = width / (values.length - 1);
+    const pts = values.map((v, i) => [i * stepX, height - 3 - ((v - min) / span) * (height - 6)]);
+    const line = pts.map((pt, i) => `${i ? 'L' : 'M'}${pt[0].toFixed(1)} ${pt[1].toFixed(1)}`).join(' ');
+    const area = `${line} L${width} ${height} L0 ${height} Z`;
+    const up = values[values.length - 1] >= values[0];
+    const color = up ? '#34d399' : '#fb7185';
+    const gid = 'pfs' + Math.random().toString(36).slice(2, 9);
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display: block;">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.35"></stop>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.02"></stop>
+      </linearGradient></defs>
+      <path d="${area}" fill="url(#${gid})"></path>
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></path>
+    </svg>`;
+  },
+
+  paintPortfolioSparklines() {
+    const hosts = document.querySelectorAll('.pf-spark');
+    if (!hosts.length || typeof ValueHistoryService === 'undefined') return;
+    const data = getPortfolioDataHelper();
+    const win = this.valueHistoryDays();
+    hosts.forEach((el) => {
+      const pid = el.getAttribute('data-pid');
+      const positions = ValueHistoryService.buildPositions(data, [pid]);
+      if (!positions.size) { el.innerHTML = ''; return; }
+      const curve = ValueHistoryService.buildCurve(positions, win.days);
+      let values = curve.points
+        .filter((p) => p.positions > 0 && p.date >= curve.honestFrom)
+        .map((p) => p.valueTHB);
+      if (values.length < 2) { el.innerHTML = ''; return; }
+      if (this.hideValues) {
+        const base = values[0] || 1;
+        values = values.map((v) => (v / base) * 100);
+      }
+      el.innerHTML = this.sparklineSvg(values, 104, 34);
+    });
   },
 
   // ---------- การ์ดมูลค่าพอร์ตย้อนหลัง ----------
@@ -2836,7 +2907,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
       return `<button type="button" onclick="PortfolioModule.setValueRange('${id}')" style="background: ${on ? 'var(--accent-soft)' : 'var(--inset)'}; border: 1px solid ${on ? 'var(--accent)' : 'var(--line-2)'}; color: ${on ? 'var(--accent)' : 'var(--txt-muted)'}; font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 20px; cursor: pointer;">${this.VALUE_RANGE_LABELS[id]}</button>`;
     }).join('');
     return `
-      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-sizing: border-box; margin-bottom: 24px; height: 100%; display: flex; flex-direction: column;">
+      <div class="pf-card" style="padding: 18px 20px; height: 100%; display: flex; flex-direction: column;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
           <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0;">
             <span style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">📈 มูลค่าพอร์ตย้อนหลัง</span>
@@ -2844,10 +2915,10 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </div>
           <div style="display: flex; gap: 6px; flex-shrink: 0;">${pills}</div>
         </div>
-        <div id="vh-chart-host" style="height: 130px; position: relative; flex-shrink: 0;">
+        <div id="vh-chart-host" style="height: 168px; position: relative; flex-shrink: 0;">
           <div style="display: flex; align-items: center; height: 100%; font-size: 13px; color: var(--txt-muted);">กำลังเตรียมข้อมูล…</div>
         </div>
-        <div id="vh-foot" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 5px; font-size: 11.5px;"></div>
+        <div id="vh-foot" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line-2); display: flex; flex-direction: column; gap: 5px; font-size: 11.5px;"></div>
       </div>`;
   },
 
@@ -2887,6 +2958,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const win = this.valueHistoryDays();
     const curve = ValueHistoryService.buildCurve(positions, win.days);
+    this.paintPortfolioSparklines();
     return this.drawValueHistoryCurve(host, foot, curve, win);
   },
 
