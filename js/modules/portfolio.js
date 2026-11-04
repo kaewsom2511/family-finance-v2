@@ -2556,34 +2556,37 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const periodControl = `
       <select id="summary-period" onchange="PortfolioModule.setSummaryPeriod(this.value)"
-        style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 5px; font-size: 10.5px; font-weight: 700; padding: 1px 4px; cursor: pointer; text-transform: none;">
+        style="background: var(--inset); color: var(--txt-soft); border: 1px solid var(--line-2); border-radius: 5px; font-size: 11.5px; font-weight: 700; padding: 1px 5px; cursor: pointer; text-transform: none;">
         <option value="today" ${this.summaryPeriod === 'today' ? 'selected' : ''}>วันนี้</option>
         <option value="yesterday" ${this.summaryPeriod === 'yesterday' ? 'selected' : ''}>เมื่อวานนี้</option>
         <option value="all" ${this.summaryPeriod === 'all' ? 'selected' : ''}>ทั้งหมด</option>
       </select>`;
 
     const chip = (icon, label, valueHtml, subHtml) => `
-      <div style="display: flex; gap: 10px; align-items: flex-start; min-width: 0;">
-        <span style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 13px;">${icon}</span>
+      <div style="display: flex; gap: 11px; align-items: flex-start; min-width: 0;">
+        <span style="flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--inset); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 15px;">${icon}</span>
         <div style="min-width: 0;">
-          <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; color: var(--txt-muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">${label}</div>
-          <div style="font-size: 14px; font-weight: 800; margin-top: 3px; line-height: 1.3; white-space: nowrap;">${valueHtml}</div>
+          <div style="font-size: 15px; font-weight: 700; color: var(--txt-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${label}</div>
+          <div style="font-size: 25px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; line-height: 1.15; white-space: nowrap;">${valueHtml}</div>
           ${subHtml || ''}
         </div>
       </div>`;
 
+    const pctLineHtml = (color, text) => `<div style="font-size: 15px; font-weight: 700; color: ${color}; margin-top: 2px; line-height: 1.2; white-space: nowrap;">${text}</div>`;
+
     const deltaChip = (icon, label, d, controlHtml) => {
       const p = this.deltaParts(d, fx, preferBaht);
       const color = p ? (p.up ? 'var(--up)' : 'var(--down)') : 'var(--txt-faint)';
-      const main = !p ? '—' : `${mask(preferBaht ? p.baht : p.usd)} <span style="font-size: 11.5px;">${mask(p.pct)}</span>`;
-      const alt = (p && preferBaht) ? `<div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); margin-top: 1px;">${mask(`≈ ${p.usd}`)}</div>` : '';
-      return chip(icon, `${label}${controlHtml || ''}`, `<span style="color: ${color};">${main}</span>`, alt);
+      const main = !p ? '—' : mask(preferBaht ? p.baht : p.usd);
+      const pctHtml = !p ? '' : pctLineHtml(color, mask(`${p.up ? '▲' : '▼'} ${p.pct.replace(/[()]/g, '')}`));
+      const alt = (p && preferBaht) ? pctLineHtml('var(--txt-muted)', mask(`≈ ${p.usd}`)) : '';
+      return chip(icon, `${label}${controlHtml || ''}`, `<span style="color: ${color};">${main}</span>`, pctHtml + alt);
     };
 
     const divP = summary.dividends >= 0;
     const dividendChip = chip('💵', 'เงินปันผลสะสม',
       `<span style="color: ${divP ? 'var(--up)' : 'var(--down)'};">${mask(`${divP ? '+' : ''}${formatBaht(summary.dividends)}`)}</span>`,
-      `<div style="font-size: 10.5px; font-weight: 700; color: var(--txt-muted); margin-top: 1px;">${mask(`≈ ${formatUSD(summary.dividends / fx)}`)}</div>`);
+      pctLineHtml('var(--txt-muted)', mask(`≈ ${formatUSD(summary.dividends / fx)}`)));
 
     return `
       <div style="position: relative; overflow: hidden; background-color: var(--panel); background-image: linear-gradient(115deg, var(--accent-softer) 0%, var(--accent-soft) 65%, var(--up-soft-2) 100%); border: 1px solid var(--accent-line); border-radius: 16px; padding: 20px 22px; height: 100%; box-sizing: border-box; display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap;">
@@ -2592,20 +2595,20 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <path d="M0 150 L45 126 L92 134 L138 92 L184 104 L228 58 L272 70 L320 12" fill="none" stroke="var(--accent-bright)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
         </svg>
 
-        <div style="flex: 1 1 250px; min-width: 220px; position: relative;">
+        <div style="flex: 1 1 260px; min-width: 220px; position: relative;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-            <div style="font-size: 12px; font-weight: 800; color: var(--txt-strong);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--txt-soft);">${title || 'พอร์ตการลงทุนทั้งหมด'}</div>
             <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${hide ? 'แสดงยอด' : 'ซ่อนยอด'}"
-              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 26px; height: 24px; border-radius: 5px; font-size: 12px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
+              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 28px; height: 26px; border-radius: 6px; font-size: 13px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
           </div>
-          <div style="margin-top: 8px; font-size: 30px; font-weight: 900; letter-spacing: -0.8px; line-height: 1.05; color: var(--txt-strong);">
+          <div style="margin-top: 9px; font-size: 40px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.05; color: var(--txt-strong);">
             ${hide ? (preferBaht ? '฿ •••,•••.••' : '$ •••,•••.••') : (preferBaht ? formatBaht(summary.marketValue) : formatUSD(summary.marketValue / fx))}
           </div>
-          <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-top: 3px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
-          <div style="margin-top: 10px; font-size: 10.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
+          <div style="font-size: 15px; font-weight: 700; color: var(--txt-muted); margin-top: 5px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
+          <div style="margin-top: 12px; font-size: 12.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
         </div>
 
-        <div style="flex: 2 1 360px; display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 14px 18px; position: relative;">
+        <div style="flex: 2 1 420px; display: grid; grid-template-columns: repeat(auto-fit, minmax(172px, 1fr)); gap: 16px 22px; position: relative; border-left: 1px solid var(--line-2); padding-left: 24px; box-sizing: border-box;">
           ${deltaChip('📈', 'วันนี้', deltas.today)}
           ${deltaChip('📅', 'เมื่อวานนี้', deltas.yesterday)}
           ${deltaChip('💹', 'กำไรสะสม', picked, periodControl)}
