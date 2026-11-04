@@ -2547,9 +2547,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
       <div style="margin-bottom: 14px;">
         <div style="font-size: 11px; color: var(--txt-muted);">มูลค่าตลาดปัจจุบัน</div>
         <div style="font-size: 21px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; color: var(--txt-strong);">
-          ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
+          ${hide ? (preferBaht ? '฿ •••,•••.••' : '$ •••,•••.••') : (preferBaht ? formatBaht(summary.marketValue) : formatUSD(summary.marketValue / fx))}
         </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">≈ ${this.hideValues ? '•••,••' : formatBaht(summary.marketValue).slice(1)} บาท</div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${preferBaht ? `≈ ${this.hideValues ? '•••,••' : formatUSD(summary.marketValue / fx)}` : `≈ ${this.hideValues ? '•••,••' : formatBaht(summary.marketValue).slice(1)} บาท`}</div>
         <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; font-size: 12.5px;">
           ${this.deltaRowHtml(deltas.today, 'วันนี้', fx, preferBaht)}
           ${this.deltaRowHtml(deltas.yesterday, 'เมื่อวานนี้', fx, preferBaht)}
@@ -2589,9 +2589,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
               style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 26px; height: 24px; border-radius: 5px; font-size: 12px; cursor: pointer;">${hide ? '🙈' : '👁'}</button>
           </div>
           <div style="margin-top: 7px; font-size: 25px; font-weight: 900; letter-spacing: -0.6px; line-height: 1.05; color: var(--txt-strong);">
-            ${hide ? '$ •••,•••.••' : formatUSD(summary.marketValue / fx)}
+            ${hide ? (preferBaht ? '฿ •••,•••.••' : '$ •••,•••.••') : (preferBaht ? formatBaht(summary.marketValue) : formatUSD(summary.marketValue / fx))}
           </div>
-          <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท</div>
+          <div style="font-size: 11.5px; font-weight: 700; color: var(--txt-muted); margin-top: 2px;">${preferBaht ? `≈ ${mask(formatUSD(summary.marketValue / fx))}` : `≈ ${mask(formatBaht(summary.marketValue).slice(1))} บาท`}</div>
           <div style="margin-top: 8px; font-size: 10.5px; color: var(--txt-faint);">Last Updated: ${lastUpdated}</div>
         </div>
 
@@ -2607,7 +2607,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
   renderOverviewDashboard(container) {
     const data = getPortfolioDataHelper();
     const overallSummary = this.calculatePortfolioDetail(data, 'ALL');
-    const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBaht = (num) => { const v = Number(num || 0); return (v < 0 ? '-฿' : '฿') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     const formatUSD = (num) => '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const summaryCardHtml = this.renderSummaryCardHtml(overallSummary, formatUSD, formatBaht);
 
@@ -2802,7 +2802,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const summary = this.calculatePortfolioDetail(data);
 
-    const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBaht = (num) => { const v = Number(num || 0); return (v < 0 ? '-฿' : '฿') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     const formatUSD = (num) => '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatNum = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
@@ -3112,7 +3112,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const targetPortId = this.selectedPerfPortId;
     const summary = this.calculatePortfolioDetail(data, targetPortId);
-    const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBaht = (num) => { const v = Number(num || 0); return (v < 0 ? '-฿' : '฿') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
 
     let closedList = summary.closedPositions || [];
 
@@ -3334,7 +3334,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const cachedFx = JSON.parse(localStorage.getItem('wealthport:latest-usd-thb') || '{}');
     const liveFxRate = cachedFx.rate || 33.49;
-    const formatBaht = (num) => '฿' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBaht = (num) => { const v = Number(num || 0); return (v < 0 ? '-฿' : '฿') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     const formatNum = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     let combinedDividends = [];
@@ -3610,7 +3610,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
         <td><strong>${(t.symbol || '').replace(/\.BK$/i, '')}</strong></td>
         <td>${t.portName}</td>
         <td class="text-right" style="color: var(--txt-muted);">${formatBaht(t.grossAmount || t.amount)}</td>
-        <td class="text-right" style="color: var(--down);">-${formatBaht(t.taxWithheld || 0)}</td>
+        <td class="text-right" style="color: var(--down);">-${formatBaht(Math.abs(t.taxWithheld || 0))}</td>
         <td class="text-right" style="color: var(--up); font-weight: 700;">+${formatBaht(t.amount)}</td>
       </tr>
     `).join('');
@@ -3646,7 +3646,7 @@ this.openAssetModal(holding.symbol, { reopen: true });
           </div>
           <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
             <div class="card-label" style="font-size: 11.5px; color: var(--txt-muted); margin-bottom: 6px; font-weight: 600;">🏛️ ภาษีหัก ณ ที่จ่าย 10% (Withholding Tax)</div>
-            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--down);">-${formatBaht(totalTaxWithheld)}</div>
+            <div class="card-value" style="font-size: 20px; font-weight: 900; color: var(--down);">-${formatBaht(Math.abs(totalTaxWithheld))}</div>
             <div class="card-subtext" style="font-size: 11px; color: var(--txt-muted); margin-top: 6px;">หักนำส่งกรมสรรพากรแล้ว</div>
           </div>
           <div class="stat-card" style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;">
