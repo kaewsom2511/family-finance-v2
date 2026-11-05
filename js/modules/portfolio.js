@@ -697,7 +697,9 @@ var PortfolioModule = {
 
   checkRouteFromHash() {
     const hash = (window.location.hash || '').toLowerCase();
-    if (hash.includes('plan')) {
+    if (hash.includes('allocation')) {
+      this.currentTab = 'allocation';
+    } else if (hash.includes('plan')) {
       this.currentTab = 'plan';
     } else if (hash.includes('technical') || hash.includes('chart')) {
       this.currentTab = 'charts';
@@ -728,6 +730,8 @@ var PortfolioModule = {
       } else if (this.currentTab === 'charts' && txt.includes('กราฟเทคนิค')) {
         el.classList.add('active');
       } else if (this.currentTab === 'plan' && txt.includes('วางแผนปันผล')) {
+        el.classList.add('active');
+      } else if (this.currentTab === 'allocation' && txt.includes('สัดส่วนการลงทุน')) {
         el.classList.add('active');
       }
     });
@@ -3602,6 +3606,217 @@ this.openAssetModal(holding.symbol, { reopen: true });
     }
   },
 
+  renderAllocation(container) {
+    const TYPE_META = {
+      'thai-stock': { label: 'หุ้นไทย', color: '#3b82f6' },
+      'mutual-fund': { label: 'กองทุนรวม', color: '#22d3ee' },
+      'foreign-stock': { label: 'หุ้นต่างประเทศ', color: '#a855f7' }
+    };
+
+    const data = getPortfolioDataHelper();
+    const summary = this.calculatePortfolioDetail(data, 'ALL');
+    const holdings = (summary.activeHoldings || []).filter(h => Number(h.marketValue) > 0);
+    const total = holdings.reduce((sum, h) => sum + Number(h.marketValue || 0), 0);
+
+    const formatBaht = (num) => {
+      const v = Number(num || 0);
+      return (v < 0 ? '-฿' : '฿') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    const formatUSD = (num) => '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const pctText = (v) => `${Number(v || 0).toFixed(1)}%`;
+    const mask = (text) => (this.hideValues ? '•••' : text);
+    const lastUpdated = summary.lastQuoteMs
+      ? new Date(summary.lastQuoteMs).toLocaleString('th-TH', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+      : 'ยังไม่มีการอัปเดตราคา';
+
+    const pageHead = `
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; justify-content: space-between; flex-wrap: wrap;">
+          <span style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 18px;">🧩</span><span style="font-size: 11px; font-weight: 700; color: var(--txt-muted); letter-spacing: 0.5px;">ASSET ALLOCATION</span></span>
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 10.5px; color: var(--txt-faint);">${lastUpdated}</span>
+            <button type="button" id="btn-toggle-hide-values" onclick="PortfolioModule.toggleHideValues()" title="${this.hideValues ? 'แสดงยอด' : 'ซ่อนยอด'}"
+              style="background: var(--inset); border: 1px solid var(--line-2); color: var(--txt-soft); width: 26px; height: 24px; border-radius: 5px; font-size: 12px; cursor: pointer;">${this.hideValues ? '🙈' : '👁'}</button>
+          </span>
+        </div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: var(--txt-strong);">สัดส่วนการลงทุน</h1>
+        <div style="font-size: 13px; color: var(--txt-muted); margin-top: 2px;">คำนวณจาก holdings ที่ถืออยู่จริง × ราคาล่าสุดในแอป · ทุกพอร์ตรวมกัน</div>
+      </div>`;
+
+    if (!holdings.length) {
+      container.innerHTML = `
+        <div class="portfolio-container" style="padding-bottom: 30px;">
+          ${pageHead}
+          <div style="background: var(--panel); border: 1px dashed var(--line-2); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--txt-muted); font-size: 13px;">
+            ยังไม่มีหลักทรัพย์ที่ถืออยู่ในพอร์ต — เพิ่มรายการซื้อในหน้า “รายการถือครอง” ก่อน
+          </div>
+        </div>`;
+      return;
+    }
+
+    const groups = Object.keys(TYPE_META).map(key => {
+      const value = holdings
+        .filter(h => h.assetType === key)
+        .reduce((sum, h) => sum + h.marketValue, 0);
+      return { key, label: TYPE_META[key].label, color: TYPE_META[key].color, value, count: holdings.filter(h => h.assetType === key).length };
+    }).filter(g => g.value > 0).sort((a, b) => b.value - a.value);
+
+    const usdValue = holdings.filter(h => h.assetType === 'foreign-stock').reduce((sum, h) => sum + h.marketValue, 0);
+    const thbValue = total - usdValue;
+
+    const portRows = this.getSortedPortfolios(data).map(p => {
+      const pid = p.id || p.portfolioId;
+      const pSummary = this.calculatePortfolioDetail(data, pid);
+      return { name: p.name || pid, value: pSummary.marketValue || 0, count: pSummary.activeCount || 0 };
+    }).filter(p => p.value > 0).sort((a, b) => b.value - a.value);
+    const portTotal = portRows.reduce((sum, p) => sum + p.value, 0);
+
+    const sorted = [...holdings].sort((a, b) => b.marketValue - a.marketValue);
+    const top10Value = sorted.slice(0, 10).reduce((sum, h) => sum + h.marketValue, 0);
+    const usableQuotes = summary.liveQuotes + summary.staleQuotes;
+
+    const stops = [];
+    let acc = 0;
+    groups.forEach(g => {
+      const pct = (g.value / total) * 100;
+      stops.push(`${g.color} ${acc.toFixed(2)}% ${(acc + pct).toFixed(2)}%`);
+      acc += pct;
+    });
+
+    const legendRow = (color, label, sub, value, pct) => `
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <span style="width: 10px; height: 10px; background: ${color}; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px ${color};"></span>
+        <div style="min-width: 0; flex: 1 1 auto;">
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--txt-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.esc(label)}</div>
+          <div style="font-size: 11.5px; color: var(--txt-muted); margin-top: 1px;">${mask(formatBaht(value))}${sub ? ` · ${sub}` : ''}</div>
+        </div>
+        <strong style="font-size: 15px; font-weight: 900; color: var(--txt-strong); white-space: nowrap; letter-spacing: -0.3px;">${pctText(pct)}</strong>
+      </div>`;
+
+    const barRow = (color, label, value, pctOfTotal, sub) => `
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+          <span style="font-size: 12.5px; font-weight: 700; color: var(--txt-soft); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.esc(label)}${sub ? `<span style="font-weight: 600; color: var(--txt-muted);"> · ${sub}</span>` : ''}</span>
+          <span style="font-size: 12.5px; font-weight: 800; color: var(--txt-strong); white-space: nowrap;">${mask(formatBaht(value))} <span style="color: var(--txt-muted); font-weight: 700;">${pctText(pctOfTotal)}</span></span>
+        </div>
+        <div style="height: 7px; background: rgba(9, 13, 38, 0.6); border-radius: 4px; overflow: hidden; border: 1px solid rgba(129, 140, 248, 0.12);">
+          <div style="width: ${Math.max(0, Math.min(100, pctOfTotal))}%; height: 100%; background: ${color}; border-radius: 4px;"></div>
+        </div>
+      </div>`;
+
+    const kpiBox = (label, value, sub, color) => `
+      <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;">
+        <div style="font-size: 10.5px; color: var(--txt-muted); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 3px;">${label}</div>
+        <div style="font-size: 19px; font-weight: 900; color: ${color || 'var(--txt-strong)'};">${value}</div>
+        <div style="font-size: 11px; color: var(--txt-muted); margin-top: 2px;">${sub}</div>
+      </div>`;
+
+    const qDot = { live: '#34d399', stale: '#fbbf24', estimate: '#fb923c', missing: '#fb7185' };
+    let cum = 0;
+    const rowsHtml = sorted.map((h, i) => {
+      const weight = (h.marketValue / total) * 100;
+      cum += weight;
+      const isForeign = h.assetType === 'foreign-stock';
+      const meta = TYPE_META[h.assetType] || { label: h.assetType, color: 'var(--txt-muted)' };
+      const name = String(h.name || '').trim();
+      const showsName = name && name.toUpperCase() !== String(h.symbol || '').toUpperCase();
+      const plColor = h.plPct >= 0 ? 'var(--up)' : 'var(--down)';
+      return `
+        <tr>
+          <td style="padding: 9px 8px; color: var(--txt-faint); font-weight: 700;">${i + 1}</td>
+          <td style="padding: 9px 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: ${qDot[h.quoteStatus] || qDot.missing}; flex-shrink: 0;" title="${this.esc(h.quoteStatus || 'missing')}"></span>
+              <strong style="font-size: 13px; color: var(--accent);">${this.esc(h.symbol)}</strong>
+            </div>
+            ${showsName ? `<div style="font-size: 11px; color: var(--txt-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.esc(name)}</div>` : ''}
+          </td>
+          <td style="padding: 9px 8px; font-size: 12px; color: var(--txt-soft); white-space: nowrap;">${meta.label}</td>
+          <td style="padding: 9px 8px; text-align: right; white-space: nowrap;">
+            <div style="font-weight: 700; color: var(--txt-strong);">${mask(formatBaht(h.marketValue))}</div>
+            ${isForeign && h.marketUSD != null ? `<div style="font-size: 11px; color: var(--txt-faint);">≈ ${formatUSD(h.marketUSD)}</div>` : ''}
+          </td>
+          <td style="padding: 9px 8px; text-align: right; white-space: nowrap;">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 7px;">
+              <div style="width: 54px; height: 6px; background: rgba(9, 13, 38, 0.6); border-radius: 3px; overflow: hidden;">
+                <div style="width: ${Math.min(100, weight)}%; height: 100%; background: ${meta.color}; border-radius: 3px;"></div>
+              </div>
+              <strong style="font-size: 12.5px; color: var(--txt-strong); min-width: 42px;">${weight.toFixed(2)}%</strong>
+            </div>
+          </td>
+          <td style="padding: 9px 8px; text-align: right; color: var(--txt-muted); font-weight: 700; white-space: nowrap;">${cum.toFixed(1)}%</td>
+          <td style="padding: 9px 8px; text-align: right; color: ${plColor}; font-weight: 800; white-space: nowrap;">${h.plPct >= 0 ? '+' : ''}${Number(h.plPct || 0).toFixed(2)}%</td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="portfolio-container" style="padding-bottom: 30px;">
+        ${pageHead}
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 10px; margin-bottom: 16px;">
+          ${kpiBox('มูลค่าตลาดรวม', mask(formatBaht(total)), `${holdings.length} หลักทรัพย์`, 'var(--txt-strong)')}
+          ${kpiBox('หลักทรัพย์ 10 อันดับแรก', pctText(total > 0 ? (top10Value / total) * 100 : 0), `รวม ${mask(formatBaht(top10Value))}`, 'var(--accent)')}
+          ${kpiBox('มูลค่าสูงสุดรายตัว', pctText(total > 0 ? (sorted[0].marketValue / total) * 100 : 0), this.esc(sorted[0].symbol), 'var(--txt-strong)')}
+          ${kpiBox('ราคาที่ใช้คำนวณ', `${usableQuotes}/${holdings.length}`, usableQuotes === holdings.length ? 'มีราคาล่าสุดครบ' : `ยังขาด ${holdings.length - usableQuotes} รายการ`, usableQuotes === holdings.length ? 'var(--up)' : 'var(--warn)')}
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 16px; align-items: stretch;">
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column;">
+            <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong); margin-bottom: 14px;">🥧 ตามประเภทสินทรัพย์</div>
+            <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+              <div style="position: relative; width: 132px; height: 132px; border-radius: 50%; background: conic-gradient(from 210deg, ${stops.join(', ')}); box-shadow: 0 0 24px rgba(59, 130, 246, 0.3);">
+                <div style="position: absolute; inset: 22px; border-radius: 50%; background: #0d1437; border: 1px solid rgba(129, 140, 248, 0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+                  <div class="pf-num-grad" style="font-size: 14px; font-weight: 900; letter-spacing: -0.3px;">${mask(total >= 1e6 ? `฿${(total / 1e6).toFixed(2)}M` : formatBaht(total))}</div>
+                  <div style="font-size: 9.5px; font-weight: 700; color: var(--txt-muted);">รวมทั้งหมด</div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              ${groups.map(g => legendRow(g.color, g.label, `${g.count} รายการ`, g.value, (g.value / total) * 100)).join('')}
+            </div>
+          </div>
+
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">💵 ตามสกุลเงินที่ถือ</div>
+            ${barRow('#3b82f6', 'เงินบาท (THB)', thbValue, total > 0 ? (thbValue / total) * 100 : 0, 'หุ้นไทย + กองทุน')}
+            ${barRow('#a855f7', 'ดอลลาร์ (USD)', usdValue, total > 0 ? (usdValue / total) * 100 : 0, 'หุ้นต่างประเทศ')}
+            <div style="font-size: 11.5px; color: var(--txt-faint); line-height: 1.6; border-top: 1px dashed var(--line); padding-top: 10px; margin-top: auto;">
+              มูลค่าต่างประเทศถูกแปลงเป็นบาทด้วยอัตรา ${Number(summary.liveFxRate || 33.49).toFixed(2)} เพื่อให้เทียบกันได้ในฐานเดียวกัน
+            </div>
+          </div>
+
+          <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 13px;">
+            <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">💼 ตามพอร์ต</div>
+            ${portRows.length ? portRows.map(p => barRow('#22d3ee', p.name, p.value, portTotal > 0 ? (p.value / portTotal) * 100 : 0, `${p.count} รายการ`)).join('') : '<div style="font-size: 12.5px; color: var(--txt-muted);">ไม่พบข้อมูลพอร์ต</div>'}
+          </div>
+        </div>
+
+        <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+            <div style="font-size: 14.5px; font-weight: 800; color: var(--txt-strong);">📋 น้ำหนักรายหลักทรัพย์</div>
+            <div style="font-size: 11.5px; color: var(--txt-muted);">เรียงจากมูลค่ามากไปน้อย · จุดสีหน้าสัญลักษณ์ = สถานะราคา (🟢 สด · 🟡 เก่า · 🟠 ประมาณ · 🔴 ไม่มีราคา)</div>
+          </div>
+          <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+              <thead>
+                <tr style="position: sticky; top: 0; background: var(--panel); z-index: 1;">
+                  <th style="text-align: left; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">#</th>
+                  <th style="text-align: left; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">หลักทรัพย์</th>
+                  <th style="text-align: left; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">ประเภท</th>
+                  <th style="text-align: right; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">มูลค่า</th>
+                  <th style="text-align: right; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">น้ำหนัก</th>
+                  <th style="text-align: right; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">สะสม</th>
+                  <th style="text-align: right; padding: 8px; font-size: 10.5px; color: var(--txt-muted); letter-spacing: 0.3px; border-bottom: 1px solid var(--line);">กำไร/ขาดทุน</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
   renderPerformanceReport(container) {
     const data = getPortfolioDataHelper();
     const sortedPortfolios = this.getSortedPortfolios(data);
@@ -4638,6 +4853,8 @@ this.openAssetModal(holding.symbol, { reopen: true });
         this.renderOverviewDashboard(container);
       } else if (this.currentTab === 'holdings') {
         this.renderHoldingsManagement(container);
+      } else if (this.currentTab === 'allocation') {
+        this.renderAllocation(container);
       } else if (this.currentTab === 'performance') {
         this.renderPerformanceReport(container);
       } else if (this.currentTab === 'dividend') {

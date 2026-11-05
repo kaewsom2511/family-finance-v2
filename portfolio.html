@@ -161,6 +161,7 @@
               <a href="portfolio.html#dividends" class="nav-sub-item" id="subnav-portfolio-dividends">💵 ปันผลจริงรายตัว</a>
               <a href="portfolio.html#technical" class="nav-sub-item" id="subnav-portfolio-chart">🕯️ กราฟเทคนิค</a>
               <a href="portfolio.html#plan" class="nav-sub-item" id="subnav-portfolio-plan">🎯 วางแผนปันผล</a>
+              <a href="portfolio.html#allocation" class="nav-sub-item" id="subnav-portfolio-allocation">🧩 สัดส่วนการลงทุน</a>
               <a href="securities.html" class="nav-sub-item">🗄️ ราคา & NAV จากฐานข้อมูล</a>
               <a href="price-center.html" class="nav-sub-item">💹 ศูนย์ราคา</a>
               <a href="dividend-center.html" class="nav-sub-item">🪙 ศูนย์ปันผล</a>
@@ -242,6 +243,8 @@
         document.getElementById('subnav-portfolio-chart')?.classList.add('active');
       } else if (hash === '#plan') {
       document.getElementById('subnav-portfolio-plan')?.classList.add('active');  
+      } else if (hash === '#allocation') {
+        document.getElementById('subnav-portfolio-allocation')?.classList.add('active');
       } else {
         document.getElementById('subnav-portfolio-all')?.classList.add('active');
       }
