@@ -1,11 +1,21 @@
 /**
  * js/modules/dividend-center.js
- * ศูนย์ปันผล — ประวัติปันผล/DPU, Yield 12 เดือน และปฏิทินวันจ่าย
- * อ่าน dividends / v_dividend_12m / v_security_latest แบบ anon (RLS read-only)
+ * ศูนย์ปันผล — ประวัติปันผล/DPU, Yield 12 เดือน และปฏิทินวัน XD/วันจ่าย
+ * อ่าน dividends / v_security_latest แบบ anon (RLS read-only)
+ *
+ * dividends มีสองที่มา:
+ *   yahoo      = ปันผลต่อหน่วยจริง + วันขึ้นเครื่องหมาย XD (collector เขียนให้ทุกวัน)
+ *   manual_log = ที่แอปบันทึกเอง มีแค่วันรับเงิน และบางรายการเป็น "ยอดเงินที่ได้รับ" ไม่ใช่ต่อหน่วย
+ * ถ้าหลักทรัพย์ไหนมีข้อมูล yahoo จะใช้ชุดนั้นเพียงชุดเดียว ไม่เอามาบวกปนกัน
  */
 var DividendCenterModule = {
-  // ตัวเลขที่บันทึกจากแอปบางรายการเป็น "ยอดเงินที่ได้รับ" ไม่ใช่ต่อหน่วย → yield เกินจริง
+  // ตัวเลขของ manual_log ที่คำนวณ Yield แล้วเกินนี้ถือว่าเป็นยอดเงินรวม ไม่ใช่ต่อหน่วย
   MAX_SANE_YIELD: 50,
+
+  // แหล่งที่ให้ตัวเลข "ต่อหน่วย" จริง (source_code อื่นทั้งหมดถือเป็นยอดที่แอปบันทึก)
+  MARKET_SOURCES: ['yahoo'],
+  PAGE_ROWS: 1000,
+  MAX_PAGES: 10,
 
   TYPE_LABELS: {
     'thai-stock': 'หุ้นไทย',
@@ -111,25 +121,35 @@ var DividendCenterModule = {
     }
   },
 
-  async loadOnce() {
-    const [divs, summary, latest] = await Promise.all([
-      supabaseClient.from('dividends')
+  async fetchDividendRows() {
+    // ยิงทีละหน้า: Supabase จำกัด 1000 แถวต่อคำขอ แต่ตาราง dividends มีเกินนั้นแล้ว
+    const rows = [];
+    for (let page = 0; page < this.MAX_PAGES; page += 1) {
+      const from = page * this.PAGE_ROWS;
+      const { data, error } = await supabaseClient.from('dividends')
         .select('security_id,kind,amount_per_share,currency,ex_date,record_date,pay_date,period_label,fiscal_year,is_declared,source_code')
-        .limit(2000),
-      supabaseClient.from('v_dividend_12m').select('*').limit(1000),
+        .order('id', { ascending: true })
+        .range(from, from + this.PAGE_ROWS - 1);
+      if (error) throw error;
+      rows.push(...(data || []));
+      if (!data || data.length < this.PAGE_ROWS) break;
+    }
+    return rows;
+  },
+
+  async loadOnce() {
+    const [divs, latest] = await Promise.all([
+      this.fetchDividendRows(),
       supabaseClient.from('v_security_latest')
         .select('security_id,symbol,name_th,name_en,asset_type,currency,price,fund_nav')
         .limit(1000)
     ]);
-    [divs, summary, latest].forEach(result => {
-      if (result.error) throw result.error;
-    });
+    if (latest.error) throw latest.error;
 
     const latestById = new Map((latest.data || []).map(row => [row.security_id, row]));
-    const summaryById = new Map((summary.data || []).map(row => [row.security_id, row]));
     const bySecurity = new Map();
 
-    (divs.data || []).forEach(item => {
+    divs.forEach(item => {
       const info = latestById.get(item.security_id) || {};
       if (!bySecurity.has(item.security_id)) {
         bySecurity.set(item.security_id, {
@@ -154,26 +174,37 @@ var DividendCenterModule = {
       });
     });
 
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - 365);
+    const cutoffKey = cutoff.toISOString().slice(0, 10);
+
     this.state.rows = [...bySecurity.values()].map(row => {
       const info = latestById.get(row.securityId) || {};
-      const summaryRow = summaryById.get(row.securityId) || {};
-      const history = row.history.slice().sort((a, b) => String(b.payDate || '').localeCompare(String(a.payDate || '')));
-      const perShare12m = summaryRow.per_share_12m == null ? null : Number(summaryRow.per_share_12m);
+      const market = row.history.filter(item => this.MARKET_SOURCES.includes(item.source));
+      const usesMarket = market.length > 0;
+      const dated = (usesMarket ? market : row.history)
+        .map(item => ({ ...item, date: item.exDate || item.payDate, dateKind: item.exDate ? 'XD' : 'จ่าย' }))
+        .filter(item => item.date)
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      const last12 = dated.filter(item => String(item.date).slice(0, 10) >= cutoffKey);
+      const perShare12m = last12.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
       const latestValue = Number(row.assetType === 'mutual-fund' ? info.fund_nav : info.price);
-      let rawYield = summaryRow.derived_yield_pct == null ? null : Number(summaryRow.derived_yield_pct);
-      if (rawYield == null && perShare12m > 0 && latestValue > 0) {
-        rawYield = Number((perShare12m / latestValue * 100).toFixed(2));
-      }
+      const rawYield = last12.length && perShare12m > 0 && Number.isFinite(latestValue) && latestValue > 0
+        ? Number((perShare12m / latestValue * 100).toFixed(2))
+        : null;
       const suspicious = rawYield != null && rawYield > this.MAX_SANE_YIELD;
       return {
         ...row,
-        history,
-        perShare12m,
-        payouts12m: summaryRow.payouts_12m == null ? null : Number(summaryRow.payouts_12m),
-        lastPayDate: summaryRow.last_pay_date || history[0].payDate || null,
+        history: dated,
+        usesMarket,
+        sourceLabel: usesMarket ? 'yahoo' : (row.history[0].source || 'manual_log'),
+        perShare12m: last12.length ? perShare12m : null,
+        payouts12m: last12.length,
+        lastDate: dated.length ? dated[0].date : null,
+        lastDateKind: dated.length ? dated[0].dateKind : null,
         yieldPct: Number.isFinite(rawYield) && !suspicious ? rawYield : null,
         suspicious,
-        latestValue: Number.isFinite(latestValue) ? latestValue : null
+        latestValue: Number.isFinite(latestValue) && latestValue > 0 ? latestValue : null
       };
     }).sort((a, b) => {
       if (a.yieldPct == null && b.yieldPct == null) return a.symbol.localeCompare(b.symbol);
@@ -187,9 +218,11 @@ var DividendCenterModule = {
       assetType: row.assetType,
       amount: item.amount,
       currency: item.currency,
-      payDate: item.payDate,
+      source: item.source,
+      date: item.date,
+      dateKind: item.dateKind,
       fiscalYear: item.fiscalYear
-    }))).filter(item => item.payDate);
+    })));
   },
 
   // ---------------------------------------------------------------- render
@@ -210,7 +243,7 @@ var DividendCenterModule = {
           <div>
             <div style="font-size: 20px; font-weight: 800; color: var(--txt-strong);">ศูนย์ปันผล</div>
             <div style="font-size: 12.5px; color: var(--txt-muted); margin-top: 4px;">
-              ประวัติปันผล/DPU, Yield 12 เดือน และปฏิทินวันจ่ายจาก <span style="color: var(--txt-soft);">dividends · v_dividend_12m</span>
+              ประวัติปันผล/DPU, Yield 12 เดือน และปฏิทินวัน XD/วันจ่าย จาก <span style="color: var(--txt-soft);">dividends · v_security_latest</span>
             </div>
           </div>
           <button type="button" id="div-refresh" style="background: rgba(96, 165, 250, 0.10); border: 1px solid rgba(129, 140, 248, 0.32); color: #c7d2fe; padding: 8px 16px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer;">↻ โหลดใหม่</button>
@@ -233,7 +266,7 @@ var DividendCenterModule = {
                     <th>ประเภท</th>
                     <th style="text-align: right;">ปันผล 12 เดือน</th>
                     <th style="text-align: right;">ครั้ง</th>
-                    <th>จ่ายล่าสุด</th>
+                    <th>ล่าสุด</th>
                     <th style="text-align: right;">Yield</th>
                   </tr>
                 </thead>
@@ -241,8 +274,9 @@ var DividendCenterModule = {
               </table>
             </div>
             <div style="font-size: 11px; color: var(--txt-faint); padding: 8px 10px 4px;">
-              ยอดปันผลเป็นตัวเลขที่บันทึกไว้ในฐานข้อมูล (manual_log) — บางรายการอาจเป็นยอดเงินรวมที่ได้รับ ไม่ใช่ต่อหน่วย
-              จึงไม่แสดง Yield เมื่อคำนวณแล้วเกิน ${this.MAX_SANE_YIELD}%/ปี และติด ⚠ ไว้ที่สัญลักษณ์
+              ตัวเลขต่อหน่วยและวัน XD มาจาก Yahoo (collector เก็บให้ทุกวัน) · หลักทรัพย์ที่ยังไม่มีข้อมูลจาก Yahoo
+              จะใช้ยอดที่แอปบันทึก (manual_log) ซึ่งบางรายการเป็นยอดเงินรวมที่ได้รับ จึงไม่แสดง Yield
+              เมื่อคำนวณแล้วเกิน ${this.MAX_SANE_YIELD}%/ปี และติด ⚠ ไว้ที่สัญลักษณ์
             </div>
           </div>
 
@@ -251,8 +285,8 @@ var DividendCenterModule = {
 
         <div class="pf-card" style="padding: 18px 18px 20px; margin-top: 16px;">
           <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-            <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">ปฏิทินวันจ่ายปันผล 12 เดือนล่าสุด</div>
-            <div style="font-size: 11.5px; color: var(--txt-faint);">แสดงเฉพาะวันจ่ายจริง — ฐานข้อมูลยังไม่มีวัน XD/วันกำหนดสิทธิ</div>
+            <div style="font-size: 15px; font-weight: 800; color: var(--txt-strong);">ปฏิทินวัน XD / วันจ่าย 12 เดือนล่าสุด</div>
+            <div style="font-size: 11.5px; color: var(--txt-faint);">วัน XD มาจาก Yahoo · หลักทรัพย์ที่ยังไม่มีข้อมูล Yahoo จะใช้วันจ่ายที่แอปบันทึก</div>
           </div>
           <div id="div-calendar" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px;"></div>
         </div>
@@ -304,12 +338,14 @@ var DividendCenterModule = {
     const rows = this.state.rows;
     const events = this.state.events;
     const funds = rows.filter(row => row.assetType === 'mutual-fund').length;
-    const lastPay = events.reduce((best, item) => (!best || item.payDate > best ? item.payDate : best), null);
+    const lastEvent = events.reduce((best, item) => (!best || item.date > best ? item.date : best), null);
     const topYield = rows.find(row => row.yieldPct != null);
     const cutoff = new Date();
     cutoff.setUTCDate(cutoff.getUTCDate() - 365);
     const cutoffKey = cutoff.toISOString().slice(0, 10);
-    const yearlyEvents = events.filter(item => item.payDate >= cutoffKey).length;
+    const yearlyEvents = events.filter(item => item.date >= cutoffKey).length;
+    const fromMarket = events.filter(item => this.MARKET_SOURCES.includes(item.source)).length;
+    const fromRecord = events.length - fromMarket;
 
     const card = (icon, label, value, hint) => `
       <div class="pf-card" style="padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;">
@@ -323,8 +359,8 @@ var DividendCenterModule = {
 
     document.getElementById('div-kpis').innerHTML = [
       card('🏢', 'หลักทรัพย์ที่มีประวัติปันผล', this.num(rows.length, 0), `หุ้น/ETF ${rows.length - funds} · กองทุน ${funds}`),
-      card('🧾', 'รายการที่บันทึกไว้', this.num(events.length, 0), 'จากแหล่งข้อมูล manual_log'),
-      card('🗓️', 'จ่ายล่าสุด', lastPay ? this.thDate(lastPay) : '—', lastPay && this.daysSince(lastPay) != null ? `${this.daysSince(lastPay)} วันก่อน` : 'ยังไม่มีข้อมูล'),
+      card('🧾', 'รายการที่บันทึกไว้', this.num(events.length, 0), `Yahoo ${this.num(fromMarket, 0)} · ที่แอปบันทึก ${this.num(fromRecord, 0)}`),
+      card('🗓️', 'ล่าสุด', lastEvent ? this.thDate(lastEvent) : '—', lastEvent && this.daysSince(lastEvent) != null ? `${this.daysSince(lastEvent)} วันก่อน` : 'ยังไม่มีข้อมูล'),
       card('📈', 'Yield สูงสุด (12 เดือน)', topYield ? topYield.yieldPct.toFixed(2) + '%' : '—', topYield ? `${topYield.symbol} · ${this.num(yearlyEvents, 0)} รายการใน 12 เดือน` : 'ยังคำนวณไม่ได้')
     ].join('');
   },
@@ -352,7 +388,7 @@ var DividendCenterModule = {
         <td style="font-size: 12px; color: var(--txt-soft);">${this.TYPE_LABELS[row.assetType] || this.escape(row.assetType)}</td>
         <td style="text-align: right; font-weight: 700; color: var(--txt-strong);">${this.money(row.perShare12m, row.currency)}</td>
         <td style="text-align: right; font-size: 12px;">${row.payouts12m == null ? '—' : this.num(row.payouts12m, 0)}</td>
-        <td style="font-size: 12px;">${this.thDate(row.lastPayDate)}</td>
+        <td style="font-size: 12px;">${this.thDate(row.lastDate)}</td>
         <td style="text-align: right; font-weight: 700; color: var(--accent-3);">${row.yieldPct == null ? '—' : row.yieldPct.toFixed(2) + '%'}</td>
       </tr>`).join('');
   },
@@ -391,7 +427,7 @@ var DividendCenterModule = {
     const rows = row.history.slice(0, 24);
     const historyRows = rows.length ? rows.map(item => `
       <tr>
-        <td>${this.thDate(item.payDate)}</td>
+        <td>${this.thDate(item.date)} <span style="font-size: 10px; color: var(--txt-faint);">${item.dateKind}</span></td>
         <td style="text-align: right; font-weight: 700;">${this.money(item.amount, item.currency)}</td>
         <td style="text-align: right; font-size: 11.5px; color: var(--txt-muted);">${item.fiscalYear == null ? '—' : item.fiscalYear}</td>
         <td style="text-align: right; font-size: 11px; color: var(--txt-muted);">${this.escape(item.source || '—')}</td>
@@ -412,12 +448,14 @@ var DividendCenterModule = {
           <span style="font-size: 12.5px; font-weight: 700; color: var(--accent-3);">${row.yieldPct == null ? '' : 'Yield ' + row.yieldPct.toFixed(2) + '%'}</span>
         </div>
         <div style="font-size: 12px; color: var(--txt-muted); margin-bottom: 12px;">
-          ปันผลที่บันทึก 12 เดือน · ${row.payouts12m == null ? '—' : this.num(row.payouts12m, 0)} ครั้ง · จ่ายล่าสุด ${this.thDate(row.lastPayDate)}
+          ปันผล 12 เดือน · ${row.payouts12m == null ? '—' : this.num(row.payouts12m, 0)} ครั้ง
+          ${row.lastDate ? `· ล่าสุด ${this.thDate(row.lastDate)} (${row.lastDateKind})` : ''}
+          · ที่มา <span style="color: var(--txt-soft); font-weight: 700;">${this.escape(row.sourceLabel)}</span>
         </div>
 
         ${row.suspicious ? `
         <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 9px; padding: 9px 11px; font-size: 11.5px; color: #fcd34d; margin-bottom: 12px;">
-          ยอดนี้สูงผิดปกติเมื่อเทียบกับราคา/NAV (คำนวณได้เกิน ${this.MAX_SANE_YIELD}%/ปี) — อาจบันทึกเป็นยอดเงินรวมที่ได้รับ ไม่ใช่ต่อหน่วย จึงไม่แสดง Yield
+          ยอดนี้สูงผิดปกติเมื่อเทียบกับราคา/NAV (คำนวณได้เกิน ${this.MAX_SANE_YIELD}%/ปี) — ยอดที่แอปบันทึกอาจเป็นยอดเงินรวมที่ได้รับ ไม่ใช่ต่อหน่วย จึงไม่แสดง Yield
         </div>` : ''}
 
         <div class="div-chart-box"><canvas id="div-chart"></canvas></div>
@@ -428,7 +466,7 @@ var DividendCenterModule = {
           <table class="div-table" style="font-size: 12px;">
             <thead>
               <tr>
-                <th>วันจ่าย</th>
+                <th>วัน XD / จ่าย</th>
                 <th style="text-align: right;">ต่อหน่วย</th>
                 <th style="text-align: right;">ปีบัญชี</th>
                 <th style="text-align: right;">แหล่ง</th>
@@ -504,10 +542,10 @@ var DividendCenterModule = {
     }
     const byKey = new Map(months.map(month => [month.key, month]));
     this.state.events.forEach(item => {
-      const month = byKey.get(String(item.payDate).slice(0, 7));
+      const month = byKey.get(String(item.date).slice(0, 7));
       if (month) month.events.push(item);
     });
-    months.forEach(month => month.events.sort((a, b) => String(b.payDate).localeCompare(String(a.payDate))));
+    months.forEach(month => month.events.sort((a, b) => String(b.date).localeCompare(String(a.date))));
     return months.reverse();
   },
 
@@ -524,8 +562,8 @@ var DividendCenterModule = {
       const extra = month.events.length - shown.length;
       const items = shown.map(item => `
         <div style="display: flex; justify-content: space-between; gap: 6px; font-size: 11.5px; padding: 3px 0; border-bottom: 1px dashed rgba(129, 140, 248, 0.12);">
-          <span style="color: var(--txt-soft); font-weight: 700; white-space: nowrap;">${String(item.payDate).slice(8, 10)} · ${this.escape(item.symbol)}</span>
-          <span style="color: var(--txt-muted); white-space: nowrap;">${this.money(item.amount, item.currency)}</span>
+          <span style="color: var(--txt-soft); font-weight: 700; white-space: nowrap;">${String(item.date).slice(8, 10)} · ${this.escape(item.symbol)}</span>
+          <span style="color: var(--txt-muted); white-space: nowrap;">${this.money(item.amount, item.currency)} <span style="font-size: 9.5px; color: var(--txt-faint);">${item.dateKind}</span></span>
         </div>`).join('');
       return `
         <div style="background: rgba(9, 13, 38, 0.45); border: 1px solid var(--line-soft); border-radius: 10px; padding: 10px 12px; min-height: 86px;">

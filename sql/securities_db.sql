@@ -401,7 +401,17 @@ left join lateral (
 ) f on true;
 
 -- ปันผลย้อนหลัง 12 เดือน + yield ที่ระบบคำนวณเอง (แยกจากตัวเลขที่แหล่งข้อมูลให้มา)
+-- หลักทรัพย์ที่แหล่งข้อมูลจริง (เช่น yahoo) ให้ตัวเลขต่อหน่วยแล้ว ใช้เฉพาะชุดนั้น
+-- ไม่รวมแถวที่แอปบันทึก (manual_log) ซึ่งบางรายการเป็นยอดเงินที่ได้รับทั้งก้อน ไม่ใช่ต่อหน่วย
 create or replace view public.v_dividend_12m as
+with recent as (
+  select d.*,
+         max(case when d.source_code <> 'manual_log' then 1 else 0 end)
+           over (partition by d.security_id) as has_market_source
+  from public.dividends d
+  where d.pay_date >= (current_date - interval '365 days')
+     or (d.pay_date is null and d.ex_date >= (current_date - interval '365 days'))
+)
 select
   s.security_id,
   s.symbol,
@@ -412,11 +422,10 @@ select
   case when l.close > 0
        then round((sum(d.amount_per_share) / l.close * 100)::numeric, 2)
        else null end                                       as derived_yield_pct
-from public.dividends d
+from recent d
 join public.securities s using (security_id)
 left join public.prices_latest l using (security_id)
-where d.pay_date >= (current_date - interval '365 days')
-   or (d.pay_date is null and d.ex_date >= (current_date - interval '365 days'))
+where d.source_code <> 'manual_log' or d.has_market_source = 0
 group by s.security_id, s.symbol, s.currency, l.close;
 
 -- ---------------------------------------------------------------------------
