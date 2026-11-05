@@ -3137,8 +3137,9 @@ this.openAssetModal(holding.symbol, { reopen: true });
 
     const rowHtml = (r, i) => {
       const row = r.row;
-      const asOf = r.anchor ? r.anchor.asOf : row.firstRecorded;
-      const units = r.anchor ? r.anchor.units : row.suggestedUnits;
+      // ค่าเริ่มต้น = วันแรกของช่วงกราฟ ไม่ใช่วันที่แอปเริ่มบันทึกของแต่ละแถว มิฉะนั้นกดบันทึกแล้วกราฟยังเริ่มช้าอยู่ดี
+      const asOf = r.anchor ? r.anchor.asOf : win.firstDay;
+      const units = r.anchor ? r.anchor.units : (r.pos ? ValueHistoryService.openingUnitsAt(r.pos, win.firstDay) : row.suggestedUnits);
       const disabled = !row.anchorable;
       const cell = 'padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px; box-sizing: border-box;';
       const input = 'width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; background: var(--panel-2); color: var(--txt-strong);';
@@ -3162,11 +3163,11 @@ this.openAssetModal(holding.symbol, { reopen: true });
           <div style="font-size: 12.5px; color: var(--txt-soft); background: var(--inset); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;">
             แอปเริ่มบันทึกรายการซื้อ-ขายของสถานะเหล่านี้ทีหลังวันแรกของกราฟ กราฟจึงไม่รู้มูลค่าก่อนหน้านั้น<br>
             กรอกจำนวนหน่วยที่ถืออยู่จริง ณ วันตั้งต้น (ดูจากใบแจ้งยอดของโบรกเกอร์) ระบบจะใช้ยอดนั้นเป็นฐาน แล้วเดินรายการซื้อ-ขายจริงต่อจากนั้น — <strong>ไม่แก้รายการเดิม และยอดปัจจุบันไม่เปลี่ยน</strong><br>
-            ถ้าย้อนวันไปก่อนวันที่แอปบันทึก ระบบจะถือว่าถือเท่าเดิมมาจนถึงวันนั้น ถ้าไม่จริงให้พิมพ์จำนวนของวันนั้นแทน และตั้ง 0 เพื่อข้ามสถานะที่ทราบแน่นอนไม่ได้
+            ทุกแถวตั้งต้นเป็นวันแรกของกราฟช่วงนี้แล้ว และใส่ยอดที่ถืออยู่จริง ณ วันที่แอปเริ่มบันทึกให้ (ถือว่าถือยอดนั้นมาตลอดก่อนหน้านั้น) ถ้าไม่จริงให้พิมพ์จำนวนของวันตั้งต้นเอง และตั้ง 0 เพื่อข้ามสถานะที่ไม่ทราบแน่นอน
           </div>
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--txt-muted);">
             <span>ตั้งวันเดียวกันทุกสถานะ:</span>
-            <input type="date" id="vha-bulk-date" max="${win.lastDay}" style="padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; background: var(--panel-2); color: var(--txt-strong);">
+            <input type="date" id="vha-bulk-date" value="${win.firstDay}" max="${win.lastDay}" style="padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; background: var(--panel-2); color: var(--txt-strong);">
             <button type="button" id="btn-vha-apply-date" style="background: var(--panel-2); border: 1px solid var(--line-2); color: var(--txt-soft); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer;">ใช้วันนั้น</button>
             <span style="margin-left: auto;">กราฟช่วง ${this.VALUE_RANGE_LABELS[this.valueRange]} เริ่มวันที่ ${win.firstDay}</span>
           </div>
