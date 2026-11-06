@@ -129,7 +129,10 @@ var SecuritiesModule = {
     if (filter !== 'all') query = query.eq('asset_type', filter);
     // ตัดอักขระที่ทำให้ไวยากรณ์ or() ของ PostgREST พัง (ค้นหาว่าง = ไม่กรอง)
     const term = String(search || '').replace(/[%,()*]/g, ' ').trim();
-    if (term) {
+    if (term.length > 0 && term.length <= 3) {
+      // คำสั้น = พิมพ์ชื่อยอก → match เฉพาะ symbol ขึ้นต้น ไม่แตะชื่อ (มิฉะนั้น "tu" จะไปโดน "Infra-stru-cture")
+      query = query.ilike('symbol', `${term}*`);
+    } else if (term) {
       query = query.or(`symbol.ilike.%${term}%,name_th.ilike.%${term}%,name_en.ilike.%${term}%`);
     }
     return query.order('symbol', { ascending: true }).range(from, from + this.PAGE_SIZE - 1);
