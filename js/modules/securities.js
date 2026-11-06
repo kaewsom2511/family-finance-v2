@@ -588,9 +588,21 @@ var SecuritiesModule = {
     btn.disabled = true;
     if (note) note.textContent = 'กำลังส่งคำขอ…';
     try {
-      // upsert: คิวใหม่ insert · คิวที่เคยล้มเหลวกลับมาเป็น pending ขอใหม่ได้ (RLS อนุญาตเฉพาะ failed)
-      const { error } = await supabaseClient.from('history_requests')
-        .upsert({ security_id: row.securityId, status: 'pending' }, { onConflict: 'security_id' });
+      // แยกตามสถานะเดิม: คิวใหม่ insert · คิวที่เคยล้มเหลว update กลับเป็น pending
+      // (upsert/on_conflict ใช้ไม่ได้ — RLS ของ UPDATE แยกจาก INSERT และ PostgREST
+      // ต้องผ่าน USING ของ policy อัปเดตแม้แถวจะยังไม่เคยมี)
+      const { data: existing } = await supabaseClient.from('history_requests')
+        .select('status').eq('security_id', row.securityId).maybeSingle();
+      let error = null;
+      if (!existing) {
+        ({ error } = await supabaseClient.from('history_requests')
+          .insert({ security_id: row.securityId, status: 'pending' }));
+      } else if (existing.status === 'failed') {
+        ({ error } = await supabaseClient.from('history_requests')
+          .update({ status: 'pending', message: null, processed_at: null,
+                    requested_at: new Date().toISOString() })
+          .eq('security_id', row.securityId));
+      }
       if (error) throw error;
       btn.style.opacity = '0.55';
       btn.textContent = '⏳ อยู่ในคิวแล้ว';
