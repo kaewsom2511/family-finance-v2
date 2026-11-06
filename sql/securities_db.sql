@@ -84,6 +84,8 @@ create table if not exists public.securities (
   industry        text,
   status          text not null default 'active'
                   check (status in ('active','delisted','suspended','merged','unknown')),
+  -- true = เก็บประวัติราคา/NAV ย้อนหลัง (ตัวที่ถือ/ติดตาม) / false = มีแค่ราคาล่าสุด (ทะเบียนทั้งตลาด)
+  track_history   boolean not null default false,
   listed_from     date,
   listed_to       date,
   notes           text,
@@ -91,6 +93,10 @@ create table if not exists public.securities (
   modified_at     timestamptz not null default now(),
   unique (symbol, exchange_code)
 );
+
+create index if not exists securities_track_history_idx
+  on public.securities (asset_type)
+  where track_history;
 
 -- ประวัติการเปลี่ยนสัญลักษณ์ (ข้อ 12: จัดการหุ้นที่เปลี่ยน symbol / ย้ายตลาด / delist)
 create table if not exists public.security_symbol_history (
@@ -234,6 +240,8 @@ create table if not exists public.fund_details (
   minimum_first_buy  numeric(18,2),
   inception_date     date,
   nav_date           date,                  -- วันที่ NAV อ้างอิง
+  latest_nav         numeric(18,6),         -- NAV ล่าสุดจาก snapshot (กองที่ไม่ได้เก็บประวัติ)
+  prev_nav           numeric(18,6),
   risk_level         smallint,
   source_code        text references public.data_sources(source_code),
   fetched_at         timestamptz not null default now()
@@ -363,10 +371,12 @@ select
   min(x.data_date)                         as first_date,
   max(x.data_date)                         as last_date,
   max(x.fetched_at)                        as last_fetched_at,
-  array_agg(distinct x.source_code)        as sources
+  array_agg(distinct x.source_code)        as sources,
+  s.track_history
 from public.securities s
 left join series x using (security_id)
-group by s.security_id, s.symbol, s.asset_type, s.exchange_code, s.currency, s.status;
+group by s.security_id, s.symbol, s.asset_type, s.exchange_code, s.currency,
+         s.status, s.track_history;
 
 -- มุมมองที่ Family Finance ใช้: ราคา/NAV ล่าสุด + ชื่อย่อ + สกุลเงินต่อ 1 แถว
 create or replace view public.v_security_latest as
@@ -387,8 +397,11 @@ select
   l.change_pct,
   l.is_estimate,
   l.fetched_at   as price_fetched_at,
-  f.nav          as fund_nav,
-  f.nav_date     as fund_nav_date
+  case when d.nav_date is not null and (f.nav_date is null or d.nav_date > f.nav_date)
+       then d.latest_nav else f.nav end      as fund_nav,
+  case when d.nav_date is not null and (f.nav_date is null or d.nav_date > f.nav_date)
+       then d.nav_date else f.nav_date end   as fund_nav_date,
+  s.track_history
 from public.securities s
 join public.exchanges e using (exchange_code)
 left join public.prices_latest l using (security_id)
@@ -398,7 +411,8 @@ left join lateral (
   where h.security_id = s.security_id
   order by h.nav_date desc
   limit 1
-) f on true;
+) f on true
+left join public.fund_details d using (security_id);
 
 -- ปันผลย้อนหลัง 12 เดือน + yield ที่ระบบคำนวณเอง (แยกจากตัวเลขที่แหล่งข้อมูลให้มา)
 -- หลักทรัพย์ที่แหล่งข้อมูลจริง (เช่น yahoo) ให้ตัวเลขต่อหน่วยแล้ว ใช้เฉพาะชุดนั้น

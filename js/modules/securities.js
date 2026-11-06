@@ -9,6 +9,8 @@ var SecuritiesModule = {
   STALE_DAYS: 4,
   THIN_POINTS: 100,
   HISTORY_LIMIT: 500,
+  // ทะเบียนทั้งตลาดมีหลักหมื่นตัว → อ่านทีละหน้าและค้นฝั่งเซิร์ฟเวอร์ ไม่โหลดทั้งหมดมาเก็บในเบราว์เซอร์
+  PAGE_SIZE: 50,
 
   TYPE_LABELS: {
     'thai-stock': 'หุ้นไทย',
@@ -31,6 +33,9 @@ var SecuritiesModule = {
     rows: [],
     filter: 'all',
     search: '',
+    page: 0,
+    total: 0,
+    stats: { counts: {}, total: 0, missingTracked: 0, newest: null },
     selectedId: null,
     chart: null,
     historyCache: new Map()
@@ -104,32 +109,73 @@ var SecuritiesModule = {
       this.renderError(error);
       return;
     }
+    // ตัวเลขสรุปเป็นของประกอบ — พังไม่ควรทำให้ทั้งหน้าล่ม
+    try {
+      await this.loadStats();
+    } catch (error) {
+      console.warn('[Securities] stats error', error && error.message);
+    }
     this.renderAll();
   },
 
   async load() {
-    const [latest, coverage, details, navRows] = await Promise.all([
-      supabaseClient.from('v_security_latest').select('*').limit(1000),
-      supabaseClient.from('v_coverage').select('security_id,data_points,first_date,last_date,last_fetched_at,sources').limit(1000),
-      supabaseClient.from('fund_details').select('security_id,fund_type,expense_ratio,nav_date').limit(1000),
-      supabaseClient.from('fund_nav_history')
-        .select('security_id,nav_date,nav,source_code')
-        .order('nav_date', { ascending: false })
-        .limit(1000)
+    await this.fetchPage();
+  },
+
+  pageQuery() {
+    const { filter, search, page } = this.state;
+    const from = page * this.PAGE_SIZE;
+    let query = supabaseClient.from('v_security_latest').select('*', { count: 'exact' });
+    if (filter !== 'all') query = query.eq('asset_type', filter);
+    // ตัดอักขระที่ทำให้ไวยากรณ์ or() ของ PostgREST พัง (ค้นหาว่าง = ไม่กรอง)
+    const term = String(search || '').replace(/[%,()*]/g, ' ').trim();
+    if (term) {
+      query = query.or(`symbol.ilike.%${term}%,name_th.ilike.%${term}%,name_en.ilike.%${term}%`);
+    }
+    return query.order('symbol', { ascending: true }).range(from, from + this.PAGE_SIZE - 1);
+  },
+
+  async fetchPage() {
+    const { data, error, count } = await this.pageQuery();
+    if (error) throw error;
+    const rows = data || [];
+    this.state.total = count || 0;
+    if (!rows.length && this.state.page > 0) {
+      // ข้อมูลเปลี่ยนจนหน้านี้หาย (เช่นค้นหาผลแคบลง) → ถอยกลับหน้าแรก
+      this.state.page = 0;
+      return this.fetchPage();
+    }
+    this.state.rows = await this.decorate(rows);
+  },
+
+  // เติมเฉพาะข้อมูลของแถวในหน้านี้ — ไม่ดึงทั้งทะเบียนมาคำนวณในเบราว์เซอร์
+  async decorate(rows) {
+    if (!rows.length) return [];
+    const ids = rows.map(row => row.security_id);
+    const fundIds = rows.filter(row => row.asset_type === 'mutual-fund').map(row => row.security_id);
+    const [coverage, details] = await Promise.all([
+      supabaseClient.from('v_coverage')
+        .select('security_id,data_points,first_date,last_date,last_fetched_at,sources')
+        .in('security_id', ids),
+      fundIds.length
+        ? supabaseClient.from('fund_details')
+            .select('security_id,fund_type,expense_ratio,nav_date,latest_nav,prev_nav')
+            .in('security_id', fundIds)
+        : Promise.resolve({ data: [], error: null })
     ]);
-    [latest, coverage, details, navRows].forEach(result => {
-      if (result.error) throw result.error;
-    });
+    [coverage, details].forEach(result => { if (result.error) throw result.error; });
 
     const covById = new Map((coverage.data || []).map(row => [row.security_id, row]));
     const detailById = new Map((details.data || []).map(row => [row.security_id, row]));
-    const fundChanges = this.buildFundChanges(navRows.data || []);
 
-    this.state.rows = (latest.data || []).map(row => {
+    return rows.map(row => {
       const cov = covById.get(row.security_id) || {};
+      const detail = detailById.get(row.security_id) || null;
       const isFund = row.asset_type === 'mutual-fund';
+      const nav = Number(detail && detail.latest_nav);
+      const prevNav = Number(detail && detail.prev_nav);
       const change = isFund
-        ? (fundChanges.get(row.security_id) || {}).change
+        ? (nav > 0 && prevNav > 0 ? (nav / prevNav - 1) * 100 : null)
         : (row.change_pct == null ? null : Number(row.change_pct));
       const lastDate = isFund ? row.fund_nav_date : row.price_date;
       return {
@@ -149,37 +195,29 @@ var SecuritiesModule = {
         lastFetchedAt: cov.last_fetched_at || null,
         sources: Array.isArray(cov.sources) ? cov.sources : [],
         daysOld: this.daysSince(lastDate),
-        fundDetail: detailById.get(row.security_id) || null
+        fundDetail: detail
       };
-    }).sort((a, b) => a.symbol.localeCompare(b.symbol));
+    });
   },
 
-  // จุด NAV ล่าสุด 2 วันของแต่ละกอง (ข้ามแหล่งข้อมูลที่ให้วันเดียวกันซ้ำ)
-  buildFundChanges(navRows) {
-    const result = new Map();
-    const done = new Set();
-    navRows.forEach(row => {
-      if (done.has(row.security_id)) return;
-      let entry = result.get(row.security_id);
-      if (!entry) {
-        entry = { last: null, prev: null, dates: new Set() };
-        result.set(row.security_id, entry);
-      }
-      if (entry.dates.has(row.nav_date)) return;
-      entry.dates.add(row.nav_date);
-      if (!entry.last) { entry.last = row; return; }
-      entry.prev = row;
-      done.add(row.security_id);
-    });
-    const changes = new Map();
-    result.forEach((entry, securityId) => {
-      const last = Number(entry.last && entry.last.nav);
-      const prev = Number(entry.prev && entry.prev.nav);
-      changes.set(securityId, {
-        change: prev > 0 && last > 0 ? (last / prev - 1) * 100 : null
-      });
-    });
-    return changes;
+  // ยอดรวมทั้งทะเบียนสำหรับการ์ดสรุป — นับฝั่งเซิร์ฟเวอร์ด้วย head request (ไม่ดึงแถวจริง)
+  async loadStats() {
+    const types = this.FILTERS.filter(item => item.key !== 'all').map(item => item.key);
+    const results = await Promise.all([
+      supabaseClient.from('v_security_latest').select('security_id', { count: 'exact', head: true }),
+      ...types.map(type => supabaseClient.from('v_security_latest')
+        .select('security_id', { count: 'exact', head: true }).eq('asset_type', type)),
+      supabaseClient.from('v_coverage').select('security_id', { count: 'exact', head: true })
+        .eq('track_history', true).eq('data_points', 0)
+    ]);
+    results.forEach(result => { if (result.error) throw result.error; });
+    const counts = {};
+    types.forEach((type, index) => { counts[type] = results[index + 1].count || 0; });
+    this.state.stats = {
+      total: results[0].count || 0,
+      counts,
+      missingTracked: results[results.length - 1].count || 0
+    };
   },
 
   async fetchHistory(row) {
@@ -256,6 +294,7 @@ var SecuritiesModule = {
                 <tbody id="sec-table-body"></tbody>
               </table>
             </div>
+            <div id="sec-pager" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 2px 4px; font-size: 12.5px; color: var(--txt-muted);"></div>
           </div>
 
           <div id="sec-detail"></div>
@@ -263,10 +302,12 @@ var SecuritiesModule = {
       </div>`;
 
     document.getElementById('sec-refresh').addEventListener('click', () => window.location.reload());
+    let searchTimer = null;
     document.getElementById('sec-search').addEventListener('input', event => {
-      this.state.search = event.target.value.trim().toLowerCase();
-      this.renderTable();
-      this.syncSelection();
+      const value = event.target.value.trim();
+      clearTimeout(searchTimer);
+      // ช้าไปหน่อยเพื่อไม่ให้ยิงคำขอทุกตัวอักษร
+      searchTimer = setTimeout(() => this.applyFilters({ search: value }), 350);
     });
 
     const filters = document.getElementById('sec-filters');
@@ -280,15 +321,18 @@ var SecuritiesModule = {
     filters.addEventListener('click', event => {
       const button = event.target.closest('button[data-filter]');
       if (!button) return;
-      this.state.filter = button.dataset.filter;
       filters.querySelectorAll('button[data-filter]').forEach(item => {
-        const active = item.dataset.filter === this.state.filter;
+        const active = item.dataset.filter === button.dataset.filter;
         item.style.background = active ? 'rgba(96, 165, 250, 0.22)' : 'transparent';
         item.style.borderColor = active ? 'rgba(96, 165, 250, 0.55)' : 'rgba(129, 140, 248, 0.22)';
         item.style.color = active ? '#dbeafe' : 'var(--txt-soft)';
       });
-      this.renderTable();
-      this.syncSelection();
+      this.applyFilters({ filter: button.dataset.filter });
+    });
+
+    document.getElementById('sec-pager').addEventListener('click', event => {
+      const button = event.target.closest('button[data-page]');
+      if (button && !button.disabled) this.changePage(Number(button.dataset.page));
     });
 
     document.getElementById('sec-table-body').addEventListener('click', event => {
@@ -298,18 +342,49 @@ var SecuritiesModule = {
 
     this.renderKpis();
     this.renderTable();
-    const first = this.visibleRows()[0];
+    this.renderPager();
+    const first = this.state.rows[0];
     if (first) this.selectSecurity(first.securityId);
     else this.renderDetail(null);
   },
 
+  async applyFilters(patch) {
+    Object.assign(this.state, patch, { page: 0 });
+    try {
+      await this.load();
+    } catch (error) {
+      console.error('[Securities] filter error', error);
+      return;
+    }
+    this.renderKpis();
+    this.renderTable();
+    this.renderPager();
+    this.syncSelection();
+  },
+
+  async changePage(page) {
+    const pages = Math.max(1, Math.ceil(this.state.total / this.PAGE_SIZE));
+    if (page < 0 || page >= pages || page === this.state.page) return;
+    this.state.page = page;
+    try {
+      await this.load();
+    } catch (error) {
+      console.error('[Securities] page error', error);
+      return;
+    }
+    this.renderKpis();
+    this.renderTable();
+    this.renderPager();
+    this.syncSelection();
+  },
+
   renderKpis() {
     const rows = this.state.rows;
-    const funds = rows.filter(row => row.isFund).length;
-    const others = rows.length - funds;
-    const points = rows.reduce((sum, row) => sum + row.dataPoints, 0);
+    const stats = this.state.stats || {};
+    const counts = stats.counts || {};
     const newest = rows.reduce((best, row) => (row.lastDate && (!best || row.lastDate > best) ? row.lastDate : best), null);
-    const stale = rows.filter(row => ['stale', 'missing'].includes(this.statusOf(row).key)).length;
+    const start = this.state.page * this.PAGE_SIZE + 1;
+    const shown = rows.length ? `${start}–${start + rows.length - 1} จาก ${this.state.total}` : 'ไม่มีแถว';
 
     const card = (icon, label, value, hint) => `
       <div class="pf-card" style="padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;">
@@ -322,26 +397,42 @@ var SecuritiesModule = {
       </div>`;
 
     document.getElementById('sec-kpis').innerHTML = [
-      card('📚', 'หลักทรัพย์ในทะเบียน', this.num(rows.length, 0), `หุ้น/ETF/REIT ${others} · กองทุน ${funds}`),
-      card('📈', 'จุดข้อมูลที่เก็บไว้', this.num(points, 0), 'ราคา + NAV ทุกแหล่งข้อมูล'),
-      card('🗓️', 'ข้อมูลล่าสุด', newest ? this.thDate(newest) : '—', newest && this.daysSince(newest) != null ? `${this.daysSince(newest)} วันก่อน` : 'ยังไม่มีข้อมูล'),
-      card('⚠️', 'ต้องตรวจสอบ', this.num(stale, 0), 'ค้างหรือไม่มีข้อมูลเลย')
+      card('📚', 'หลักทรัพย์ในทะเบียน', this.num(stats.total || 0, 0),
+        `หุ้นไทย ${this.num(counts['thai-stock'] || 0, 0)} · หุ้นนอก ${this.num(counts['foreign-stock'] || 0, 0)} · ETF ${this.num(counts['etf'] || 0, 0)} · กองทุน ${this.num(counts['mutual-fund'] || 0, 0)}`),
+      card('🔎', 'ผลที่ตรงกับเงื่อนไข', this.num(this.state.total, 0), `กำลังแสดง ${shown}`),
+      card('🗓️', 'ข้อมูลล่าสุดในหน้านี้', newest ? this.thDate(newest) : '—',
+        newest && this.daysSince(newest) != null ? `${this.daysSince(newest)} วันก่อน` : 'ยังไม่มีข้อมูล'),
+      card('⚠️', 'ตัวที่ติดตามยังไม่มีข้อมูล', this.num(stats.missingTracked || 0, 0), 'นับเฉพาะ track_history = true')
     ].join('');
   },
 
-  visibleRows() {
-    const { rows, filter, search } = this.state;
-    return rows.filter(row => {
-      if (filter !== 'all' && row.assetType !== filter) return false;
-      if (!search) return true;
-      return row.symbol.toLowerCase().includes(search) || row.name.toLowerCase().includes(search);
-    });
+  renderPager() {
+    const host = document.getElementById('sec-pager');
+    if (!host) return;
+    const total = this.state.total;
+    if (!total) {
+      host.innerHTML = '';
+      return;
+    }
+    const pages = Math.max(1, Math.ceil(total / this.PAGE_SIZE));
+    const page = this.state.page;
+    const button = (label, target, disabled) => `
+      <button type="button" data-page="${target}" ${disabled ? 'disabled' : ''}
+        style="background: ${disabled ? 'transparent' : 'rgba(96, 165, 250, 0.10)'};
+               border: 1px solid rgba(129, 140, 248, ${disabled ? '0.15' : '0.32'});
+               color: ${disabled ? 'var(--txt-faint)' : '#c7d2fe'};
+               padding: 6px 12px; border-radius: 9px; font-size: 12px; font-weight: 700;
+               cursor: ${disabled ? 'default' : 'pointer'};">${label}</button>`;
+    host.innerHTML = `
+      ${button('← ก่อนหน้า', page - 1, page <= 0)}
+      <span>หน้า ${page + 1} / ${pages} · ${this.num(total, 0)} รายการ</span>
+      ${button('ถัดไป →', page + 1, page >= pages - 1)}`;
   },
 
   renderTable() {
     const body = document.getElementById('sec-table-body');
     if (!body) return;
-    const rows = this.visibleRows();
+    const rows = this.state.rows;
     if (!rows.length) {
       body.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--txt-faint); padding: 24px;">ไม่พบหลักทรัพย์ที่ตรงกับตัวกรอง</td></tr>';
       return;
@@ -374,7 +465,7 @@ var SecuritiesModule = {
 
   // ตัวที่เลือกอยู่อาจถูกกรองหายไป — เลือกตัวแรกที่ยังเห็นแทน เพื่อไม่ให้ panel ขัดกับตาราง
   syncSelection() {
-    const rows = this.visibleRows();
+    const rows = this.state.rows;
     if (rows.some(row => row.securityId === this.state.selectedId)) return;
     if (rows.length) {
       this.selectSecurity(rows[0].securityId);

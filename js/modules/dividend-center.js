@@ -30,7 +30,8 @@ var DividendCenterModule = {
     { key: 'thai-stock', label: 'หุ้นไทย' },
     { key: 'foreign-stock', label: 'หุ้นต่างประเทศ' },
     { key: 'mutual-fund', label: 'กองทุน' },
-    { key: 'etf', label: 'ETF' }
+    { key: 'etf', label: 'ETF' },
+    { key: 'reit', label: 'REIT' }
   ],
 
   MONTHS: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
@@ -138,12 +139,14 @@ var DividendCenterModule = {
   },
 
   async loadOnce() {
-    const [divs, latest] = await Promise.all([
-      this.fetchDividendRows(),
-      supabaseClient.from('v_security_latest')
-        .select('security_id,symbol,name_th,name_en,asset_type,currency,price,fund_nav')
-        .limit(1000)
-    ]);
+    const divs = await this.fetchDividendRows();
+    // ดึงเฉพาะหลักทรัพย์ที่มีปันผล — ทะเบียนทั้งตลาดมีหลักหมื่นตัว ถ้าดึงแบบ limit จะได้ชุดที่ไม่ครบ
+    const ids = [...new Set(divs.map(item => item.security_id).filter(Boolean))];
+    const latest = ids.length
+      ? await supabaseClient.from('v_security_latest')
+          .select('security_id,symbol,name_th,name_en,asset_type,currency,price,fund_nav')
+          .in('security_id', ids)
+      : { data: [], error: null };
     if (latest.error) throw latest.error;
 
     const latestById = new Map((latest.data || []).map(row => [row.security_id, row]));

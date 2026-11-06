@@ -130,10 +130,13 @@ var PriceCenterModule = {
   },
 
   async loadOnce() {
+    // ทะเบียนทั้งตลาดมีหลักหมื่นตัว — หน้านี้แสดง "ตัวที่ติดตาม" (track_history) ไม่ใช่ทั้งทะเบียน
+    // (ทั้งทะเบียนดูได้ที่หน้าศูนย์ข้อมูลราคา & NAV ซึ่งค้นหา/แบ่งหน้าฝั่งเซิร์ฟเวอร์)
     const [latest, coverage, navRows] = await Promise.all([
-      supabaseClient.from('v_security_latest').select('*').limit(1000),
+      supabaseClient.from('v_security_latest').select('*').eq('track_history', true).limit(1000),
       supabaseClient.from('v_coverage')
         .select('security_id,data_points,first_date,last_date,last_fetched_at,sources')
+        .eq('track_history', true)
         .limit(1000),
       supabaseClient.from('fund_nav_history')
         .select('security_id,nav_date,nav')
@@ -244,7 +247,8 @@ var PriceCenterModule = {
           <div>
             <div style="font-size: 20px; font-weight: 800; color: var(--txt-strong);">ศูนย์ราคา</div>
             <div style="font-size: 12.5px; color: var(--txt-muted); margin-top: 4px;">
-              ราคาปิด/NAV ล่าสุด พร้อมกราฟและข้อมูลย้อนหลังจาก <span style="color: var(--txt-soft);">prices_daily · fund_nav_history</span>
+              ราคาปิด/NAV ล่าสุดของหลักทรัพย์ที่ติดตาม พร้อมกราฟและข้อมูลย้อนหลังจาก <span style="color: var(--txt-soft);">prices_daily · fund_nav_history</span>
+              · ทั้งทะเบียนดูที่ <span style="color: var(--txt-soft);">securities.html</span>
             </div>
           </div>
           <button type="button" id="pc-refresh" style="background: rgba(96, 165, 250, 0.10); border: 1px solid rgba(129, 140, 248, 0.32); color: #c7d2fe; padding: 8px 16px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer;">↻ โหลดใหม่</button>
@@ -345,7 +349,7 @@ var PriceCenterModule = {
       </div>`;
 
     document.getElementById('pc-kpis').innerHTML = [
-      card('📚', 'หลักทรัพย์ที่มีราคา/NAV', this.num(rows.length, 0), `หุ้น/ETF/REIT ${others} · กองทุน ${funds}`),
+      card('📚', 'หลักทรัพย์ที่ติดตาม', this.num(rows.length, 0), `หุ้น/ETF/REIT ${others} · กองทุน ${funds}`),
       card('🗓️', 'ราคาปิดล่าสุด', newest ? this.thDate(newest) : '—', newest && this.daysSince(newest) != null ? `${this.daysSince(newest)} วันก่อน` : 'ยังไม่มีข้อมูล'),
       card('📊', 'ตลาดวันนี้', `<span style="color: var(--up);">▲ ${up}</span> <span style="color: var(--txt-faint);">/</span> <span style="color: var(--down);">▼ ${down}</span>`, `ไม่เปลี่ยน ${withChange.length - up - down} · ไม่มีข้อมูล ${rows.length - withChange.length}`),
       card('🔄', 'ดึงข้อมูลล่าสุด', latestFetch ? this.thTime(latestFetch) : '—', 'เวลาจากแหล่งข้อมูล (fetched_at)')
