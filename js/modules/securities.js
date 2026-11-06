@@ -542,9 +542,64 @@ var SecuritiesModule = {
         </div>
 
         <div id="sec-chart-note" style="font-size: 11.5px; color: var(--txt-faint); margin-top: 8px;">กำลังโหลดกราฟ…</div>
+        <div id="sec-history-request" style="margin-top: 10px;"></div>
       </div>`;
 
     this.drawChart(row);
+    this.renderHistoryRequest(row);
+  },
+
+  // ตัวที่ยังไม่มีประวัติ (ทะเบียนทั้งตลาด) — ให้กดขอเข้าคิว history_requests
+  // collector รอบรายวันค่อย ๆ ดึง ~1 ปีย้อนหลังให้ทีละชุด
+  async renderHistoryRequest(row) {
+    const host = document.getElementById('sec-history-request');
+    if (!host) return;
+    if (row.dataPoints > 0) { host.innerHTML = ''; return; }
+
+    const btnStyle = 'width: 100%; padding: 9px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; '
+      + 'background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); '
+      + 'color: #7dd3fc; cursor: pointer;';
+    host.innerHTML = `
+      <button id="sec-request-history" style="${btnStyle}">📥 ขอประวัติย้อนหลัง (~1 ปี)</button>
+      <div id="sec-request-note" style="font-size: 11.5px; color: var(--txt-faint); margin-top: 6px;"></div>`;
+
+    const btn = document.getElementById('sec-request-history');
+    const note = document.getElementById('sec-request-note');
+    btn.addEventListener('click', () => this.requestHistory(row, btn, note));
+
+    try {
+      const { data } = await supabaseClient.from('history_requests')
+        .select('status,message').eq('security_id', row.securityId).maybeSingle();
+      if (!data) return;
+      if (data.status === 'pending') {
+        btn.disabled = true;
+        btn.style.opacity = '0.55';
+        btn.textContent = '⏳ อยู่ในคิวแล้ว';
+        note.textContent = 'ระบบจะดึงประวัติให้ในรอบเก็บข้อมูลถัดไป (ราคาราว 17:45 / 05:30)';
+      } else if (data.status === 'failed') {
+        note.textContent = 'รอบก่อนล้มเหลว: ' + (data.message || 'ไม่ทราบสาเหตุ') + ' — กดปุ่มเพื่อขอใหม่';
+      }
+    } catch (error) {
+      // ตารางคิวยังไม่ถูกสร้าง (migration ยังไม่รัน) — ปล่อยปุ่มไว้ให้กด จะมีข้อความผิดพลาดชัดเจน
+    }
+  },
+
+  async requestHistory(row, btn, note) {
+    btn.disabled = true;
+    if (note) note.textContent = 'กำลังส่งคำขอ…';
+    try {
+      // upsert: คิวใหม่ insert · คิวที่เคยล้มเหลวกลับมาเป็น pending ขอใหม่ได้ (RLS อนุญาตเฉพาะ failed)
+      const { error } = await supabaseClient.from('history_requests')
+        .upsert({ security_id: row.securityId, status: 'pending' }, { onConflict: 'security_id' });
+      if (error) throw error;
+      btn.style.opacity = '0.55';
+      btn.textContent = '⏳ อยู่ในคิวแล้ว';
+      if (note) note.textContent = 'ระบบจะดึงประวัติให้ในรอบเก็บข้อมูลถัดไป (ราคาราว 17:45 / 05:30)';
+    } catch (error) {
+      btn.disabled = false;
+      if (note) note.textContent = 'ส่งคำขอไม่สำเร็จ: ' + (error.message || error)
+        + ' — ถ้าเพิ่งอัปเดตระบบ ลองรีเฟรชหน้านี้หนึ่งครั้ง';
+    }
   },
 
   async drawChart(row) {
